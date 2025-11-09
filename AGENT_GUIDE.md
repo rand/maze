@@ -20,6 +20,8 @@
 8. [Observability](#8-observability)
 9. [Reference Tables](#9-reference-tables)
 10. [Quick Command Reference](#10-quick-command-reference)
+11. [Implementation Patterns](#11-implementation-patterns)
+12. [Enforcement and CI/CD](#12-enforcement-and-cicd)
 
 ---
 
@@ -2730,6 +2732,545 @@ uv run pytest tests/unit -v
 
 ---
 
+## 11. Implementation Patterns
+
+### 11.1 Incremental Refinement Pattern
+
+**Use Case**: Iteratively tighten constraints based on validation failures
+
+**When to Use**: Complex tasks where optimal constraints unknown upfront
+
+**Implementation**:
+
+```python
+async def incremental_refinement(prompt: str, spec: Specification):
+    """Start loose, tighten on failures."""
+
+    # Start with syntactic only
+    constraints = ConstraintSet()
+    constraints.add(SyntacticConstraint.from_language(spec.language))
+
+    for attempt in range(3):
+        # Generate with current constraints
+        code = await generate(prompt, constraints)
+
+        # Validate
+        result = await validate(code, spec)
+
+        if result.passed:
+            # Success - store pattern
+            await memory.store_constraint_pattern(
+                pattern=constraints.to_pattern(),
+                success=True,
+                metrics={"attempts": attempt + 1}
+            )
+            return code
+
+        # Tighten constraints based on failure type
+        if result.type_errors:
+            # Add type constraints
+            constraints.add(TypeConstraint(
+                expected_type=spec.return_type,
+                context=spec.type_context
+            ))
+
+        if result.semantic_errors:
+            # Add semantic constraints
+            for error in result.semantic_errors:
+                constraints.add(semantic_constraint_from_error(error))
+
+    # Failed after 3 attempts
+    return None
+```
+
+**Workflow Integration**:
+1. Start with syntactic constraints only
+2. Generate and validate
+3. If fails, analyze failure type
+4. Add appropriate constraint tier (type, semantic, contextual)
+5. Retry with tightened constraints
+6. Store successful pattern in mnemosyne
+
+---
+
+### 11.2 Speculative Generation Pattern
+
+**Use Case**: Generate multiple candidates in parallel, select best
+
+**When to Use**: Performance is less critical than correctness
+
+**Implementation**:
+
+```python
+async def speculative_generation(prompt: str, spec: Specification):
+    """Generate multiple candidates, validate concurrently."""
+
+    # Create constraint variations
+    constraint_sets = [
+        create_loose_constraints(spec),
+        create_medium_constraints(spec),
+        create_strict_constraints(spec),
+    ]
+
+    # Generate in parallel
+    tasks = [
+        generate(prompt, constraints)
+        for constraints in constraint_sets
+    ]
+    candidates = await asyncio.gather(*tasks)
+
+    # Validate in parallel
+    validation_tasks = [
+        validate(code, spec)
+        for code in candidates
+    ]
+    results = await asyncio.gather(*validation_tasks)
+
+    # Select best (first that passes, or highest score)
+    for code, result in zip(candidates, results):
+        if result.passed:
+            return code
+
+    # None passed - return best partial
+    return max(zip(candidates, results), key=lambda x: x[1].score)[0]
+```
+
+**Workflow Integration**:
+1. Create 3 constraint variations (loose, medium, strict)
+2. Generate all candidates in parallel
+3. Validate all candidates in parallel
+4. Return first passing, or highest-scoring partial
+5. Store best approach in mnemosyne
+
+---
+
+### 11.3 Typed Hole Filling Pattern
+
+**Use Case**: Complete partial code with type-directed search
+
+**When to Use**: Completing functions, filling in implementation details
+
+**Implementation**:
+
+```python
+async def fill_typed_hole(code_with_hole: str, hole_type: Type):
+    """Fill hole using type inhabitation."""
+
+    # Extract context around hole
+    context = extract_context(code_with_hole)
+    type_context = infer_type_context(context)
+
+    # Find expressions matching hole type
+    solver = InhabitationSolver()
+    valid_expressions = solver.find_valid_expressions(
+        expected_type=hole_type,
+        context=type_context
+    )
+
+    # Rank by likelihood and type fitness
+    ranked = rank_expressions(valid_expressions, context)
+
+    # Try each candidate
+    for expr in ranked[:5]:  # Top 5
+        completed = code_with_hole.replace("/*__HOLE__*/", expr)
+
+        # Validate
+        result = await validate(completed, spec)
+        if result.passed:
+            return completed
+
+    # No valid completion found
+    return None
+```
+
+**Workflow Integration**:
+1. Identify typed hole marker (`/*__HOLE__*/`)
+2. Extract surrounding context
+3. Use type inhabitation solver to find valid expressions
+4. Rank candidates by likelihood and type fitness
+5. Try top N candidates with validation
+6. Return first valid completion
+
+---
+
+### 11.4 Adaptive Constraint Weighting Pattern
+
+**Use Case**: Learn from project to weight soft constraints
+
+**When to Use**: Project-specific generation, adapting to codebase conventions
+
+**Implementation**:
+
+```python
+async def adaptive_weighting(prompt: str, spec: Specification):
+    """Weight constraints based on project patterns."""
+
+    # Recall successful patterns from this project
+    patterns = await memory.recall_similar_contexts(
+        query=prompt,
+        namespace=f"project:maze:{spec.language}",
+        limit=10
+    )
+
+    # Create contextual constraints weighted by success
+    contextual = ContextualConstraint(weight=0.5)
+
+    for pattern in patterns:
+        success_rate = pattern.metadata.get("success_rate", 0.5)
+        contextual.add_pattern(
+            pattern=pattern.content,
+            weight=success_rate
+        )
+
+    # Combine with hard constraints
+    constraints = ConstraintSet()
+    constraints.add(SyntacticConstraint.from_language(spec.language))
+    constraints.add(contextual)
+
+    # Generate with weighted constraints
+    code = await generate(prompt, constraints)
+
+    # Update weights based on outcome
+    result = await validate(code, spec)
+    await update_pattern_weights(patterns, result.passed)
+
+    return code
+```
+
+**Workflow Integration**:
+1. Recall similar successful patterns from mnemosyne
+2. Create contextual constraints weighted by success rate
+3. Combine with hard constraints (syntactic, type)
+4. Generate with weighted constraints
+5. Validate and update pattern weights
+6. Store updated success rates in mnemosyne
+
+**mnemosyne Storage**:
+```bash
+# Store pattern with success metrics
+mnemosyne remember -c "Pattern {name}: {success_rate}% success in {context}" \
+  -n "project:maze:{language}:{pattern-category}" \
+  -i 8 \
+  -t "pattern,{language},success"
+```
+
+---
+
+### 11.5 Pattern Selection Guide
+
+| Scenario | Recommended Pattern | Rationale |
+|----------|-------------------|-----------|
+| First attempt at task type | Incremental Refinement | Unknown optimal constraints |
+| Critical correctness requirement | Speculative Generation | Multiple attempts, select best |
+| Partial code completion | Typed Hole Filling | Type-guided search efficient |
+| Project-specific style | Adaptive Weighting | Learn from codebase patterns |
+| Time-constrained task | Incremental Refinement | Fastest to first success |
+| Complex type requirements | Typed Hole Filling | Leverage type system |
+| Learning new domain | Adaptive Weighting | Build pattern library |
+
+---
+
+## 12. Enforcement and CI/CD
+
+### 12.1 Automated Quality Gates
+
+**CI/CD Workflow** (`.github/workflows/maze-ci.yml`):
+
+```yaml
+name: Maze CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: astral-sh/setup-uv@v1
+
+      - name: Install dependencies
+        run: uv pip install -e ".[dev]"
+
+      - name: Run tests
+        run: uv run pytest tests/unit -v
+
+      - name: Check coverage
+        run: |
+          uv run pytest --cov=maze --cov-report=term --cov-fail-under=85
+
+      - name: Performance benchmarks
+        run: |
+          uv run pytest -m performance -v
+          # Assert targets met (handled in test assertions)
+
+      - name: Type checking
+        run: uv run mypy src/
+
+      - name: Linting
+        run: |
+          uv run black --check src/ tests/
+          uv run ruff src/ tests/
+```
+
+**When to Update**:
+- New quality gate added → Add step to CI
+- Coverage target changes → Update `--cov-fail-under`
+- New linter/formatter → Add to workflow
+
+---
+
+### 12.2 Pre-Commit Hooks
+
+**Location**: `.git/hooks/pre-commit`
+
+**Implementation**:
+
+```bash
+#!/bin/bash
+
+# Format check
+uv run black --check src/ tests/ || {
+    echo "❌ Code not formatted. Run: uv run black src/ tests/"
+    exit 1
+}
+
+# Lint check
+uv run ruff src/ tests/ || {
+    echo "❌ Linting failed"
+    exit 1
+}
+
+# Fast tests only
+uv run pytest tests/unit -m "not slow and not performance" || {
+    echo "❌ Tests failed"
+    exit 1
+}
+
+echo "✅ Pre-commit checks passed"
+```
+
+**Installation**:
+
+```bash
+# Make hook executable
+chmod +x .git/hooks/pre-commit
+
+# Verify
+git commit -m "test" --dry-run
+```
+
+**Bypassing** (emergency only):
+```bash
+# Skip pre-commit for emergency fix
+git commit --no-verify -m "fix: Emergency hotfix"
+
+# Create follow-up issue to fix properly
+bd create "Clean up emergency commit {hash}" -t task -p 1
+```
+
+---
+
+### 12.3 Performance Regression Detection
+
+**Baseline Tracking**:
+
+```bash
+# Save baseline before changes
+uv run python benchmarks/baseline.py --save baseline.json
+
+# After changes, compare
+uv run python benchmarks/baseline.py --compare baseline.json
+```
+
+**Baseline Script** (`benchmarks/baseline.py`):
+
+```python
+#!/usr/bin/env python3
+"""Save and compare performance baselines."""
+import json
+import argparse
+from pathlib import Path
+
+def measure_performance():
+    """Measure all performance metrics."""
+    from maze.integrations.llguidance import LLGuidanceAdapter
+    import statistics
+    import time
+
+    adapter = LLGuidanceAdapter(enable_profiling=True)
+    # ... measurement code ...
+
+    return {
+        "p99_mask_us": p99,
+        "cache_hit_rate": hit_rate,
+        "grammar_compile_ms": compile_time,
+        # ... other metrics ...
+    }
+
+def save_baseline(metrics, path="baseline.json"):
+    """Save metrics as baseline."""
+    Path(path).write_text(json.dumps(metrics, indent=2))
+    print(f"✅ Baseline saved to {path}")
+
+def compare_baseline(metrics, baseline_path="baseline.json"):
+    """Compare current metrics to baseline."""
+    baseline = json.loads(Path(baseline_path).read_text())
+
+    regressions = []
+    for key, current in metrics.items():
+        previous = baseline.get(key)
+        if previous is None:
+            continue
+
+        # Calculate change
+        change = ((current - previous) / previous) * 100
+
+        # Check thresholds (from CLAUDE.md)
+        if change > 10:  # >10% degradation is warning
+            regressions.append(f"⚠️  {key}: {previous} → {current} ({change:+.1f}%)")
+        elif change > 25:  # >25% degradation is failure
+            regressions.append(f"❌ {key}: {previous} → {current} ({change:+.1f}%)")
+        elif change < -10:  # >10% improvement
+            regressions.append(f"✅ {key}: {previous} → {current} ({change:+.1f}%)")
+
+    if any(line.startswith("❌") for line in regressions):
+        print("\n".join(regressions))
+        exit(1)  # Fail build
+    else:
+        print("\n".join(regressions) if regressions else "✅ No regressions")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--save", help="Save baseline to file")
+    parser.add_argument("--compare", help="Compare to baseline file")
+    args = parser.parse_args()
+
+    metrics = measure_performance()
+
+    if args.save:
+        save_baseline(metrics, args.save)
+    elif args.compare:
+        compare_baseline(metrics, args.compare)
+    else:
+        print(json.dumps(metrics, indent=2))
+```
+
+**Usage in Workflow**:
+```bash
+# Before feature work
+uv run python benchmarks/baseline.py --save before.json
+
+# After feature complete
+uv run python benchmarks/baseline.py --compare before.json
+# → Fails if >25% regression, warns if >10%
+```
+
+---
+
+### 12.4 Quality Gate Enforcement Matrix
+
+| Gate | Command | Pass Criteria | Enforcement Level | Bypass Allowed |
+|------|---------|---------------|-------------------|----------------|
+| Unit tests | `uv run pytest tests/unit -v` | All pass | ✅ CI required | ❌ Never |
+| Performance | `uv run pytest -m performance -v` | All targets met | ✅ CI required | ❌ Never |
+| Coverage | `uv run pytest --cov=maze --cov-fail-under=70` | ≥70% overall | ✅ CI required | ⚠️  Emergency only |
+| Type checking | `uv run mypy src/` | No errors | ✅ CI required | ⚠️  Emergency only |
+| Formatting | `uv run black --check src/ tests/` | No changes needed | ✅ Pre-commit + CI | ⚠️  Emergency only |
+| Linting | `uv run ruff src/ tests/` | No errors | ✅ Pre-commit + CI | ⚠️  Emergency only |
+| Documentation | Manual review | Updated per matrix | ⚠️  PR review | ❌ Never |
+| Changelog | Manual review | Entry in [Unreleased] | ⚠️  PR review | ⚠️  Docs-only changes |
+
+**Emergency Bypass Protocol**:
+1. Only for critical production issues
+2. Must create follow-up Beads issue immediately
+3. Must link bypass commit to follow-up issue
+4. Follow-up must be priority 0 or 1
+5. Store incident in mnemosyne with high importance (9)
+
+```bash
+# Emergency bypass
+git commit --no-verify -m "fix: Critical production issue {brief}
+
+EMERGENCY BYPASS: Pre-commit checks skipped
+Follow-up issue: maze-{id}"
+
+# Immediately create follow-up
+bd create "Fix quality violations from emergency commit {hash}" \
+  -t bug -p 0 --json
+
+# Store incident
+mnemosyne remember -c "Emergency bypass for {issue}: {reason}" \
+  -n "project:maze" -i 9 -t "incident,bypass,emergency"
+```
+
+---
+
+### 12.5 Release Quality Checklist
+
+**Pre-Release Verification** (from §2.3):
+
+```bash
+#!/bin/bash
+# release-check.sh
+
+set -e
+
+echo "🔍 Running release quality checks..."
+
+# 1. All tests
+echo "Running tests..."
+uv run pytest || exit 1
+
+# 2. Performance benchmarks
+echo "Running performance benchmarks..."
+uv run pytest -m performance -v || exit 1
+
+# 3. Coverage
+echo "Checking coverage..."
+uv run pytest --cov=maze --cov-report=term --cov-fail-under=70 || exit 1
+
+# 4. Type checking
+echo "Type checking..."
+uv run mypy src/ || exit 1
+
+# 5. Formatting
+echo "Checking formatting..."
+uv run black --check src/ tests/ || exit 1
+
+# 6. Linting
+echo "Linting..."
+uv run ruff src/ tests/ || exit 1
+
+# 7. Documentation
+echo "Checking documentation..."
+[ -f CHANGELOG.md ] || { echo "❌ CHANGELOG.md missing"; exit 1; }
+grep -q "\[Unreleased\]" CHANGELOG.md || { echo "❌ No [Unreleased] section"; exit 1; }
+
+# 8. No TODO/FIXME
+echo "Checking for TODO/FIXME..."
+! grep -r "TODO\|FIXME" src/ && echo "✅ No TODO/FIXME found" || {
+    echo "❌ Found TODO/FIXME comments. Create Beads issues instead."
+    exit 1
+}
+
+# 9. Beads state
+echo "Checking Beads state..."
+bd ready --json | jq 'length' > /dev/null || { echo "⚠️  Beads check failed"; }
+
+echo "✅ All release quality checks passed!"
+```
+
+**Usage**:
+```bash
+# Before release
+./release-check.sh
+
+# If passes, proceed with release
+git tag -a v0.2.0 -m "Release v0.2.0"
+```
+
+---
+
 ## Conclusion
 
 This guide provides decision trees, workflows, templates, and reference tables for agentic systems working on Maze. Key principles:
@@ -2743,6 +3284,8 @@ This guide provides decision trees, workflows, templates, and reference tables f
 7. **Anti-Patterns** prevent mistakes
 8. **Observability** tracks health
 9. **References** provide quick lookups
+10. **Implementation Patterns** provide tested code examples
+11. **Enforcement** automates quality gates
 
 **Remember**:
 - Use Task Classification Tree (§1.1) for every request
