@@ -1,113 +1,82 @@
-// Theme toggle functionality
+// Theme toggle functionality with SVG diagram switching
 (function() {
     'use strict';
 
-    const THEME_KEY = 'maze-theme';
-    const LIGHT = 'light-theme';
-    const DARK = 'dark-theme';
+    const THEME_KEY = 'theme-preference';
 
-    // Get saved theme or system preference
-    function getInitialTheme() {
-        const saved = localStorage.getItem(THEME_KEY);
-        if (saved === 'light' || saved === 'dark') {
-            return saved === 'light' ? LIGHT : DARK;
-        }
-        // No saved preference, use system
-        return null;
+    // Get current theme
+    function getCurrentTheme() {
+        return localStorage.getItem(THEME_KEY) || 'light';
     }
 
-    // Apply theme
-    function applyTheme(theme) {
-        document.body.classList.remove(LIGHT, DARK);
-        if (theme) {
-            document.body.classList.add(theme);
-        }
+    // Save theme preference
+    function saveTheme(theme) {
+        localStorage.setItem(THEME_KEY, theme);
     }
 
-    // Toggle theme
-    function toggleTheme() {
-        const currentTheme = document.body.classList.contains(DARK) ? DARK :
-                           document.body.classList.contains(LIGHT) ? LIGHT : null;
+    // Update SVG diagrams based on theme
+    function updateDiagrams(theme) {
+        const pictures = document.querySelectorAll('picture');
+        pictures.forEach(picture => {
+            const sources = picture.querySelectorAll('source');
+            const img = picture.querySelector('img');
 
-        let newTheme;
-        if (currentTheme === DARK) {
-            newTheme = LIGHT;
-            localStorage.setItem(THEME_KEY, 'light');
-        } else {
-            newTheme = DARK;
-            localStorage.setItem(THEME_KEY, 'dark');
-        }
+            sources.forEach(source => {
+                const media = source.getAttribute('media');
+                // Hide/show sources based on theme
+                if (theme === 'dark' && media === '(prefers-color-scheme: dark)') {
+                    source.disabled = false;
+                } else if (theme === 'light' && media === '(prefers-color-scheme: dark)') {
+                    source.disabled = true;
+                }
+            });
 
-        applyTheme(newTheme);
-    }
+            // Update img src directly for theme
+            if (img) {
+                const srcPath = img.src || img.getAttribute('src');
+                if (srcPath) {
+                    const basePath = srcPath.replace(/-light\.svg$/, '.svg').replace(/-dark\.svg$/, '.svg');
+                    const newSrc = basePath.replace(/\.svg$/, theme === 'dark' ? '-dark.svg' : '-light.svg');
 
-    // Initialize
-    function init() {
-        const initialTheme = getInitialTheme();
-        if (initialTheme) {
-            applyTheme(initialTheme);
-        }
-
-        // Add toggle listener
-        const toggle = document.querySelector('.theme-toggle');
-        if (toggle) {
-            toggle.addEventListener('click', toggleTheme);
-        }
-
-        // Listen for system theme changes
-        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        mediaQuery.addEventListener('change', (e) => {
-            // Only update if user hasn't set a manual preference
-            if (!localStorage.getItem(THEME_KEY)) {
-                applyTheme(null); // Remove manual classes, let CSS handle it
+                    // Check if themed version exists, otherwise use base
+                    const testSrc = newSrc.includes('-light.svg') || newSrc.includes('-dark.svg') ? newSrc : srcPath;
+                    img.src = testSrc;
+                }
             }
         });
     }
 
-    // Run on DOM ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
-})();
-
-// Diagram theme switching
-(function() {
-    'use strict';
-
-    function updateDiagramVisibility() {
-        const isDark = document.body.classList.contains('dark-theme') ||
-                      (!document.body.classList.contains('light-theme') &&
-                       window.matchMedia('(prefers-color-scheme: dark)').matches);
-
-        document.querySelectorAll('.diagram-light').forEach(img => {
-            img.style.display = isDark ? 'none' : 'block';
-        });
-
-        document.querySelectorAll('.diagram-dark').forEach(img => {
-            img.style.display = isDark ? 'block' : 'none';
-        });
+    // Apply theme to document
+    function applyTheme(theme) {
+        document.body.classList.remove('light-theme', 'dark-theme');
+        document.body.classList.add(`${theme}-theme`);
+        updateDiagrams(theme);
     }
 
-    // Update on page load
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', updateDiagramVisibility);
-    } else {
-        updateDiagramVisibility();
+    // Toggle theme
+    function toggleTheme() {
+        const current = getCurrentTheme();
+        const newTheme = current === 'light' ? 'dark' : 'light';
+        saveTheme(newTheme);
+        applyTheme(newTheme);
     }
 
-    // Update when theme toggle is clicked
-    document.addEventListener('DOMContentLoaded', function() {
-        const toggle = document.querySelector('.theme-toggle');
-        if (toggle) {
-            toggle.addEventListener('click', function() {
-                setTimeout(updateDiagramVisibility, 0);
-            });
+    // Initialize theme
+    function initTheme() {
+        const savedTheme = getCurrentTheme();
+        applyTheme(savedTheme);
+
+        // Add toggle listener
+        const toggleBtn = document.querySelector('.theme-toggle');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', toggleTheme);
         }
-    });
+    }
 
-    // Update when system theme changes
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    mediaQuery.addEventListener('change', updateDiagramVisibility);
+    // Run on load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initTheme);
+    } else {
+        initTheme();
+    }
 })();

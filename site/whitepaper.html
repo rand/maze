@@ -59,24 +59,25 @@
     <aside class="sidebar">
         <div class="sidebar-content">
             <div class="sidebar-tagline">// Constrained Code Generation</div>
+            <div class="sidebar-toc"></div>
         </div>
     </aside>
 
     <main class="container">
         
-<h1 id="maze-whitepaper">MAZE Whitepaper<a class="headerlink" href="#maze-whitepaper" title="Permanent link">&para;</a></h1>
+<h1 id="maze-whitepaper">MAZE Whitepaper</h1>
 <p><strong>Adaptive Constrained Code Generation</strong></p>
 <p><strong>Version</strong>: v0.1.0-whitepaper
 <strong>Date</strong>: November 2025
 <strong>Repository</strong>: <a href="https://github.com/rand/maze">github.com/rand/maze</a></p>
-<h2 id="abstract">Abstract<a class="headerlink" href="#abstract" title="Permanent link">&para;</a></h2>
+<h2 id="abstract">Abstract</h2>
 <p>Large Language Models (LLMs) have demonstrated remarkable capabilities in code generation, yet they suffer from high error rates when generating complex, type-correct code. Unconstrained generation often produces syntactically valid but semantically incorrect or type-unsafe code, requiring expensive post-hoc validation and multiple repair iterations.</p>
 <p>MAZE introduces a paradigm shift: <strong>compile constraints before decoding, rather than hoping for correctness after generation</strong>. Through a novel 4-tier constraint hierarchy—syntactic (CFG grammars), type (inhabitation search), semantic (test-driven), and contextual (learned patterns)—MAZE guides LLM generation toward valid, type-correct, and project-conformant code from the start.</p>
 <p>Built on research from PLDI 2025 (Type-Constrained Code Generation) and OOPSLA 2024 (Typed Holes), MAZE integrates with multiple LLM providers (OpenAI, vLLM, SGLang, llama.cpp) through llguidance for constraint enforcement, mnemosyne for persistent learning, and RUNE for sandboxed validation.</p>
 <p><strong>Current status</strong>: Core constraint system complete (Phases 1-3), validation pipeline in active development (Phase 4: 6/10 tasks complete), with adaptive learning and production hardening planned (Phases 5-6).</p>
 <p><strong>Significance</strong>: MAZE demonstrates that formal constraint enforcement can be integrated with modern LLMs without sacrificing generation speed, providing a foundation for the next generation of AI-assisted development tools.</p>
 <hr />
-<h2 id="table-of-contents">Table of Contents<a class="headerlink" href="#table-of-contents" title="Permanent link">&para;</a></h2>
+<h2 id="table-of-contents">Table of Contents</h2>
 <ol>
 <li><a href="#1-introduction">Introduction</a></li>
 <li><a href="#2-problem-statement">Problem Statement</a></li>
@@ -92,8 +93,8 @@
 <li><a href="#12-resources">Resources</a></li>
 </ol>
 <hr />
-<h2 id="1-introduction">1. Introduction<a class="headerlink" href="#1-introduction" title="Permanent link">&para;</a></h2>
-<h3 id="the-code-generation-challenge">The Code Generation Challenge<a class="headerlink" href="#the-code-generation-challenge" title="Permanent link">&para;</a></h3>
+<h2 id="1-introduction">1. Introduction</h2>
+<h3 id="the-code-generation-challenge">The Code Generation Challenge</h3>
 <p>Large Language Models have revolutionized software development assistance, enabling developers to generate substantial code from natural language descriptions. However, this capability comes with a fundamental limitation: without explicit constraints, LLMs generate code based solely on statistical patterns learned from training data. This approach produces code that is often:</p>
 <ul>
 <li><strong>Syntactically plausible</strong> but incorrect</li>
@@ -101,7 +102,7 @@
 <li><strong>Semantically wrong</strong>, failing to implement the specified behavior</li>
 <li><strong>Inconsistent</strong> with project conventions and patterns</li>
 </ul>
-<h3 id="mazes-paradigm-shift">MAZE's Paradigm Shift<a class="headerlink" href="#mazes-paradigm-shift" title="Permanent link">&para;</a></h3>
+<h3 id="mazes-paradigm-shift">MAZE's Paradigm Shift</h3>
 <p>MAZE reverses this paradigm. Instead of hoping the LLM generates correct code, MAZE <strong>compiles constraints before token generation</strong>, guiding the model toward valid outputs from the start.</p>
 <p><strong>Traditional Approach</strong>:</p>
 <div class="highlight"><pre><span></span><code><span class="n">Generate</span><span class="w"> </span><span class="p">(</span><span class="n">unconstrained</span><span class="p">)</span><span class="w"> </span><span class="err">→</span><span class="w"> </span><span class="n">Validate</span><span class="w"> </span><span class="err">→</span><span class="w"> </span><span class="n">Find</span><span class="w"> </span><span class="n">errors</span><span class="w"> </span><span class="err">→</span><span class="w"> </span><span class="n">Fix</span><span class="w"> </span><span class="err">→</span><span class="w"> </span><span class="n">Repeat</span>
@@ -111,7 +112,7 @@
 <div class="highlight"><pre><span></span><code><span class="n">Build</span><span class="w"> </span><span class="n">constraints</span><span class="w"> </span><span class="err">→</span><span class="w"> </span><span class="n">Generate</span><span class="w"> </span><span class="p">(</span><span class="n">constrained</span><span class="p">)</span><span class="w"> </span><span class="err">→</span><span class="w"> </span><span class="n">Minimal</span><span class="w"> </span><span class="n">validation</span><span class="w"> </span><span class="err">→</span><span class="w"> </span><span class="n">Done</span>
 </code></pre></div>
 
-<h3 id="architecture-foundation">Architecture Foundation<a class="headerlink" href="#architecture-foundation" title="Permanent link">&para;</a></h3>
+<h3 id="architecture-foundation">Architecture Foundation</h3>
 <p>MAZE is built on four key innovations:</p>
 <ol>
 <li><strong>4-Tier Constraint Hierarchy</strong>: Progressive constraint tightening from syntax through types, semantics, and context</li>
@@ -119,8 +120,8 @@
 <li><strong>Multi-System Integration</strong>: Seamless integration with llguidance, mnemosyne, RUNE, and pedantic_raven</li>
 <li><strong>Provider Agnosticism</strong>: Support for OpenAI, vLLM, SGLang, and llama.cpp through unified adapters</li>
 </ol>
-<h2 id="2-problem-statement">2. Problem Statement<a class="headerlink" href="#2-problem-statement" title="Permanent link">&para;</a></h2>
-<h3 id="unconstrained-llm-generation-failures">Unconstrained LLM Generation Failures<a class="headerlink" href="#unconstrained-llm-generation-failures" title="Permanent link">&para;</a></h3>
+<h2 id="2-problem-statement">2. Problem Statement</h2>
+<h3 id="unconstrained-llm-generation-failures">Unconstrained LLM Generation Failures</h3>
 <p>Consider a request to generate a TypeScript function:</p>
 <div class="highlight"><pre><span></span><code>&quot;Create an async function that fetches a user by ID and returns their email&quot;
 </code></pre></div>
@@ -139,7 +140,7 @@
 <li><strong>Incomplete error handling</strong>: Network failures unhandled</li>
 <li><strong>Contextual mismatch</strong>: May not match project's error handling patterns</li>
 </ol>
-<h3 id="the-cost-of-post-hoc-validation">The Cost of Post-Hoc Validation<a class="headerlink" href="#the-cost-of-post-hoc-validation" title="Permanent link">&para;</a></h3>
+<h3 id="the-cost-of-post-hoc-validation">The Cost of Post-Hoc Validation</h3>
 <p>Post-generation validation creates a costly feedback loop:</p>
 <ul>
 <li><strong>Iteration 1</strong>: Generate code → Compile → Find type errors → Prompt for fixes</li>
@@ -147,12 +148,12 @@
 <li><strong>Iteration 3</strong>: Generate fixes → Compile → Test → Find semantic errors → Prompt again</li>
 </ul>
 <p>In practice, research shows unconstrained generation often requires 3-5 iterations before producing working code. Each iteration consumes LLM API calls, increases latency, risks context window overflow, and frustrates developers.</p>
-<h3 id="type-errors-in-generated-code">Type Errors in Generated Code<a class="headerlink" href="#type-errors-in-generated-code" title="Permanent link">&para;</a></h3>
+<h3 id="type-errors-in-generated-code">Type Errors in Generated Code</h3>
 <p>Type errors are particularly problematic because they cascade. A single type mismatch can cause compilation failures blocking all downstream work, silent bugs when type coercion hides errors, integration failures when code doesn't match API contracts, and maintenance burden as type-unsafe code spreads through the codebase.</p>
 <p>Research by Mündler et al. (PLDI 2025) found that unconstrained LLMs produce type errors in over 50% of generated functions for typed languages like TypeScript and Rust.</p>
-<h2 id="3-architecture-overview">3. Architecture Overview<a class="headerlink" href="#3-architecture-overview" title="Permanent link">&para;</a></h2>
+<h2 id="3-architecture-overview">3. Architecture Overview</h2>
 <p>MAZE's architecture consists of five integrated stages that transform a code generation request into validated, type-correct code:</p>
-<h3 id="stage-1-context-indexer">Stage 1: Context Indexer<a class="headerlink" href="#stage-1-context-indexer" title="Permanent link">&para;</a></h3>
+<h3 id="stage-1-context-indexer">Stage 1: Context Indexer</h3>
 <p><strong>Purpose</strong>: Extract structured information from source code to inform constraint synthesis</p>
 <p><strong>Current Implementation</strong>:</p>
 <ul>
@@ -162,7 +163,7 @@
 <li>Detects project style (indentation, quotes, semicolons)</li>
 <li>Identifies test patterns (Jest, Mocha, Vitest)</li>
 </ul>
-<h3 id="stage-2-constraint-synthesis">Stage 2: Constraint Synthesis<a class="headerlink" href="#stage-2-constraint-synthesis" title="Permanent link">&para;</a></h3>
+<h3 id="stage-2-constraint-synthesis">Stage 2: Constraint Synthesis</h3>
 <p><strong>Purpose</strong>: Build hierarchical constraints from indexed context and generation request</p>
 <p><strong>Components</strong>:</p>
 <ol>
@@ -170,7 +171,7 @@
 <li><strong>TypeToGrammarConverter</strong> ✅: Converts type constraints into grammar constraints</li>
 <li><strong>SchemaBuilder</strong> ✅: Generates JSON Schema for structured output (OpenAI compatibility)</li>
 </ol>
-<h3 id="stage-3-decode-orchestrator">Stage 3: Decode Orchestrator<a class="headerlink" href="#stage-3-decode-orchestrator" title="Permanent link">&para;</a></h3>
+<h3 id="stage-3-decode-orchestrator">Stage 3: Decode Orchestrator</h3>
 <p><strong>Purpose</strong>: Generate code under constraints using provider-specific adapters</p>
 <p><strong>Integration</strong>: llguidance for fast constraint enforcement</p>
 <p><strong>Provider Adapters</strong> ✅:</p>
@@ -180,7 +181,7 @@
 <li><strong>SGLang</strong>: Native llguidance integration</li>
 <li><strong>llama.cpp</strong>: Grammar-based generation</li>
 </ul>
-<h3 id="stage-4-post-validation">Stage 4: Post-Validation<a class="headerlink" href="#stage-4-post-validation" title="Permanent link">&para;</a></h3>
+<h3 id="stage-4-post-validation">Stage 4: Post-Validation</h3>
 <p><strong>Purpose</strong>: Validate generated code across multiple dimensions in parallel</p>
 <p><strong>Validators</strong> (parallel execution):</p>
 <ol>
@@ -190,7 +191,7 @@
 <li><strong>LintValidator</strong> ✅ Complete: Style checking (ESLint, Ruff, Clippy)</li>
 <li><strong>ValidationPipeline</strong> ✅ Complete: Orchestrates parallel validation</li>
 </ol>
-<h3 id="stage-5-repair-loop">Stage 5: Repair Loop<a class="headerlink" href="#stage-5-repair-loop" title="Permanent link">&para;</a></h3>
+<h3 id="stage-5-repair-loop">Stage 5: Repair Loop</h3>
 <p><strong>Status</strong>: 📋 Planned (Phase 4)</p>
 <p><strong>Planned Components</strong>:</p>
 <ul>
@@ -198,7 +199,7 @@
 <li>DiagnosticAnalyzer: Interprets validation failures</li>
 <li>ConstraintRefinement: Tightens constraints based on diagnostics</li>
 </ul>
-<h3 id="integration-flow">Integration Flow<a class="headerlink" href="#integration-flow" title="Permanent link">&para;</a></h3>
+<h3 id="integration-flow">Integration Flow</h3>
 <p>MAZE integrates with four external systems:</p>
 <ol>
 <li><strong>llguidance</strong> (Microsoft Research): Constraint enforcement during decoding</li>
@@ -206,9 +207,9 @@
 <li><strong>RUNE</strong>: Sandboxed execution for safe test validation</li>
 <li><strong>pedantic_raven</strong>: Deep semantic validation (planned integration)</li>
 </ol>
-<h2 id="4-4-tier-constraint-system">4. 4-Tier Constraint System<a class="headerlink" href="#4-4-tier-constraint-system" title="Permanent link">&para;</a></h2>
+<h2 id="4-4-tier-constraint-system">4. 4-Tier Constraint System</h2>
 <p>MAZE's core innovation is a hierarchical constraint system that progressively narrows the space of valid programs:</p>
-<h3 id="tier-1-syntactic-constraints-cfg-grammars">Tier 1: Syntactic Constraints (CFG Grammars)<a class="headerlink" href="#tier-1-syntactic-constraints-cfg-grammars" title="Permanent link">&para;</a></h3>
+<h3 id="tier-1-syntactic-constraints-cfg-grammars">Tier 1: Syntactic Constraints (CFG Grammars)</h3>
 <p><strong>Purpose</strong>: Ensure generated code is syntactically valid</p>
 <p><strong>Implementation</strong>: Context-Free Grammars (CFG) in Lark format</p>
 <p><strong>Status</strong>: ✅ Complete for TypeScript, partial for Python/Rust</p>
@@ -218,12 +219,12 @@
 <li><strong>Language-aware generation</strong>: LLM respects language syntax rules</li>
 <li><strong>Composability</strong>: Grammars can be combined and extended</li>
 </ul>
-<h3 id="tier-2-type-constraints-inhabitation-search">Tier 2: Type Constraints (Inhabitation Search)<a class="headerlink" href="#tier-2-type-constraints-inhabitation-search" title="Permanent link">&para;</a></h3>
+<h3 id="tier-2-type-constraints-inhabitation-search">Tier 2: Type Constraints (Inhabitation Search)</h3>
 <p><strong>Purpose</strong>: Ensure generated code is type-correct</p>
 <p><strong>Implementation</strong>: Type inhabitation solver + type-to-grammar conversion</p>
 <p><strong>Status</strong>: ✅ Complete</p>
 <p><strong>Research Foundation</strong>: Mündler et al., "Type-Constrained Code Generation" (PLDI 2025, arXiv:2504.09246)</p>
-<h4 id="key-concept-type-inhabitation">Key Concept: Type Inhabitation<a class="headerlink" href="#key-concept-type-inhabitation" title="Permanent link">&para;</a></h4>
+<h4 id="key-concept-type-inhabitation">Key Concept: Type Inhabitation</h4>
 <p>Given a source type <code>S</code> and target type <code>T</code>, find valid transformation paths.</p>
 <p><strong>Example</strong>: Finding <code>User → string</code> paths</p>
 <p>Given:</p>
@@ -254,7 +255,7 @@
 <li><strong>Error reduction</strong>: Eliminates type errors that plague unconstrained generation</li>
 <li><strong>Contextual awareness</strong>: Leverages project's type hierarchy</li>
 </ul>
-<h3 id="tier-3-semantic-constraints-test-driven">Tier 3: Semantic Constraints (Test-Driven)<a class="headerlink" href="#tier-3-semantic-constraints-test-driven" title="Permanent link">&para;</a></h3>
+<h3 id="tier-3-semantic-constraints-test-driven">Tier 3: Semantic Constraints (Test-Driven)</h3>
 <p><strong>Purpose</strong>: Ensure generated code implements specified behavior</p>
 <p><strong>Implementation</strong>: Test cases + property specifications</p>
 <p><strong>Status</strong>: ✅ Validators complete, orchestration planned</p>
@@ -264,7 +265,7 @@
 <li><strong>Property-based constraints</strong>: Invariants that must hold</li>
 </ol>
 <p><strong>Integration with RUNE</strong>: All test execution happens in RUNE sandboxes to ensure network isolation, filesystem isolation, resource limits, and deterministic execution.</p>
-<h3 id="tier-4-contextual-constraints-learned">Tier 4: Contextual Constraints (Learned)<a class="headerlink" href="#tier-4-contextual-constraints-learned" title="Permanent link">&para;</a></h3>
+<h3 id="tier-4-contextual-constraints-learned">Tier 4: Contextual Constraints (Learned)</h3>
 <p><strong>Purpose</strong>: Ensure generated code matches project conventions and patterns</p>
 <p><strong>Implementation</strong>: Pattern mining + mnemosyne integration</p>
 <p><strong>Status</strong>: 📋 Planned (Phase 5)</p>
@@ -275,7 +276,7 @@
 <li>Async patterns (async/await vs. .then(), Promise usage)</li>
 <li>Import organization (alphabetical, grouped by source)</li>
 </ul>
-<h3 id="constraint-composition">Constraint Composition<a class="headerlink" href="#constraint-composition" title="Permanent link">&para;</a></h3>
+<h3 id="constraint-composition">Constraint Composition</h3>
 <p>The four tiers compose hierarchically:</p>
 <div class="highlight"><pre><span></span><code><span class="nx">Syntactic</span><span class="w"> </span><span class="nx">constraints</span><span class="w"> </span><span class="p">(</span><span class="nx">broadest</span><span class="p">)</span>
 <span class="w">  </span><span class="err">↓</span><span class="w"> </span><span class="nx">Narrows</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="nx">syntactically</span><span class="w"> </span><span class="nx">valid</span><span class="w"> </span><span class="nx">programs</span>
@@ -287,16 +288,16 @@
 <span class="w">  </span><span class="err">↓</span><span class="w"> </span><span class="nx">Narrows</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="nx">project</span><span class="o">-</span><span class="nx">conformant</span><span class="w"> </span><span class="nx">programs</span>
 </code></pre></div>
 
-<h2 id="5-type-directed-synthesis">5. Type-Directed Synthesis<a class="headerlink" href="#5-type-directed-synthesis" title="Permanent link">&para;</a></h2>
+<h2 id="5-type-directed-synthesis">5. Type-Directed Synthesis</h2>
 <p>Type-directed synthesis is MAZE's most sophisticated capability, enabling generation of type-correct code through formal type theory.</p>
 <p><strong>Research Foundation</strong>: Mündler et al. (PLDI 2025) and Blinn et al. (OOPSLA 2024)</p>
-<h3 id="bidirectional-type-inference">Bidirectional Type Inference<a class="headerlink" href="#bidirectional-type-inference" title="Permanent link">&para;</a></h3>
+<h3 id="bidirectional-type-inference">Bidirectional Type Inference</h3>
 <p>MAZE implements bidirectional type inference to propagate type information in both directions:</p>
 <ul>
 <li><strong>Synthesis mode</strong> (bottom-up): Infer type of expression from sub-expressions</li>
 <li><strong>Checking mode</strong> (top-down): Check if expression matches expected type</li>
 </ul>
-<h3 id="type-inhabitation-solver">Type Inhabitation Solver<a class="headerlink" href="#type-inhabitation-solver" title="Permanent link">&para;</a></h3>
+<h3 id="type-inhabitation-solver">Type Inhabitation Solver</h3>
 <p><strong>Purpose</strong>: Find expressions that inhabit (produce) a given type</p>
 <p><strong>Optimization Techniques</strong>:</p>
 <ol>
@@ -305,7 +306,7 @@
 <li><strong>Ranking</strong>: Prioritize simpler expressions (fewer steps)</li>
 <li><strong>Pruning</strong>: Eliminate type-incompatible paths early</li>
 </ol>
-<h3 id="typed-hole-filling">Typed Hole Filling<a class="headerlink" href="#typed-hole-filling" title="Permanent link">&para;</a></h3>
+<h3 id="typed-hole-filling">Typed Hole Filling</h3>
 <p><strong>Research Foundation</strong>: Blinn et al., "Statically Contextualizing LLMs with Typed Holes" (OOPSLA 2024, arXiv:2409.00921)</p>
 <p><strong>Concept</strong>: Partial code with "holes" to be filled</p>
 <p><strong>Example</strong>:</p>
@@ -320,8 +321,8 @@
 <span class="p">}</span>
 </code></pre></div>
 
-<h2 id="6-integration-ecosystem">6. Integration Ecosystem<a class="headerlink" href="#6-integration-ecosystem" title="Permanent link">&para;</a></h2>
-<h3 id="llguidance-constraint-enforcement">llguidance: Constraint Enforcement<a class="headerlink" href="#llguidance-constraint-enforcement" title="Permanent link">&para;</a></h3>
+<h2 id="6-integration-ecosystem">6. Integration Ecosystem</h2>
+<h3 id="llguidance-constraint-enforcement">llguidance: Constraint Enforcement</h3>
 <p><strong>Source</strong>: Microsoft Research, <a href="https://github.com/guidance-ai/llguidance">guidance-ai/llguidance</a></p>
 <p><strong>Purpose</strong>: Efficient constraint enforcement during LLM decoding</p>
 <p><strong>Performance</strong> (upstream benchmarks):</p>
@@ -330,11 +331,11 @@
 <li>Grammar compilation: &lt;50ms for typical programming language grammars</li>
 <li>Memory overhead: ~10MB per grammar automaton</li>
 </ul>
-<h3 id="mnemosyne-persistent-memory">mnemosyne: Persistent Memory<a class="headerlink" href="#mnemosyne-persistent-memory" title="Permanent link">&para;</a></h3>
+<h3 id="mnemosyne-persistent-memory">mnemosyne: Persistent Memory</h3>
 <p><strong>Source</strong>: <a href="https://github.com/rand/mnemosyne">rand/mnemosyne</a>, <a href="https://rand.github.io/mnemosyne">Documentation</a></p>
 <p><strong>Purpose</strong>: Semantic memory and learning across sessions</p>
 <p><strong>Status</strong>: ✅ Basic integration complete, full adaptive learning planned (Phase 5)</p>
-<h3 id="rune-sandboxed-execution">RUNE: Sandboxed Execution<a class="headerlink" href="#rune-sandboxed-execution" title="Permanent link">&para;</a></h3>
+<h3 id="rune-sandboxed-execution">RUNE: Sandboxed Execution</h3>
 <p><strong>Source</strong>: <a href="https://github.com/rand/RUNE">rand/RUNE</a>, <a href="https://rand.github.io/RUNE">Documentation</a></p>
 <p><strong>Purpose</strong>: Safe, isolated execution for test validation</p>
 <p><strong>Safety Guarantees</strong>:</p>
@@ -345,15 +346,15 @@
 <li><strong>Deterministic execution</strong>: Same input → same output</li>
 </ul>
 <p><strong>Status</strong>: ✅ Complete integration via RuneExecutor</p>
-<h3 id="pedantic_raven-quality-enforcement">pedantic_raven: Quality Enforcement<a class="headerlink" href="#pedantic_raven-quality-enforcement" title="Permanent link">&para;</a></h3>
+<h3 id="pedantic_raven-quality-enforcement">pedantic_raven: Quality Enforcement</h3>
 <p><strong>Source</strong>: <a href="https://github.com/rand/pedantic_raven">rand/pedantic_raven</a></p>
 <p><strong>Status</strong>: 📋 Placeholder exists, full integration planned (Phase 4/5)</p>
-<h2 id="7-implementation-status-and-roadmap">7. Implementation Status and Roadmap<a class="headerlink" href="#7-implementation-status-and-roadmap" title="Permanent link">&para;</a></h2>
-<h3 id="current-status-active-development">Current Status: Active Development<a class="headerlink" href="#current-status-active-development" title="Permanent link">&para;</a></h3>
+<h2 id="7-implementation-status-and-roadmap">7. Implementation Status and Roadmap</h2>
+<h3 id="current-status-active-development">Current Status: Active Development</h3>
 <p>MAZE has completed its core architectural foundation (Phases 1-3) and is actively building the validation and repair pipeline (Phase 4).</p>
-<h3 id="phase-1-3-core-system-complete">Phase 1-3: Core System ✅ COMPLETE<a class="headerlink" href="#phase-1-3-core-system-complete" title="Permanent link">&para;</a></h3>
+<h3 id="phase-1-3-core-system-complete">Phase 1-3: Core System ✅ COMPLETE</h3>
 <p><strong>10,847 lines of code across 43 source files</strong></p>
-<h4 id="phase-1-foundation">Phase 1: Foundation<a class="headerlink" href="#phase-1-foundation" title="Permanent link">&para;</a></h4>
+<h4 id="phase-1-foundation">Phase 1: Foundation</h4>
 <ul>
 <li>✅ Core type system</li>
 <li>✅ Constraint abstractions</li>
@@ -361,14 +362,14 @@
 <li>✅ TypeScript indexer</li>
 <li>✅ Test infrastructure (29 test files)</li>
 </ul>
-<h4 id="phase-2-syntactic-synthesis">Phase 2: Syntactic Synthesis<a class="headerlink" href="#phase-2-syntactic-synthesis" title="Permanent link">&para;</a></h4>
+<h4 id="phase-2-syntactic-synthesis">Phase 2: Syntactic Synthesis</h4>
 <ul>
 <li>✅ Grammar builder</li>
 <li>✅ JSON Schema builder</li>
 <li>✅ Provider adapters</li>
 <li>✅ Language grammars: TypeScript (complete), Python/Rust (partial)</li>
 </ul>
-<h4 id="phase-3-type-system">Phase 3: Type System<a class="headerlink" href="#phase-3-type-system" title="Permanent link">&para;</a></h4>
+<h4 id="phase-3-type-system">Phase 3: Type System</h4>
 <p><strong>2,124 lines dedicated to type system</strong></p>
 <ul>
 <li>✅ Type inference engine</li>
@@ -377,7 +378,7 @@
 <li>✅ Type-to-grammar converter</li>
 <li>✅ TypeScript type system</li>
 </ul>
-<h3 id="phase-4-validation-repair-in-progress-610-complete">Phase 4: Validation &amp; Repair 🚧 IN PROGRESS (6/10 complete)<a class="headerlink" href="#phase-4-validation-repair-in-progress-610-complete" title="Permanent link">&para;</a></h3>
+<h3 id="phase-4-validation-repair-in-progress-610-complete">Phase 4: Validation &amp; Repair 🚧 IN PROGRESS (6/10 complete)</h3>
 <p><strong>Recent Progress</strong> (as of November 8, 2025):</p>
 <p>✅ <strong>Complete Components</strong>:</p>
 <ol>
@@ -396,7 +397,7 @@
 <li>Full pedantic_raven integration: Deep semantic validation</li>
 </ul>
 <p><strong>Expected Completion</strong>: December 2025</p>
-<h3 id="phase-5-adaptive-learning-planned">Phase 5: Adaptive Learning 📋 PLANNED<a class="headerlink" href="#phase-5-adaptive-learning-planned" title="Permanent link">&para;</a></h3>
+<h3 id="phase-5-adaptive-learning-planned">Phase 5: Adaptive Learning 📋 PLANNED</h3>
 <p><strong>Timeline</strong>: Q1 2026</p>
 <ul>
 <li>Pattern mining from existing codebases</li>
@@ -404,7 +405,7 @@
 <li>Full mnemosyne integration for persistent learning</li>
 <li>Project-specific pattern adaptation</li>
 </ul>
-<h3 id="phase-6-production-planned">Phase 6: Production 📋 PLANNED<a class="headerlink" href="#phase-6-production-planned" title="Permanent link">&para;</a></h3>
+<h3 id="phase-6-production-planned">Phase 6: Production 📋 PLANNED</h3>
 <p><strong>Timeline</strong>: Q2 2026</p>
 <ul>
 <li>Performance optimization (speculative decoding, parallelization)</li>
@@ -413,9 +414,9 @@
 <li>Comprehensive benchmarking: HumanEval, MBPP, SWE-bench-lite</li>
 <li>Production deployment guides</li>
 </ul>
-<h2 id="8-research-foundation">8. Research Foundation<a class="headerlink" href="#8-research-foundation" title="Permanent link">&para;</a></h2>
+<h2 id="8-research-foundation">8. Research Foundation</h2>
 <p>MAZE builds on established research in constrained generation, program synthesis, and type theory:</p>
-<h3 id="type-constrained-code-generation-pldi-2025">Type-Constrained Code Generation (PLDI 2025)<a class="headerlink" href="#type-constrained-code-generation-pldi-2025" title="Permanent link">&para;</a></h3>
+<h3 id="type-constrained-code-generation-pldi-2025">Type-Constrained Code Generation (PLDI 2025)</h3>
 <p><strong>Paper</strong>: Mündler et al., "Type-Constrained Code Generation with Language Models"</p>
 <p><strong>Venue</strong>: PLDI 2025</p>
 <p><strong>arXiv</strong>: <a href="https://arxiv.org/abs/2504.09246">2504.09246</a></p>
@@ -425,7 +426,7 @@
 <li>Bidirectional type inference for LLM guidance</li>
 <li>Reported &gt;50% reduction in compilation errors</li>
 </ol>
-<h3 id="statically-contextualizing-llms-with-typed-holes-oopsla-2024">Statically Contextualizing LLMs with Typed Holes (OOPSLA 2024)<a class="headerlink" href="#statically-contextualizing-llms-with-typed-holes-oopsla-2024" title="Permanent link">&para;</a></h3>
+<h3 id="statically-contextualizing-llms-with-typed-holes-oopsla-2024">Statically Contextualizing LLMs with Typed Holes (OOPSLA 2024)</h3>
 <p><strong>Paper</strong>: Blinn et al., "Statically Contextualizing Large Language Models with Typed Holes"</p>
 <p><strong>Venue</strong>: OOPSLA 2024</p>
 <p><strong>arXiv</strong>: <a href="https://arxiv.org/abs/2409.00921">2409.00921</a></p>
@@ -435,7 +436,7 @@
 <li>Static context extraction for LLM guidance</li>
 <li>Evaluation on real-world TypeScript codebases</li>
 </ol>
-<h3 id="llguidance-constraint-enforcement-for-llms">LLGuidance: Constraint Enforcement for LLMs<a class="headerlink" href="#llguidance-constraint-enforcement-for-llms" title="Permanent link">&para;</a></h3>
+<h3 id="llguidance-constraint-enforcement-for-llms">LLGuidance: Constraint Enforcement for LLMs</h3>
 <p><strong>Source</strong>: Microsoft Research, <a href="https://github.com/guidance-ai/llguidance">guidance-ai/llguidance</a></p>
 <p><strong>Key Contributions</strong>:</p>
 <ol>
@@ -443,9 +444,9 @@
 <li>Sub-100μs token mask computation</li>
 <li>Provider-agnostic integration</li>
 </ol>
-<h2 id="9-architecture-validation">9. Architecture Validation<a class="headerlink" href="#9-architecture-validation" title="Permanent link">&para;</a></h2>
+<h2 id="9-architecture-validation">9. Architecture Validation</h2>
 <p>All claims in this whitepaper are validated against the codebase at tag <code>v0.1.0-whitepaper</code>.</p>
-<h3 id="code-statistics">Code Statistics<a class="headerlink" href="#code-statistics" title="Permanent link">&para;</a></h3>
+<h3 id="code-statistics">Code Statistics</h3>
 <table>
 <thead>
 <tr>
@@ -472,7 +473,7 @@
 </tr>
 </tbody>
 </table>
-<h3 id="component-verification">Component Verification<a class="headerlink" href="#component-verification" title="Permanent link">&para;</a></h3>
+<h3 id="component-verification">Component Verification</h3>
 <p>All components link to tagged source code at <code>v0.1.0-whitepaper</code> for verification:</p>
 <ul>
 <li><strong>Core Type System</strong> ✅: <a href="https://github.com/rand/maze/tree/v0.1.0-whitepaper/src/maze/core/types.py">types.py</a>, <a href="https://github.com/rand/maze/tree/v0.1.0-whitepaper/src/maze/core/constraints.py">constraints.py</a></li>
@@ -481,8 +482,8 @@
 <li><strong>Validation</strong> ✅: <a href="https://github.com/rand/maze/tree/v0.1.0-whitepaper/src/maze/validation/">validation/</a></li>
 <li><strong>Integrations</strong> ✅: llguidance, mnemosyne, RUNE in <a href="https://github.com/rand/maze/tree/v0.1.0-whitepaper/src/maze/integrations/">integrations/</a></li>
 </ul>
-<h2 id="10-getting-started">10. Getting Started<a class="headerlink" href="#10-getting-started" title="Permanent link">&para;</a></h2>
-<h3 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h3>
+<h2 id="10-getting-started">10. Getting Started</h2>
+<h3 id="installation">Installation</h3>
 <p>MAZE requires Python 3.10+ and uses <code>uv</code> for dependency management:</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># Clone repository</span>
 git<span class="w"> </span>clone<span class="w"> </span>https://github.com/rand/maze
@@ -495,7 +496,7 @@ uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </s
 uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import maze; print(&#39;MAZE installed successfully&#39;)&quot;</span>
 </code></pre></div>
 
-<h3 id="basic-usage-conceptual">Basic Usage (Conceptual)<a class="headerlink" href="#basic-usage-conceptual" title="Permanent link">&para;</a></h3>
+<h3 id="basic-usage-conceptual">Basic Usage (Conceptual)</h3>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">maze.core.constraints</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConstraintSet</span><span class="p">,</span> <span class="n">SyntacticConstraint</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">maze.type_system.context</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypeContext</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">maze.orchestrator</span><span class="w"> </span><span class="kn">import</span> <span class="n">generate</span>
@@ -522,8 +523,8 @@ uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </sp
 <span class="nb">print</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
 </code></pre></div>
 
-<h2 id="11-conclusion">11. Conclusion<a class="headerlink" href="#11-conclusion" title="Permanent link">&para;</a></h2>
-<h3 id="summary-of-contributions">Summary of Contributions<a class="headerlink" href="#summary-of-contributions" title="Permanent link">&para;</a></h3>
+<h2 id="11-conclusion">11. Conclusion</h2>
+<h3 id="summary-of-contributions">Summary of Contributions</h3>
 <p>MAZE introduces a novel approach to code generation that shifts from post-hoc validation to pre-generation constraint enforcement:</p>
 <ol>
 <li><strong>4-Tier Constraint Hierarchy</strong>: Progressive constraint tightening from syntax through types, semantics, and context</li>
@@ -532,14 +533,14 @@ uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </sp
 <li><strong>Research-Backed Design</strong>: Built on PLDI 2025 and OOPSLA 2024 research</li>
 <li><strong>Provider-Agnostic Architecture</strong>: Support for OpenAI, vLLM, SGLang, and llama.cpp</li>
 </ol>
-<h3 id="current-state-solid-foundation">Current State: Solid Foundation<a class="headerlink" href="#current-state-solid-foundation" title="Permanent link">&para;</a></h3>
+<h3 id="current-state-solid-foundation">Current State: Solid Foundation</h3>
 <p>With 10,847 lines of code across 43 source files, MAZE has completed its core architectural foundation:</p>
 <ul>
 <li><strong>Phase 1-3</strong>: Type system, constraint synthesis, and core integrations complete</li>
 <li><strong>Phase 4</strong>: Validation pipeline 60% complete (6/10 tasks)</li>
 <li><strong>Phase 5-6</strong>: Adaptive learning and production hardening planned</li>
 </ul>
-<h3 id="future-work">Future Work<a class="headerlink" href="#future-work" title="Permanent link">&para;</a></h3>
+<h3 id="future-work">Future Work</h3>
 <p><strong>Short Term</strong> (Phase 4, Q4 2025):</p>
 <ul>
 <li>Complete repair orchestrator</li>
@@ -559,19 +560,19 @@ uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </sp
 <li>IDE integrations (VSCode, IntelliJ)</li>
 <li>Production deployment optimization</li>
 </ul>
-<h2 id="12-resources">12. Resources<a class="headerlink" href="#12-resources" title="Permanent link">&para;</a></h2>
-<h3 id="project-links">Project Links<a class="headerlink" href="#project-links" title="Permanent link">&para;</a></h3>
+<h2 id="12-resources">12. Resources</h2>
+<h3 id="project-links">Project Links</h3>
 <ul>
 <li><strong>GitHub Repository</strong>: <a href="https://github.com/rand/maze">github.com/rand/maze</a></li>
 <li><strong>Documentation</strong>: <a href="CLAUDE.md">CLAUDE.md</a>, <a href="AGENT_GUIDE.md">AGENT_GUIDE.md</a></li>
 <li><strong>Whitepaper</strong>: <a href="https://rand.github.io/maze">maze whitepaper</a></li>
 </ul>
-<h3 id="research-papers">Research Papers<a class="headerlink" href="#research-papers" title="Permanent link">&para;</a></h3>
+<h3 id="research-papers">Research Papers</h3>
 <ul>
 <li><strong>Type-Constrained Code Generation</strong>: <a href="https://arxiv.org/abs/2504.09246">arXiv:2504.09246</a> (PLDI 2025)</li>
 <li><strong>Typed Holes</strong>: <a href="https://arxiv.org/abs/2409.00921">arXiv:2409.00921</a> (OOPSLA 2024)</li>
 </ul>
-<h3 id="related-projects">Related Projects<a class="headerlink" href="#related-projects" title="Permanent link">&para;</a></h3>
+<h3 id="related-projects">Related Projects</h3>
 <ul>
 <li><strong>llguidance</strong>: <a href="https://github.com/guidance-ai/llguidance">github.com/guidance-ai/llguidance</a> (Microsoft Research)</li>
 <li><strong>mnemosyne</strong>: <a href="https://rand.github.io/mnemosyne">rand.github.io/mnemosyne</a> (Memory &amp; Learning)</li>
@@ -593,5 +594,6 @@ uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </sp
 
     <script src="js/theme.js"></script>
     <script src="js/sidebar.js"></script>
+    <script src="js/toc.js"></script>
 </body>
 </html>
