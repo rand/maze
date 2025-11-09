@@ -568,6 +568,125 @@ repository_organization:
 
 ---
 
+### 2.5 Documentation Management (Zensical)
+
+**Trigger**: Documentation updates, architecture changes, or content improvements
+
+#### Documentation Structure
+```
+docs/
+├── index.md              # Project homepage
+├── whitepaper.md         # Technical documentation
+├── assets/               # Images, diagrams, favicons
+├── stylesheets/          # Shared + orange theme CSS
+├── javascripts/          # Theme preference persistence
+└── overrides/            # Ecosystem navigation bar
+```
+
+#### Updating Documentation
+
+**Local workflow**:
+```bash
+# 1. Edit markdown files
+vim docs/index.md
+
+# 2. Test locally (optional)
+/Users/rand/src/shared-docs-base/.venv/bin/zensical serve
+# Opens http://localhost:8000
+
+# 3. Commit changes
+git add docs/
+git commit -m "Update documentation: <description>"
+
+# 4. Push to trigger deployment
+git push origin main
+
+# 5. Verify deployment (1-2 minutes)
+# https://rand.github.io/maze/
+```
+
+#### Shared Infrastructure
+
+- **Location**: `/Users/rand/src/shared-docs-base`
+- **Styles**:
+  - `stylesheets/shared.css` - Common typography, code blocks, tables
+  - `stylesheets/orange.css` - MAZE theme (#F59E0B, ⊡)
+- **Build script**: `scripts/build-site.sh`
+- **Configuration**: `zensical.toml` in project root
+
+#### Updating Shared Assets
+
+When modifying shared styles that affect all projects:
+
+```bash
+# Update shared CSS
+cd /Users/rand/src/shared-docs-base
+vim stylesheets/shared.css
+
+# Copy to all projects
+for project in RUNE mnemosyne maze pedantic_raven; do
+  cp stylesheets/*.css /Users/rand/src/${project}/docs/stylesheets/
+done
+
+# Commit in each project
+cd /Users/rand/src/maze
+git add docs/stylesheets/
+git commit -m "Update shared documentation styles"
+git push origin main
+```
+
+#### Theme Customization
+
+MAZE uses:
+- **Primary color**: Orange (#F59E0B)
+- **Accent color**: #FB923C
+- **Glyph**: ⊡ (square)
+- **Fonts**: Geist (text), JetBrains Mono (code)
+
+#### GitHub Actions Workflow
+
+Documentation deploys automatically via `.github/workflows/docs.yml`:
+
+- **Trigger**: Push to `main` branch
+- **Build**: UV + Zensical → `site/` directory (~5 min)
+- **Deploy**: GitHub Pages (automatic)
+- **URL**: https://rand.github.io/maze/
+
+#### Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| Build fails | Run `uv run zensical build --clean` locally to see error |
+| Theme not applied | Verify `stylesheets/orange.css` exists in `docs/stylesheets/` |
+| Navigation broken | Check `nav` array in `zensical.toml` |
+| Site not updating | Check GitHub Actions workflow status, wait 1-2min for cache |
+| Images missing | Verify images are in `docs/assets/` and paths are correct |
+
+#### Ecosystem Navigation
+
+All documentation sites include cross-project navigation:
+- RUNE
+- mnemosyne
+- MAZE (you are here)
+- pedantic_raven
+
+Located in `docs/overrides/main.html` from shared-docs-base.
+
+#### References
+
+- **shared-docs-base**: https://github.com/rand/shared-docs-base
+- **Zensical docs**: https://zensical.org/docs/
+- **Migration details**: `/Users/rand/src/MIGRATION_COMPLETE.md`
+
+**Exit Criteria**:
+- Documentation files updated
+- Local build verified (optional but recommended)
+- Changes committed and pushed
+- GitHub Actions deployment succeeded
+- Live site reflects changes
+
+---
+
 ## 3. Templates
 
 ### 3.1 Commit Message Template
