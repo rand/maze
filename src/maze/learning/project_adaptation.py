@@ -256,10 +256,24 @@ class ProjectAdaptationManager:
                 if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                     return node.name
         except SyntaxError:
-            # Try regex fallback
-            match = re.search(r'def\s+(\w+)\s*\(', code)
-            if match:
-                return match.group(1)
+            pass
+
+        # Try regex fallback for various languages
+        # Python: def foo(
+        match = re.search(r'def\s+(\w+)\s*\(', code)
+        if match:
+            return match.group(1)
+
+        # JavaScript/TypeScript: function foo(
+        match = re.search(r'function\s+(\w+)\s*\(', code)
+        if match:
+            return match.group(1)
+
+        # Arrow functions: const foo = (
+        match = re.search(r'const\s+(\w+)\s*=\s*\(', code)
+        if match:
+            return match.group(1)
+
         return None
 
     def _extract_class_name(self, code: str) -> Optional[str]:
@@ -357,6 +371,9 @@ class ProjectAdaptationManager:
                             testing["framework"] = "pytest"
                         elif "unittest" in example:
                             testing["framework"] = "unittest"
+                        elif "fixture" in example.lower() and testing["framework"] == "unknown":
+                            # Fixtures strongly suggest pytest
+                            testing["framework"] = "pytest"
 
                         if "fixture" in example:
                             testing["uses_fixtures"] = True
