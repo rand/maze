@@ -14,8 +14,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from maze.core.types import Type, TypeContext, FunctionSignature, TypeParameter
 from maze.core.constraints import ConstraintSet, SyntacticConstraint, TypeConstraint
-# TODO: Re-enable after llguidance integration is complete
-# from maze.integrations.llguidance import LLGuidanceAdapter, TokenizerConfig
+from maze.integrations.llguidance import LLGuidanceAdapter, TokenizerConfig
 from maze.indexer.languages.typescript import TypeScriptIndexer
 
 
@@ -83,15 +82,15 @@ def constraint_set(syntactic_constraint: SyntacticConstraint, type_constraint: T
 
 
 # Fixtures for llguidance
-# TODO: Re-enable after llguidance integration is complete
-# @pytest.fixture
-# def llguidance_adapter() -> LLGuidanceAdapter:
-#     """Create an LLGuidanceAdapter for testing."""
-#     return LLGuidanceAdapter(
-#         tokenizer_config=TokenizerConfig(vocab_size=10000),
-#         mask_cache_size=1000,
-#         enable_profiling=True
-#     )
+
+@pytest.fixture
+def llguidance_adapter() -> LLGuidanceAdapter:
+    """Create an LLGuidanceAdapter for testing."""
+    return LLGuidanceAdapter(
+        tokenizer_config=TokenizerConfig(vocab_size=10000),
+        mask_cache_size=1000,
+        enable_profiling=True
+    )
 
 
 # Fixtures for indexing
