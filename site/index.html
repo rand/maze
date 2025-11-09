@@ -25,18 +25,24 @@
     <meta name="twitter:description" content="A principled authorization and configuration system combining Datalog and Cedar policies. Sub-millisecond decisions at 5M+ ops/sec.">
     <meta name="twitter:image" content="https://rand.github.io/maze/og-image.png">
 
+    <!-- Fonts -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.0.0/dist/geist.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css">
+
+    <!-- Shared Styles -->
+    <link rel="stylesheet" href="css/theme.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/tables.css">
+    <link rel="stylesheet" href="css/green.css">
 </head>
 <body>
     <nav class="navbar">
         <div class="container">
             <a href="index.html" class="nav-brand">
-                <span class="logo-glyph"></span>
+                <span class="logo-glyph">∇</span>
                 <strong>MAZE</strong> v0.1.0
             </a>
             <div class="nav-links">
@@ -58,22 +64,15 @@
 
     <aside class="sidebar">
         <div class="sidebar-content">
-            <div class="sidebar-tagline">// Constrained Code Generation</div>
-            <div class="sidebar-toc"></div>
+            <div class="sidebar-status">
+                <span class="status-glyph"></span>
+                <span class="sidebar-tagline">// Constrained Code Generation</span>
+            </div>
         </div>
     </aside>
 
     <main class="container">
         
-<header class="paper-header">
-    <h1>MAZE: Constrained Code Generation & Configuration Engine</h1>
-    <p class="paper-meta">
-        <span class="version-badge">v0.1.0</span>
-        <span>November 2025</span>
-        <a href="https://github.com/rand/maze">github.com/rand/MAZE</a>
-    </p>
-</header>
-
 <h1 id="maze-adaptive-constrained-code-generation">MAZE: Adaptive Constrained Code Generation</h1>
 <p>A research-backed system for type-correct, semantically sound code generation</p>
 <p><strong>Version</strong>: v0.1.0-whitepaper
@@ -285,17 +284,14 @@ uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </sp
 <hr />
 <p>MAZE is open-source software. For questions or contributions, visit the <a href="https://github.com/rand/maze">GitHub repository</a>.</p>
 
-<footer class="footer">
-    <p>
-        MAZE is open-source software. For questions or contributions, visit the
-        <a href="https://github.com/rand/maze">GitHub repository</a>.
-    </p>
-</footer>
-
     </main>
 
-    <script src="js/theme.js"></script>
+    <!-- Project-specific sidebar comments (load BEFORE sidebar-base.js) -->
     <script src="js/sidebar.js"></script>
+
+    <!-- Shared Scripts -->
+    <script src="js/theme.js"></script>
+    <script src="js/sidebar-base.js"></script>
     <script src="js/toc.js"></script>
 </body>
 </html>
