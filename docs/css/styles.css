@@ -196,9 +196,9 @@ body.dark-theme .theme-toggle-icon::before {
 
 /* Main Content */
 .container {
-    max-width: 800px;
+    max-width: 900px;
     margin: 0 auto;
-    padding: 3rem 2rem 6rem 2rem;
+    padding: 0 1.5rem;
 }
 
 /* Sidebar */
