@@ -1,0 +1,201 @@
+direction: down
+
+title: 4-Tier Constraint Hierarchy {
+  near: top-center
+  shape: text
+  style: {
+    font-size: 28
+    bold: true
+  }
+}
+
+subtitle: Progressive Narrowing from Syntax to Project Conformance {
+  near: top-center
+  shape: text
+  style: {
+    font-size: 14
+    italic: true
+  }
+}
+
+tier1: {
+  label: "Tier 1: Syntactic"
+  shape: rectangle
+  style: {
+    fill: "#1E3A8A"
+    stroke: "#1E3A8A"
+    stroke-width: 3
+    font-color: white
+  }
+
+  description: "CFG Grammars (Lark)\nValid syntax enforcement\nLanguage templates" {
+    shape: text
+    style.font-size: 13
+  }
+
+  status: "TypeScript ✅\nPython/Rust (partial)" {
+    shape: text
+    style.font-size: 11
+    style.italic: true
+  }
+
+  example: "Ensures: function f() { }\nRejects: function f( { }" {
+    shape: rectangle
+    style: {
+      fill: "#1E40AF"
+      font-size: 10
+    }
+  }
+}
+
+tier2: {
+  label: "Tier 2: Type"
+  shape: rectangle
+  style: {
+    fill: "#059669"
+    stroke: "#059669"
+    stroke-width: 3
+    font-color: white
+  }
+
+  description: "Type inhabitation search\nPrefix automata\nType-to-grammar conversion" {
+    shape: text
+    style.font-size: 13
+  }
+
+  status: "Complete ✅" {
+    shape: text
+    style.font-size: 11
+    style.italic: true
+  }
+
+  example: "Ensures: User → user.email\nRejects: User → user.age\n(when expecting string)" {
+    shape: rectangle
+    style: {
+      fill: "#047857"
+      font-size: 10
+    }
+  }
+}
+
+tier3: {
+  label: "Tier 3: Semantic"
+  shape: rectangle
+  style: {
+    fill: "#D97706"
+    stroke: "#D97706"
+    stroke-width: 3
+    font-color: white
+  }
+
+  description: "Test-driven constraints\nProperty-based validation\nBehavioral correctness" {
+    shape: text
+    style.font-size: 13
+  }
+
+  status: "Validators ✅\nOrchestrator 📋" {
+    shape: text
+    style.font-size: 11
+    style.italic: true
+  }
+
+  example: "Ensures: sort([3,1,2]) → [1,2,3]\nRejects: implementations\nthat fail tests" {
+    shape: rectangle
+    style: {
+      fill: "#B45309"
+      font-size: 10
+    }
+  }
+}
+
+tier4: {
+  label: "Tier 4: Contextual"
+  shape: rectangle
+  style: {
+    fill: "#7C3AED"
+    stroke: "#7C3AED"
+    stroke-width: 3
+    font-color: white
+  }
+
+  description: "Learned patterns\nProject adaptation\nmnemosyne integration" {
+    shape: text
+    style.font-size: 13
+  }
+
+  status: "Planned (Phase 5) 📋" {
+    shape: text
+    style.font-size: 11
+    style.italic: true
+  }
+
+  example: "Prefers: async/await\nover: .then()\n(based on project patterns)" {
+    shape: rectangle
+    style: {
+      fill: "#6D28D9"
+      font-size: 10
+    }
+  }
+}
+
+output: {
+  label: "✨ Final Output"
+  shape: oval
+  style: {
+    fill: "#10B981"
+    stroke: "#10B981"
+    stroke-width: 4
+    font-color: white
+  }
+
+  properties: "✅ Syntactically Valid\n✅ Type-Correct\n✅ Semantically Sound\n✅ Project-Conformant" {
+    shape: text
+    style.font-size: 13
+    style.bold: true
+  }
+}
+
+# Flow arrows with labels
+tier1 -> tier2: {
+  label: "Filters invalid syntax\n↓"
+  style: {
+    stroke-width: 4
+    font-size: 12
+  }
+}
+
+tier2 -> tier3: {
+  label: "Filters type-incorrect code\n↓"
+  style: {
+    stroke-width: 4
+    font-size: 12
+  }
+}
+
+tier3 -> tier4: {
+  label: "Filters semantically wrong code\n↓"
+  style: {
+    stroke-width: 4
+    font-size: 12
+  }
+}
+
+tier4 -> output: {
+  label: "Filters non-conformant code\n↓"
+  style: {
+    stroke-width: 4
+    font-size: 12
+  }
+}
+
+# Search space annotation
+annotation: {
+  near: center-right
+  shape: text
+  label: "Search Space\nNarrowing →"
+  style: {
+    font-size: 16
+    bold: true
+    font-color: "#475569"
+  }
+}
