@@ -90,8 +90,8 @@ body.dark-theme .navbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem 2rem;
-    max-width: 1200px;
+    padding: 1rem 1.5rem;
+    max-width: 900px;
     margin: 0 auto;
     min-height: 64px;
 }
@@ -511,5 +511,12 @@ td:last-child {
 
     .footer-content {
         grid-template-columns: 1fr;
+    }
+}
+
+/* Hide sidebar on smaller screens */
+@media (max-width: 1200px) {
+    .sidebar {
+        display: none;
     }
 }
