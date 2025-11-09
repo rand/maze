@@ -337,42 +337,41 @@ class MnemosyneIntegration:
 
         scored_patterns: list[ScoredPattern] = []
 
-        if self.use_local_cache:
-            # Search local cache
-            for pattern in self.pattern_cache.values():
-                if namespace and pattern.namespace != namespace:
-                    continue
+        # Always search local cache first (warm cache)
+        for pattern in self.pattern_cache.values():
+            if namespace and pattern.namespace != namespace:
+                continue
 
-                # Simple relevance scoring
-                score = 0.0
-                pattern_str = json.dumps(pattern.pattern_data).lower()
+            # Simple relevance scoring
+            score = 0.0
+            pattern_str = json.dumps(pattern.pattern_data).lower()
 
-                # Language match
-                if context.language.lower() in pattern_str:
-                    score += 2.0
+            # Language match
+            if context.language.lower() in pattern_str:
+                score += 2.0
 
-                # Task keywords
-                for word in context.task_description.lower().split():
-                    if len(word) > 3 and word in pattern_str:
-                        score += 0.5
+            # Task keywords
+            for word in context.task_description.lower().split():
+                if len(word) > 3 and word in pattern_str:
+                    score += 0.5
 
-                # Success rate
-                if pattern.recall_count > 0:
-                    success_rate = pattern.success_count / pattern.recall_count
-                    score += success_rate * 3.0
+            # Success rate
+            if pattern.recall_count > 0:
+                success_rate = pattern.success_count / pattern.recall_count
+                score += success_rate * 3.0
 
-                # Importance
-                score += pattern.importance * 0.3
+            # Importance
+            score += pattern.importance * 0.3
 
-                if score > 0:
-                    scored_patterns.append(ScoredPattern(
-                        pattern=pattern,
-                        score=score,
-                        reasoning=f"language:{context.language}, success_rate:{pattern.success_count}/{pattern.recall_count}"
-                    ))
+            if score > 0:
+                scored_patterns.append(ScoredPattern(
+                    pattern=pattern,
+                    score=score,
+                    reasoning=f"language:{context.language}, success_rate:{pattern.success_count}/{pattern.recall_count}"
+                ))
 
-            self.stats["cache_hits"] += 1
-        else:
+        # Supplement with mnemosyne if not enough results and mnemosyne available
+        if not self.use_local_cache and len(scored_patterns) < limit:
             # Query mnemosyne
             try:
                 output = self._cached_recall(query, namespace, limit)
@@ -414,9 +413,14 @@ class MnemosyneIntegration:
                         reasoning=f"mnemosyne_relevance:{score:.2f}"
                     ))
 
-                self.stats["cache_hits"] += 1
             except (json.JSONDecodeError, KeyError):
-                self.stats["cache_misses"] += 1
+                pass  # Failed to supplement with mnemosyne
+
+        # Track cache statistics
+        if len(scored_patterns) > 0:
+            self.stats["cache_hits"] += 1
+        else:
+            self.stats["cache_misses"] += 1
 
         # Sort by score and limit
         scored_patterns.sort(key=lambda x: x.score, reverse=True)
