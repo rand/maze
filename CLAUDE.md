@@ -34,6 +34,32 @@ Produce faster, more correct code by compiling explicit constraints (CFG grammar
 
 ---
 
+## Quick Guide: CLAUDE.md vs AGENT_GUIDE.md
+
+**Use CLAUDE.md when you need**:
+- **Performance targets and rationale** - What metrics to achieve and why
+- **Constraint design principles** - How to architect the 4-tier constraint system
+- **Integration philosophy** - When and why to use llguidance, mnemosyne, pedantic_raven, RUNE
+- **Language indexer guidelines** - What symbols to extract per language
+- **Testing philosophy** - Coverage targets and testing requirements
+- **Anti-patterns to avoid** - Critical violations and warnings
+- **Phase exit criteria** - What must be achieved before advancing phases
+
+**Use AGENT_GUIDE.md when you need**:
+- **Step-by-step commands** - Exact bash/python commands to run
+- **Code examples** - Implementation patterns and detailed examples
+- **Decision trees** - Task classification and routing logic
+- **Templates** - Commit messages, PR descriptions, mnemosyne storage
+- **Workflows** - Sequential steps for code changes, releases, tidying
+- **Checklists** - Quality gates, enforcement matrices
+- **Reference tables** - Quick command lookups and mappings
+
+**Mental Model**:
+- **CLAUDE.md** = Strategic principles (WHAT to do and WHY)
+- **AGENT_GUIDE.md** = Tactical operations (HOW to do it and WHEN)
+
+---
+
 ## Maze-Specific Work Plan Protocol
 
 **CRITICAL**: Follow the global 4-phase Work Plan Protocol, extended with maze-specific requirements.
@@ -986,94 +1012,14 @@ uv run pytest tests/e2e/test_realworld/ -v
 
 ## Quick Reference
 
-### Development Commands
-
-```bash
-# Setup
-uv pip install -e ".[dev]"
-
-# Testing
-uv run pytest                                    # All tests
-uv run pytest tests/unit -v                      # Unit tests
-uv run pytest tests/integration -v               # Integration tests
-uv run pytest tests/e2e -v                       # E2E tests
-uv run pytest -m performance -v                  # Performance benchmarks
-uv run pytest --cov=maze --cov-report=html      # Coverage report
-
-# Performance Validation
-uv run python benchmarks/mask_computation.py     # Mask benchmark
-uv run python benchmarks/end_to_end.py          # E2E benchmark
-uv run python benchmarks/compare_engines.py     # Engine comparison
-uv run python benchmarks/baseline.py --save     # Save baseline
-uv run python benchmarks/baseline.py --compare  # Compare to baseline
-
-# Code Quality
-uv run black src/ tests/                        # Format
-uv run ruff src/ tests/                         # Lint
-uv run mypy src/                                # Type check
-
-# Git Workflow
-git checkout -b feature/constraint-optimization
-# ... make changes ...
-git add . && git commit -m "Optimize grammar caching (p99: 120μs → 45μs)"
-uv run pytest -m performance  # Validate before push
-git push -u origin feature/constraint-optimization
-```
-
-### mnemosyne Integration Commands
-
-```bash
-# Store successful constraint pattern
-mnemosyne remember \
-  -c "TypeScript async function: 97% compilation, 2.1 avg repairs" \
-  -n "project:maze:constraint:typescript" \
-  -i 8 \
-  -t "constraint,typescript,async,success"
-
-# Store performance optimization
-mnemosyne remember \
-  -c "LRU cache size 100k → 200k improved hit rate 72% → 89%" \
-  -n "project:maze:performance" \
-  -i 9 \
-  -t "optimization,caching,llguidance"
-
-# Store repair strategy
-mnemosyne remember \
-  -c "Promise<T> type errors: tighten return type constraint first" \
-  -n "project:maze:repair:typescript" \
-  -i 7 \
-  -t "repair,typescript,types,promise"
-
-# Recall patterns
-mnemosyne recall -q "async error handling" -n "project:maze:constraint" -l 5
-mnemosyne recall -q "cache optimization" -n "project:maze:performance" -l 3
-mnemosyne recall -q "type repair strategies" -n "project:maze:repair" -l 10
-
-# Evolution (consolidation, decay, archival)
-mnemosyne evolve
-```
-
-### Beads Task Management
-
-```bash
-# Ready work
-bd ready --json --limit 5
-
-# Create phase tasks
-bd create "Phase 2: Syntactic Constraints" -t epic --id bd-ph2
-bd create "Implement TypeScript CFG grammar" -t task --id bd-ph2.1 -p 0
-bd create "Add JSON Schema synthesis" -t task --id bd-ph2.2 -p 1
-bd create "Benchmark mask computation" -t task --id bd-ph2.3 -p 1
-
-# Update progress
-bd update bd-ph2.1 --status in_progress
-bd update bd-ph2.1 --comment "Grammar template complete, testing tokenization"
-bd close bd-ph2.1 --reason "Complete"
-
-# Dependencies
-bd dep add bd-ph2.3 bd-ph2.1 --type blocks  # Benchmark blocks on grammar
-bd dep tree bd-ph2                          # Visualize dependencies
-```
+**→ See AGENT_GUIDE.md §10 for all command references**:
+- §10.1: Workflow Commands (feature development, commits, PRs)
+- §10.2: Quality Check Commands (tests, coverage, performance, linting)
+- §10.3: Beads Commands (discovery, creation, updates, dependencies)
+- §10.4: Git Commands (branching, commits, releases)
+- §10.5: mnemosyne Commands (storage, recall, evolution)
+- §10.6: Documentation Commands (verification, cross-reference checking)
+- §10.7: Repository Tidying Commands (file movement, verification)
 
 ---
 
@@ -1259,251 +1205,55 @@ uv run pytest tests/e2e/ -v
 
 ## Constraint Design Patterns
 
-### Pattern 1: Incremental Refinement
+Maze uses four proven constraint design patterns for adaptive code generation:
 
-**Use Case**: Iteratively tighten constraints based on validation failures
+1. **Incremental Refinement**: Start with loose constraints, tighten based on validation failures
+   - Use when: Optimal constraints unknown upfront
+   - Max attempts: 3
+   - Stores successful patterns in mnemosyne
 
-**Implementation**:
-```python
-async def incremental_refinement(prompt: str, spec: Specification):
-    """Start loose, tighten on failures."""
+2. **Speculative Generation**: Generate multiple candidates in parallel, select best
+   - Use when: Correctness more critical than latency
+   - Creates loose, medium, strict constraint variations
+   - Selects first passing or highest-scoring partial
 
-    # Start with syntactic only
-    constraints = ConstraintSet()
-    constraints.add(SyntacticConstraint.from_language(spec.language))
+3. **Typed Hole Filling**: Complete partial code with type-directed search
+   - Use when: Completing functions or implementation details
+   - Leverages type inhabitation solver
+   - Ranks candidates by type fitness
 
-    for attempt in range(3):
-        # Generate with current constraints
-        code = await generate(prompt, constraints)
+4. **Adaptive Constraint Weighting**: Learn from project to weight soft constraints
+   - Use when: Project-specific style or conventions matter
+   - Recalls successful patterns from mnemosyne
+   - Updates weights based on outcomes
 
-        # Validate
-        result = await validate(code, spec)
-
-        if result.passed:
-            # Success - store pattern
-            await memory.store_constraint_pattern(
-                pattern=constraints.to_pattern(),
-                success=True,
-                metrics={"attempts": attempt + 1}
-            )
-            return code
-
-        # Tighten constraints based on failure type
-        if result.type_errors:
-            # Add type constraints
-            constraints.add(TypeConstraint(
-                expected_type=spec.return_type,
-                context=spec.type_context
-            ))
-
-        if result.semantic_errors:
-            # Add semantic constraints
-            for error in result.semantic_errors:
-                constraints.add(semantic_constraint_from_error(error))
-
-    # Failed after 3 attempts
-    return None
-```
-
-**When to Use**: Complex tasks where optimal constraints unknown upfront
-
----
-
-### Pattern 2: Speculative Generation
-
-**Use Case**: Generate multiple candidates in parallel, select best
-
-**Implementation**:
-```python
-async def speculative_generation(prompt: str, spec: Specification):
-    """Generate multiple candidates, validate concurrently."""
-
-    # Create constraint variations
-    constraint_sets = [
-        create_loose_constraints(spec),
-        create_medium_constraints(spec),
-        create_strict_constraints(spec),
-    ]
-
-    # Generate in parallel
-    tasks = [
-        generate(prompt, constraints)
-        for constraints in constraint_sets
-    ]
-    candidates = await asyncio.gather(*tasks)
-
-    # Validate in parallel
-    validation_tasks = [
-        validate(code, spec)
-        for code in candidates
-    ]
-    results = await asyncio.gather(*validation_tasks)
-
-    # Select best (first that passes, or highest score)
-    for code, result in zip(candidates, results):
-        if result.passed:
-            return code
-
-    # None passed - return best partial
-    return max(zip(candidates, results), key=lambda x: x[1].score)[0]
-```
-
-**When to Use**: Performance is less critical than correctness
-
----
-
-### Pattern 3: Typed Hole Filling
-
-**Use Case**: Complete partial code with type-directed search
-
-**Implementation**:
-```python
-async def fill_typed_hole(code_with_hole: str, hole_type: Type):
-    """Fill hole using type inhabitation."""
-
-    # Extract context around hole
-    context = extract_context(code_with_hole)
-    type_context = infer_type_context(context)
-
-    # Find expressions matching hole type
-    solver = InhabitationSolver()
-    valid_expressions = solver.find_valid_expressions(
-        expected_type=hole_type,
-        context=type_context
-    )
-
-    # Rank by likelihood and type fitness
-    ranked = rank_expressions(valid_expressions, context)
-
-    # Try each candidate
-    for expr in ranked[:5]:  # Top 5
-        completed = code_with_hole.replace("/*__HOLE__*/", expr)
-
-        # Validate
-        result = await validate(completed, spec)
-        if result.passed:
-            return completed
-
-    # No valid completion found
-    return None
-```
-
-**When to Use**: Completing functions, filling in implementation details
-
----
-
-### Pattern 4: Adaptive Constraint Weighting
-
-**Use Case**: Learn from project to weight soft constraints
-
-**Implementation**:
-```python
-async def adaptive_weighting(prompt: str, spec: Specification):
-    """Weight constraints based on project patterns."""
-
-    # Recall successful patterns from this project
-    patterns = await memory.recall_similar_contexts(
-        query=prompt,
-        namespace=f"project:maze:{spec.language}",
-        limit=10
-    )
-
-    # Create contextual constraints weighted by success
-    contextual = ContextualConstraint(weight=0.5)
-
-    for pattern in patterns:
-        success_rate = pattern.metadata.get("success_rate", 0.5)
-        contextual.add_pattern(
-            pattern=pattern.content,
-            weight=success_rate
-        )
-
-    # Combine with hard constraints
-    constraints = ConstraintSet()
-    constraints.add(SyntacticConstraint.from_language(spec.language))
-    constraints.add(contextual)
-
-    # Generate with weighted constraints
-    code = await generate(prompt, constraints)
-
-    # Update weights based on outcome
-    result = await validate(code, spec)
-    await update_pattern_weights(patterns, result.passed)
-
-    return code
-```
-
-**When to Use**: Project-specific generation, adapting to codebase conventions
+**→ See AGENT_GUIDE.md §11 for complete implementations, code examples, and pattern selection guide**
 
 ---
 
 ## Enforcement
 
-### Automated Checks (CI/CD)
+Quality gates are enforced through automated CI/CD and pre-commit hooks.
 
-```yaml
-# .github/workflows/maze-ci.yml
-name: Maze CI
+**Automated Gates**:
+- Tests (all must pass)
+- Performance benchmarks (all targets must be met)
+- Coverage (≥70% required, CI enforces)
+- Type checking (mypy, no errors)
+- Formatting (black, no changes needed)
+- Linting (ruff, no errors)
 
-on: [push, pull_request]
+**Enforcement Levels**:
+- ✅ **CI Required**: Tests, performance, coverage, types, format, lint
+- ⚠️ **PR Review**: Documentation updates, changelog entries
+- ❌ **Never Bypass**: Tests, performance benchmarks
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: astral-sh/setup-uv@v1
+**Emergency Bypass Protocol** (critical production issues only):
+1. Use `git commit --no-verify` for emergency fix
+2. Create priority-0 follow-up Beads issue immediately
+3. Store incident in mnemosyne (importance 9)
 
-      - name: Install dependencies
-        run: uv pip install -e ".[dev]"
-
-      - name: Run tests
-        run: uv run pytest tests/unit -v
-
-      - name: Check coverage
-        run: |
-          uv run pytest --cov=maze --cov-report=term --cov-fail-under=85
-
-      - name: Performance benchmarks
-        run: |
-          uv run pytest -m performance -v
-          # Assert targets met (handled in test assertions)
-
-      - name: Type checking
-        run: uv run mypy src/
-
-      - name: Linting
-        run: |
-          uv run black --check src/ tests/
-          uv run ruff src/ tests/
-```
-
-### Pre-Commit Hooks
-
-```bash
-# .git/hooks/pre-commit
-#!/bin/bash
-
-# Format check
-uv run black --check src/ tests/ || {
-    echo "❌ Code not formatted. Run: uv run black src/ tests/"
-    exit 1
-}
-
-# Lint check
-uv run ruff src/ tests/ || {
-    echo "❌ Linting failed"
-    exit 1
-}
-
-# Fast tests only
-uv run pytest tests/unit -m "not slow and not performance" || {
-    echo "❌ Tests failed"
-    exit 1
-}
-
-echo "✅ Pre-commit checks passed"
-```
+**→ See AGENT_GUIDE.md §12 for CI/CD workflows, pre-commit hooks, and quality gate matrix**
 
 ---
 
@@ -1553,16 +1303,32 @@ AGENT_GUIDE.md complements this CLAUDE.md with **operational details**:
 
 ### Key Cross-References
 
-| CLAUDE.md Section | AGENT_GUIDE.md Section |
-|-------------------|------------------------|
-| §1 Work Plan Protocol | §2.1 Code Change Workflow |
-| §2 Performance-First | §6.2 Performance Optimization Scenario |
-| §3 Integration Guidelines | §5 Integration Points |
-| §4 Constraint Development | §1.1 Task Classification (constraint tasks) |
-| §5 Language Indexers | §6.1 Adding New Language Indexer |
-| §6 Testing Protocols | §2.1 Code Change Workflow (steps 7-10) |
-| §7 Beads Integration | §5.3 Integration with Beads |
-| §8 Anti-Patterns | §7 Anti-Patterns for Agents |
+| CLAUDE.md Section | AGENT_GUIDE.md Section | What's There |
+|-------------------|------------------------|--------------|
+| §Work Plan Protocol | §2.1 Code Change Workflow | Step-by-step execution |
+| §Performance-First | §6.2 Performance Optimization | Example scenario |
+| §Integration Guidelines | §5 Integration Points | Conceptual overview |
+| → llguidance | §5.5 llguidance Code Patterns | Grammar design, caching, profiling code |
+| → mnemosyne | §5.2 + §3.6 + §5.2 | Commands, templates, patterns |
+| → pedantic_raven | §5.6 pedantic_raven Patterns | Validation code examples |
+| → RUNE | §5.7 RUNE Execution Patterns | Sandbox configuration code |
+| §Constraint Development | §11 Implementation Patterns | 4 patterns with full code |
+| §Language Indexers | §6.1 Adding New Indexer | Complete workflow |
+| §Testing Protocols | §2.1 steps 7-10 + §10.2 | Workflow + commands |
+| §Quick Reference | §10 Quick Command Reference | All commands organized |
+| §Constraint Patterns | §11 Implementation Patterns | Incremental, Speculative, Typed Hole, Adaptive |
+| §Enforcement | §12 Enforcement and CI/CD | CI workflow, hooks, gates |
+| §Anti-Patterns | §7 Anti-Patterns for Agents | Agent-specific violations |
+| §Phase Checkpoints | §2 Workflows | Phase execution steps |
+
+**Quick Lookup by Need**:
+- **Need code examples?** → AGENT_GUIDE.md §5, §11
+- **Need commands?** → AGENT_GUIDE.md §10
+- **Need workflows?** → AGENT_GUIDE.md §2
+- **Need templates?** → AGENT_GUIDE.md §3
+- **Need principles?** → CLAUDE.md (this file)
+- **Need targets?** → CLAUDE.md Performance sections
+- **Need decision tree?** → AGENT_GUIDE.md §1
 
 ---
 
