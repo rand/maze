@@ -99,13 +99,13 @@
         // Index page comments
         window.SIDEBAR_COMMENTS = {
             'abstract': '// Compile constraints before decoding, not after',
-            'paradigm': '// Because "just fix it later" is technical debt',
+            'the-paradigm-shift': '// Because "just fix it later" is technical debt',
             'architecture': '// 5-stage pipeline: Index → Synthesize → Orchestrate → Validate → Repair',
-            'constraints': '// 4 tiers: Syntax → Types → Semantics → Context',
-            'integrations': '// Standing on the shoulders of giants (and Microsoft Research)',
-            'status': '// Phase 3/6 complete • 60% validation coverage',
-            'research': '// PLDI 2025 • OOPSLA 2024 • llguidance',
-            'validation': '// 12K lines of Rust • Property tests FTW',
+            '4-tier-constraint-system': '// 4 tiers: Syntax → Types → Semantics → Context',
+            'integration-ecosystem': '// Standing on the shoulders of giants (and Microsoft Research)',
+            'implementation-status': '// Phase 3/6 complete • 60% validation coverage',
+            'research-foundation': '// PLDI 2025 • OOPSLA 2024 • llguidance',
+            'architecture-validation': '// 12K lines of Rust • Property tests FTW',
             'getting-started': '// cargo install --git ...'
         };
 
