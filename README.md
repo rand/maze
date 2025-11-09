@@ -268,7 +268,7 @@ Maze is based on cutting-edge research in constrained decoding and type-directed
 - CFG/Lark grammar builder
 - Multi-language grammars
 - JSON Schema synthesis
-- Provider adapters (in progress)
+- Provider adapters (OpenAI, vLLM, SGLang, llama.cpp)
 
 ### Phase 3: Type System ✅
 - Type inhabitation solver
