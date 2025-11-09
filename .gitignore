@@ -95,4 +95,4 @@ Thumbs.db
 
 # Compiled files
 *.pyc
-*.pyo
+*.pyosite/
