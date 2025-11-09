@@ -503,3 +503,26 @@ td:last-child {
         grid-template-columns: 1fr;
     }
 }
+
+/* Theme-aware diagram switching */
+.diagram-light {
+    display: block;
+}
+
+.diagram-dark {
+    display: none;
+}
+
+body.dark-theme .diagram-light,
+@media (prefers-color-scheme: dark) {
+    body:not(.light-theme) .diagram-light {
+        display: none;
+    }
+}
+
+body.dark-theme .diagram-dark,
+@media (prefers-color-scheme: dark) {
+    body:not(.light-theme) .diagram-dark {
+        display: block;
+    }
+}

@@ -1,0 +1,76 @@
+direction: down
+
+tier1: {
+  label: Tier 1: Syntactic\nCFG Grammars
+  shape: rectangle
+  style: {
+    fill: "#1a1a1a"
+    stroke: "#666"
+    font-color: "#ededed"
+  }
+}
+
+tier2: {
+  label: Tier 2: Type\nInhabitation Search
+  shape: rectangle
+  style: {
+    fill: "#1a1a1a"
+    stroke: "#666"
+    font-color: "#ededed"
+  }
+}
+
+tier3: {
+  label: Tier 3: Semantic\nTest-Driven
+  shape: rectangle
+  style: {
+    fill: "#1a1a1a"
+    stroke: "#666"
+    font-color: "#ededed"
+  }
+}
+
+tier4: {
+  label: Tier 4: Contextual\nLearned Patterns
+  shape: rectangle
+  style: {
+    fill: "#1a1a1a"
+    stroke: "#666"
+    font-color: "#ededed"
+  }
+}
+
+output: {
+  label: Type-Correct Code
+  shape: oval
+  style: {
+    fill: "#2a2a2a"
+    stroke: "#888"
+    font-color: "#ededed"
+  }
+}
+
+tier1 -> tier2: Narrows {
+  style: {
+    stroke: "#888"
+    font-color: "#aaa"
+  }
+}
+tier2 -> tier3: Narrows {
+  style: {
+    stroke: "#888"
+    font-color: "#aaa"
+  }
+}
+tier3 -> tier4: Narrows {
+  style: {
+    stroke: "#888"
+    font-color: "#aaa"
+  }
+}
+tier4 -> output {
+  style: {
+    stroke: "#888"
+    font-color: "#aaa"
+  }
+}

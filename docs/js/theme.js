@@ -71,3 +71,34 @@
         init();
     }
 })();
+
+// Update diagrams immediately when theme changes
+function updateDiagramVisibility() {
+    const isDark = document.body.classList.contains('dark-theme') ||
+                  (!document.body.classList.contains('light-theme') &&
+                   window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+    document.querySelectorAll('.diagram-light').forEach(img => {
+        img.style.display = isDark ? 'none' : 'block';
+    });
+
+    document.querySelectorAll('.diagram-dark').forEach(img => {
+        img.style.display = isDark ? 'block' : 'none';
+    });
+}
+
+// Call on page load
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', updateDiagramVisibility);
+} else {
+    updateDiagramVisibility();
+}
+
+// Update diagrams when theme toggle is clicked
+const originalToggle = toggleTheme;
+toggleTheme = function() {
+    if (typeof originalToggle === 'function') {
+        originalToggle();
+    }
+    setTimeout(updateDiagramVisibility, 0);
+};
