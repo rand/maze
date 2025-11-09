@@ -2,6 +2,7 @@
 Tests for constraint learning system.
 """
 
+from pathlib import Path
 import pytest
 
 from maze.learning.constraint_learning import (
@@ -122,6 +123,7 @@ class TestConstraintLearningSystem:
             ],
             type_patterns=[],
             semantic=[],
+            source=Path("."),
             extraction_time_ms=100.0,
             total_patterns=2
         )
@@ -143,6 +145,7 @@ class TestConstraintLearningSystem:
                 TypePattern("str", ["name", "msg"], 2, []),
             ],
             semantic=[],
+            source=Path("."),
             extraction_time_ms=100.0,
             total_patterns=2
         )
@@ -161,6 +164,7 @@ class TestConstraintLearningSystem:
             semantic=[
                 SemanticPattern("error_handling", "try-except", ["try: op()\nexcept: pass"], 4),
             ],
+            source=Path("."),
             extraction_time_ms=100.0,
             total_patterns=1
         )
@@ -180,6 +184,7 @@ class TestConstraintLearningSystem:
             ],
             type_patterns=[],
             semantic=[],
+            source=Path("."),
             extraction_time_ms=100.0,
             total_patterns=2
         )
@@ -376,8 +381,9 @@ class TestConstraintLearningSystem:
         )
 
         delta = system._compute_score_delta(feedback)
-        # Should heavily penalize security violations
-        assert delta < -2.0
+        # Should heavily penalize security violations (clamped at -2.0)
+        assert delta <= -2.0
+        assert delta == -2.0  # Should be clamped at minimum
 
     def test_compute_score_delta_clamped(self, system):
         """Test that score delta is clamped to [-2, 2]."""
@@ -502,6 +508,7 @@ except Exception:
             syntactic=[SyntacticPattern("function", "def foo(): ...", 1, [], {})],
             type_patterns=[],
             semantic=[],
+            source=Path("."),
             extraction_time_ms=100.0,
             total_patterns=1
         )
@@ -570,6 +577,7 @@ except Exception:
             syntactic=[SyntacticPattern("function", "def foo(): ...", 5, [], {})],
             type_patterns=[],
             semantic=[],
+            source=Path("."),
             extraction_time_ms=100.0,
             total_patterns=1
         )

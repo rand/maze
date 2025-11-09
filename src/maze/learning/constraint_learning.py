@@ -211,14 +211,15 @@ class ConstraintLearningSystem:
             severity = diag.get("severity", "").lower()
             message = diag.get("message", "").lower()
 
-            if "syntax" in message or severity == "error":
-                return "syntax"
-            elif "type" in message:
-                return "type"
+            # Check specific types first before generic error
+            if "security" in message or "vulnerability" in message:
+                return "security"
             elif "test" in message or "assertion" in message:
                 return "test"
-            elif "security" in message or "vulnerability" in message:
-                return "security"
+            elif "type" in message:
+                return "type"
+            elif "syntax" in message or severity == "error":
+                return "syntax"
 
         return "semantic"
 
