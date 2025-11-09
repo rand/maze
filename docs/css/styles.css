@@ -113,6 +113,18 @@ body.dark-theme .navbar {
     opacity: 0.7;
 }
 
+.logo-glyph {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    line-height: 1;
+    color: var(--accent);
+}
+
+.logo-glyph::before {
+    content: "⊡";  /* Square with rounded corners */
+}
 
 .nav-links {
     display: flex;
