@@ -23,7 +23,7 @@
 | Core type system | ✅ Complete | 94% |
 | Constraint framework | ✅ Complete | 85% |
 | llguidance integration | ✅ Complete | 42% |
-| TypeScript indexer | 🚧 In progress | 43% |
+| TypeScript indexer | ✅ Complete | 83% |
 | Grammar synthesis | ✅ Complete | 88% |
 | Provider adapters | 🚧 In progress | - |
 | Pattern mining | ✅ Complete | 100% |
