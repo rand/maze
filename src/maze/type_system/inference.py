@@ -211,19 +211,22 @@ class TypeInferenceEngine:
         """
         forward_type = self.infer_forward(node, context)
 
-        # If forward type is compatible with usage, use forward type
-        if self._is_assignable(forward_type, usage_type):
-            return forward_type
-
         # Try to narrow the type based on usage
         if forward_type.nullable and not usage_type.nullable:
             # Remove nullability if usage requires non-null
-            return Type(
+            non_null_forward = Type(
                 forward_type.name,
                 forward_type.parameters,
                 nullable=False,
                 metadata=forward_type.metadata
             )
+            # Check if non-null version matches usage
+            if non_null_forward == usage_type:
+                return non_null_forward
+
+        # If forward type is compatible with usage, use forward type
+        if self._is_assignable(forward_type, usage_type):
+            return forward_type
 
         # Otherwise, prefer usage type
         return usage_type
