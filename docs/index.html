@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MAZE: Adaptive Constrained Code Generation</title>
-    <meta name="description" content="A research-backed system for type-correct, semantically sound code generation. Compile constraints before decoding.">
+    <meta name="description" content="A research-backed system for type-correct, semantically sound code generation.">
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.0.0/dist/geist.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -14,7 +14,6 @@
     <nav class="navbar">
         <div class="container">
             <a href="index.html" class="nav-brand">
-                <span class="logo-glyph"></span>
                 <strong>MAZE</strong> v0.1.0-whitepaper
             </a>
             <div class="nav-links">
@@ -28,35 +27,31 @@
         </div>
     </nav>
 
-    <aside class="sidebar">
-        <div class="sidebar-content">
-            <div class="sidebar-tagline">Constraint-Driven Code Generation</div>
-            <div class="sidebar-status">
-                <span class="status-glyph"></span>
-                <span class="status-message">Phase 4: 60% complete</span>
-            </div>
-        </div>
-    </aside>
-
     <main class="container">
         <header class="paper-header">
             <h1>MAZE: Adaptive Constrained Code Generation</h1>
+            <p class="paper-subtitle">A research-backed system for type-correct, semantically sound code generation</p>
             <p class="paper-meta">
-                <span>Version v0.1.0-whitepaper</span> ·
-                <span>November 2025</span> ·
+                <span>Version v0.1.0-whitepaper</span>
+                <span>November 2025</span>
                 <a href="https://github.com/rand/maze">github.com/rand/maze</a>
             </p>
         </header>
 
         <section id="abstract" class="section">
             <h2>Abstract</h2>
-            <p>Large Language Models demonstrate remarkable code generation capabilities, yet suffer from high error rates when generating complex, type-correct code. Unconstrained generation produces syntactically valid but semantically incorrect or type-unsafe code, requiring expensive post-hoc validation and multiple repair iterations.</p>
-
-            <p><strong>MAZE</strong> introduces a paradigm shift: compile constraints before decoding, rather than hoping for correctness after generation. Through a novel 4-tier constraint hierarchy—syntactic (CFG grammars), type (inhabitation search), semantic (test-driven), and contextual (learned patterns)—MAZE guides LLM generation toward valid, type-correct, and project-conformant code from the start.</p>
-
-            <p>Built on research from PLDI 2025 (Type-Constrained Code Generation) and OOPSLA 2024 (Typed Holes), MAZE integrates with multiple LLM providers (OpenAI, vLLM, SGLang, llama.cpp) through llguidance for constraint enforcement, mnemosyne for persistent learning, and RUNE for sandboxed validation.</p>
-
-            <p><strong>Current status</strong>: Core constraint system complete (Phases 1-3), validation pipeline in active development (Phase 4: 6/10 tasks complete), with adaptive learning and production hardening planned (Phases 5-6).</p>
+            <p>
+                Large Language Models demonstrate remarkable code generation capabilities, yet suffer from high error rates when generating complex, type-correct code. Unconstrained generation produces syntactically valid but semantically incorrect or type-unsafe code, requiring expensive post-hoc validation and multiple repair iterations.
+            </p>
+            <p>
+                <strong>MAZE</strong> introduces a paradigm shift: compile constraints before decoding, rather than hoping for correctness after generation. Through a novel 4-tier constraint hierarchy—syntactic (CFG grammars), type (inhabitation search), semantic (test-driven), and contextual (learned patterns)—MAZE guides LLM generation toward valid, type-correct, and project-conformant code from the start.
+            </p>
+            <p>
+                Built on research from PLDI 2025 (Type-Constrained Code Generation) and OOPSLA 2024 (Typed Holes), MAZE integrates with multiple LLM providers (OpenAI, vLLM, SGLang, llama.cpp) through llguidance for constraint enforcement, mnemosyne for persistent learning, and RUNE for sandboxed validation.
+            </p>
+            <p>
+                <strong>Current status</strong>: Core constraint system complete (Phases 1-3), validation pipeline in active development (Phase 4: 6/10 tasks complete), with adaptive learning and production hardening planned (Phases 5-6).
+            </p>
         </section>
 
         <section id="paradigm" class="section">
@@ -64,20 +59,20 @@
 
             <h3>Traditional Approach: Generate, Then Fix</h3>
             <pre><code>Generate (unconstrained) → Validate → Find errors → Fix → Repeat
-// 3-5 iterations common
-// High latency, token waste, context overflow</code></pre>
+# 3-5 iterations common
+# High latency, token waste, context overflow</code></pre>
 
             <h3>MAZE Approach: Constrain, Then Generate</h3>
             <pre><code>Build constraints → Generate (constrained) → Minimal validation → Done
-// Correct by construction
-// Single iteration, predictable cost</code></pre>
+# Correct by construction
+# Single iteration, predictable cost</code></pre>
 
             <p>By enforcing constraints during decoding rather than after generation, MAZE reduces error rates, minimizes repair iterations, and produces higher-quality code with less computational overhead.</p>
         </section>
 
         <section id="architecture" class="section">
             <h2>Architecture</h2>
-            <p>MAZE's architecture consists of five integrated stages that transform a code generation request into validated, type-correct code:</p>
+            <p>MAZE's architecture consists of five integrated stages that transform a code generation request into validated, type-correct code.</p>
 
             <div class="diagram-container">
                 <img src="whitepaper/assets/diagrams/01-pipeline-light.svg" alt="MAZE Pipeline" class="diagram-svg diagram-light" />
@@ -86,17 +81,16 @@
 
             <h3>Stage 1: Context Indexer</h3>
             <p><strong>Purpose</strong>: Extract structured information from source code to inform constraint synthesis</p>
-            <p><strong>Status</strong>: ✅ TypeScript complete | Python, Rust, Go, Zig planned</p>
+            <p><strong>Status</strong>: Complete for TypeScript; Python, Rust, Go, Zig planned</p>
             <ul>
                 <li>Extracts functions, classes, interfaces, type aliases</li>
                 <li>Parses type annotations and generic parameters</li>
-                <li>Detects project style (indentation, quotes, semicolons)</li>
-                <li>Identifies test patterns (Jest, Mocha, Vitest)</li>
+                <li>Detects project style and test patterns</li>
             </ul>
 
             <h3>Stage 2: Constraint Synthesis</h3>
             <p><strong>Purpose</strong>: Build hierarchical constraints from indexed context and generation request</p>
-            <p><strong>Status</strong>: ✅ Complete</p>
+            <p><strong>Status</strong>: Complete</p>
             <ul>
                 <li><strong>GrammarBuilder</strong>: Generates CFG grammars in Lark format</li>
                 <li><strong>TypeToGrammarConverter</strong>: Converts type constraints into grammar rules</li>
@@ -105,66 +99,65 @@
 
             <h3>Stage 3: Decode Orchestrator</h3>
             <p><strong>Purpose</strong>: Generate code under constraints using provider-specific adapters</p>
-            <p><strong>Status</strong>: ✅ Complete (OpenAI, vLLM, SGLang, llama.cpp)</p>
-            <p>Integration with llguidance for token-level constraint enforcement: computes valid next tokens at each decode step based on grammar state. Upstream performance: ~50μs per token mask computation.</p>
+            <p><strong>Status</strong>: Complete (OpenAI, vLLM, SGLang, llama.cpp)</p>
+            <p>Integration with llguidance for token-level constraint enforcement. Upstream performance: approximately 50μs per token mask computation.</p>
 
             <h3>Stage 4: Post-Validation</h3>
             <p><strong>Purpose</strong>: Validate generated code across multiple dimensions in parallel</p>
-            <p><strong>Status</strong>: 🚧 60% complete (6/10 tasks)</p>
+            <p><strong>Status</strong>: 60 percent complete (6 of 10 tasks)</p>
             <ul>
-                <li>✅ <strong>SyntaxValidator</strong>: Language-specific syntax checking</li>
-                <li>✅ <strong>TypeValidator</strong>: Type checking via compiler APIs</li>
-                <li>✅ <strong>TestValidator</strong>: RUNE sandbox test execution</li>
-                <li>✅ <strong>LintValidator</strong>: Style and quality checking</li>
-                <li>✅ <strong>ValidationPipeline</strong>: Parallel validation orchestration</li>
-                <li>📋 RepairOrchestrator, DiagnosticAnalyzer, ConstraintRefinement</li>
+                <li><strong>SyntaxValidator</strong>: Language-specific syntax checking</li>
+                <li><strong>TypeValidator</strong>: Type checking via compiler APIs</li>
+                <li><strong>TestValidator</strong>: RUNE sandbox test execution</li>
+                <li><strong>LintValidator</strong>: Style and quality checking</li>
+                <li><strong>ValidationPipeline</strong>: Parallel validation orchestration</li>
+                <li>RepairOrchestrator, DiagnosticAnalyzer, ConstraintRefinement in progress</li>
             </ul>
 
             <h3>Stage 5: Repair Loop</h3>
             <p><strong>Purpose</strong>: Refine constraints and regenerate if validation fails</p>
-            <p><strong>Status</strong>: 📋 Planned (Phase 4)</p>
+            <p><strong>Status</strong>: Planned (Phase 4)</p>
         </section>
 
         <section id="constraints" class="section">
             <h2>4-Tier Constraint System</h2>
-            <p>MAZE's core innovation is a hierarchical constraint system that progressively narrows the space of valid programs:</p>
+            <p>MAZE's core innovation is a hierarchical constraint system that progressively narrows the space of valid programs.</p>
 
             <div class="diagram-container">
                 <img src="whitepaper/assets/diagrams/02-constraints-light.svg" alt="4-Tier Constraint Hierarchy" class="diagram-svg diagram-light" />
                 <img src="whitepaper/assets/diagrams/02-constraints-dark.svg" alt="4-Tier Constraint Hierarchy" class="diagram-svg diagram-dark" />
             </div>
 
-            <h3>Tier 1: Syntactic Constraints (CFG Grammars)</h3>
-            <p><strong>Purpose</strong>: Ensure generated code is syntactically valid</p>
-            <p><strong>Status</strong>: ✅ TypeScript complete, Python/Rust partial</p>
-            <p>Context-Free Grammars define valid code structure at the syntactic level. Integrated with llguidance for token-level enforcement during decoding.</p>
+            <h3>Tier 1: Syntactic Constraints</h3>
+            <p><strong>Implementation</strong>: Context-Free Grammars</p>
+            <p><strong>Status</strong>: TypeScript complete, Python and Rust partial</p>
+            <p>Ensures generated code is syntactically valid through CFG grammars integrated with llguidance for token-level enforcement during decoding.</p>
 
-            <h3>Tier 2: Type Constraints (Inhabitation Search)</h3>
-            <p><strong>Purpose</strong>: Ensure generated code is type-correct</p>
-            <p><strong>Status</strong>: ✅ Complete (2,124 lines)</p>
+            <h3>Tier 2: Type Constraints</h3>
+            <p><strong>Implementation</strong>: Type Inhabitation Search</p>
+            <p><strong>Status</strong>: Complete (2,124 lines)</p>
             <p><strong>Research Foundation</strong>: Mündler et al., PLDI 2025</p>
+            <p>Given source type S and target type T, finds valid transformation paths through property access, method calls, and function applications to construct type-correct expressions.</p>
 
             <div class="diagram-container">
                 <img src="whitepaper/assets/diagrams/03-type-light.svg" alt="Type Inhabitation Example" class="diagram-svg diagram-light" />
                 <img src="whitepaper/assets/diagrams/03-type-dark.svg" alt="Type Inhabitation Example" class="diagram-svg diagram-dark" />
             </div>
 
-            <p>Given source type S and target type T, find valid transformation paths. Type inhabitation solver searches property access, method calls, and function applications to construct type-correct expressions.</p>
+            <h3>Tier 3: Semantic Constraints</h3>
+            <p><strong>Implementation</strong>: Test-Driven Validation</p>
+            <p><strong>Status</strong>: Validators complete, orchestration planned</p>
+            <p>Ensures generated code implements specified behavior through concrete test cases and property-based invariants. All test execution happens in RUNE sandboxes for safety isolation.</p>
 
-            <h3>Tier 3: Semantic Constraints (Test-Driven)</h3>
-            <p><strong>Purpose</strong>: Ensure generated code implements specified behavior</p>
-            <p><strong>Status</strong>: ✅ Validators complete, orchestration planned</p>
-            <p>Semantic constraints specified through concrete test cases and property-based invariants. All test execution happens in RUNE sandboxes for safety isolation.</p>
-
-            <h3>Tier 4: Contextual Constraints (Learned)</h3>
-            <p><strong>Purpose</strong>: Ensure generated code matches project conventions</p>
-            <p><strong>Status</strong>: 📋 Planned (Phase 5)</p>
-            <p>Pattern mining extracts implicit conventions: naming, error handling, async patterns, import organization. Integrated with mnemosyne for persistent learning across sessions.</p>
+            <h3>Tier 4: Contextual Constraints</h3>
+            <p><strong>Implementation</strong>: Learned Patterns</p>
+            <p><strong>Status</strong>: Planned (Phase 5)</p>
+            <p>Ensures generated code matches project conventions through pattern mining. Integrated with mnemosyne for persistent learning across sessions.</p>
         </section>
 
         <section id="integrations" class="section">
             <h2>Integration Ecosystem</h2>
-            <p>MAZE integrates with four external systems, each providing complementary capabilities:</p>
+            <p>MAZE integrates with four external systems, each providing complementary capabilities.</p>
 
             <div class="diagram-container">
                 <img src="whitepaper/assets/diagrams/04-integrations-light.svg" alt="Integration Ecosystem" class="diagram-svg diagram-light" />
@@ -172,32 +165,27 @@
             </div>
 
             <h3>llguidance (Microsoft Research)</h3>
-            <p><strong>Status</strong>: ✅ Complete</p>
-            <p>Efficient constraint enforcement during LLM decoding. Compiles CFG grammars into finite-state automata for token-level masking. Performance: ~50μs per token (p99), <50ms grammar compilation.</p>
+            <p><strong>Status</strong>: Complete</p>
+            <p>Efficient constraint enforcement during LLM decoding. Compiles CFG grammars into finite-state automata for token-level masking. Performance: approximately 50μs per token (p99), grammar compilation under 50ms.</p>
 
             <h3>mnemosyne (Persistent Memory)</h3>
-            <p><strong>Status</strong>: ✅ Basic integration complete</p>
+            <p><strong>Status</strong>: Basic integration complete</p>
             <p>Semantic memory and learning across sessions. Stores successful constraint patterns, recalls relevant contexts for new tasks, updates pattern weights based on outcomes.</p>
 
             <h3>RUNE (Sandboxed Execution)</h3>
-            <p><strong>Status</strong>: ✅ Complete</p>
-            <p>Safe, isolated execution for test validation. Network isolation, filesystem isolation, resource limits. Deterministic execution ensures same input produces same output.</p>
+            <p><strong>Status</strong>: Complete</p>
+            <p>Safe, isolated execution for test validation with network isolation, filesystem isolation, and resource limits. Deterministic execution ensures same input produces same output.</p>
 
             <h3>pedantic_raven (Quality Enforcement)</h3>
-            <p><strong>Status</strong>: 📋 Planned</p>
+            <p><strong>Status</strong>: Planned</p>
             <p>Deep semantic validation and code quality checks beyond syntax and types.</p>
         </section>
 
         <section id="status" class="section">
             <h2>Implementation Status</h2>
 
-            <div class="diagram-container">
-                <img src="whitepaper/assets/diagrams/06-roadmap-light.svg" alt="Development Roadmap" class="diagram-svg diagram-light" />
-                <img src="whitepaper/assets/diagrams/06-roadmap-dark.svg" alt="Development Roadmap" class="diagram-svg diagram-dark" />
-            </div>
-
-            <h3>Phases 1-3: Core System ✅ COMPLETE</h3>
-            <p><strong>10,847 lines across 43 source files | 2,124 lines type system</strong></p>
+            <h3>Phases 1-3: Core System (Complete)</h3>
+            <p><strong>10,847 lines across 43 source files; 2,124 lines type system</strong></p>
             <ul>
                 <li>Core type system and constraint abstractions</li>
                 <li>TypeScript indexer with full symbol extraction</li>
@@ -205,25 +193,21 @@
                 <li>Type inference, inhabitation solver, typed holes</li>
                 <li>llguidance and mnemosyne integration</li>
             </ul>
-            <p><strong>Git Commit</strong>: <code>a3fad53</code> - "chore: Sync Beads state after Phase 3 completion"</p>
 
-            <h3>Phase 4: Validation & Repair 🚧 60% COMPLETE</h3>
+            <h3>Phase 4: Validation and Repair (60 percent complete)</h3>
             <p><strong>Recent Progress</strong> (as of November 8, 2025):</p>
             <ul>
-                <li>✅ SyntaxValidator - Language-specific syntax checking</li>
-                <li>✅ TypeValidator - Type checking via TypeScript compiler API</li>
-                <li>✅ TestValidator - RUNE sandbox test execution</li>
-                <li>✅ LintValidator - ESLint/Ruff/Clippy integration</li>
-                <li>✅ ValidationPipeline - Parallel validation orchestration</li>
-                <li>✅ RuneExecutor - Safe sandboxed execution</li>
-                <li>📋 RepairOrchestrator - Repair iteration logic</li>
-                <li>📋 DiagnosticAnalyzer - Failure interpretation</li>
-                <li>📋 ConstraintRefinement - Constraint tightening</li>
-                <li>📋 Full pedantic_raven integration</li>
+                <li>SyntaxValidator: Language-specific syntax checking</li>
+                <li>TypeValidator: Type checking via TypeScript compiler API</li>
+                <li>TestValidator: RUNE sandbox test execution</li>
+                <li>LintValidator: ESLint, Ruff, Clippy integration</li>
+                <li>ValidationPipeline: Parallel validation orchestration</li>
+                <li>RuneExecutor: Safe sandboxed execution</li>
+                <li>RepairOrchestrator, DiagnosticAnalyzer, ConstraintRefinement in progress</li>
             </ul>
             <p><strong>Expected Completion</strong>: December 2025</p>
 
-            <h3>Phase 5: Adaptive Learning 📋 PLANNED</h3>
+            <h3>Phase 5: Adaptive Learning (Planned)</h3>
             <p><strong>Timeline</strong>: Q1 2026</p>
             <ul>
                 <li>Pattern mining from existing codebases</li>
@@ -232,7 +216,7 @@
                 <li>Project-specific pattern adaptation</li>
             </ul>
 
-            <h3>Phase 6: Production 📋 PLANNED</h3>
+            <h3>Phase 6: Production (Planned)</h3>
             <p><strong>Timeline</strong>: Q2 2026</p>
             <ul>
                 <li>Performance optimization (speculative decoding, parallelization)</li>
@@ -240,17 +224,26 @@
                 <li>IDE integrations (VSCode, IntelliJ)</li>
                 <li>Comprehensive benchmarking (HumanEval, MBPP, SWE-bench)</li>
             </ul>
+
+            <div class="diagram-container">
+                <img src="whitepaper/assets/diagrams/06-roadmap-light.svg" alt="Development Roadmap" class="diagram-svg diagram-light" />
+                <img src="whitepaper/assets/diagrams/06-roadmap-dark.svg" alt="Development Roadmap" class="diagram-svg diagram-dark" />
+            </div>
         </section>
 
         <section id="research" class="section">
             <h2>Research Foundation</h2>
 
             <h3>Type-Constrained Code Generation (PLDI 2025)</h3>
-            <p><strong>Paper</strong>: Mündler et al. | <strong>Venue</strong>: PLDI 2025 | <strong>arXiv</strong>: <a href="https://arxiv.org/abs/2504.09246">2504.09246</a></p>
-            <p>Type constraints as prefix automata, bidirectional type inference for LLM guidance. Reported >50% reduction in compilation errors.</p>
+            <p><strong>Paper</strong>: Mündler et al.</p>
+            <p><strong>Venue</strong>: PLDI 2025</p>
+            <p><strong>arXiv</strong>: <a href="https://arxiv.org/abs/2504.09246">2504.09246</a></p>
+            <p>Type constraints as prefix automata, bidirectional type inference for LLM guidance. Reported reduction of compilation errors by over 50 percent.</p>
 
             <h3>Statically Contextualizing LLMs with Typed Holes (OOPSLA 2024)</h3>
-            <p><strong>Paper</strong>: Blinn et al. | <strong>Venue</strong>: OOPSLA 2024 | <strong>arXiv</strong>: <a href="https://arxiv.org/abs/2409.00921">2409.00921</a></p>
+            <p><strong>Paper</strong>: Blinn et al.</p>
+            <p><strong>Venue</strong>: OOPSLA 2024</p>
+            <p><strong>arXiv</strong>: <a href="https://arxiv.org/abs/2409.00921">2409.00921</a></p>
             <p>Typed holes for partial code completion with static context extraction. Evaluation on real-world TypeScript codebases.</p>
 
             <h3>LLGuidance (Microsoft Research)</h3>
@@ -279,7 +272,7 @@
                 <li><a href="https://github.com/rand/maze/tree/v0.1.0-whitepaper/src/maze/integrations/">Integrations</a></li>
             </ul>
 
-            <p><strong>Note on Performance Claims</strong>: The CHANGELOG.md documents performance achievements (50μs p99 masks, 97% compilation success, etc.). These metrics are documented but the benchmarks/ directory is currently empty. This whitepaper focuses on architectural design rather than specific performance numbers pending benchmark suite implementation.</p>
+            <p><strong>Note on Performance Claims</strong>: The CHANGELOG.md documents performance achievements. These metrics are documented but the benchmarks directory is currently empty. This whitepaper focuses on architectural design rather than specific performance numbers pending benchmark suite implementation.</p>
         </section>
 
         <section id="getting-started" class="section">
@@ -304,40 +297,14 @@ uv run python -c "import maze; print('MAZE installed successfully')"</code></pre
                 <li><a href="https://github.com/rand/maze/tree/v0.1.0-whitepaper">Tagged Code (v0.1.0-whitepaper)</a></li>
             </ul>
         </section>
-    </main>
 
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h4>Project</h4>
-                    <ul>
-                        <li><a href="https://github.com/rand/maze">GitHub</a></li>
-                        <li><a href="https://github.com/rand/maze/issues">Issues</a></li>
-                        <li><a href="whitepaper/whitepaper.md">Whitepaper</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4>Related</h4>
-                    <ul>
-                        <li><a href="https://github.com/guidance-ai/llguidance">llguidance</a></li>
-                        <li><a href="https://rand.github.io/mnemosyne">mnemosyne</a></li>
-                        <li><a href="https://rand.github.io/RUNE">RUNE</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4>Research</h4>
-                    <ul>
-                        <li><a href="https://arxiv.org/abs/2504.09246">PLDI 2025</a></li>
-                        <li><a href="https://arxiv.org/abs/2409.00921">OOPSLA 2024</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>MAZE v0.1.0-whitepaper · November 2025</p>
-            </div>
-        </div>
-    </footer>
+        <footer class="footer">
+            <p>
+                MAZE is open-source software. For questions or contributions, visit the
+                <a href="https://github.com/rand/maze">GitHub repository</a>.
+            </p>
+        </footer>
+    </main>
 
     <script src="js/theme.js"></script>
 </body>
