@@ -4,96 +4,75 @@
 [![uv](https://img.shields.io/badge/uv-package%20manager-green.svg)](https://github.com/astral-sh/uv)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**MAZE** is an adaptive constraint-based code generation system that combines Large Language Models (LLMs) with formal constraint enforcement to produce more accurate and contextually appropriate code. By compiling explicit constraints before decoding, Maze achieves **95%+ compilation success rates** with **<100μs per-token overhead**.
+**MAZE** is an adaptive constraint-based code generation system that combines Large Language Models (LLMs) with formal constraint enforcement. By compiling explicit constraints before decoding, Maze aims to produce more accurate and contextually appropriate code.
 
 ## Key Features
 
 - **4-Tier Constraint Stack**: Progressive refinement through syntactic, type, semantic, and contextual constraints
-- **Ultra-Fast Performance**: <100μs mask computation, <50ms grammar compilation
+- **Performance Targets**: <100μs mask computation, <50ms grammar compilation
 - **Multi-Language Support**: TypeScript, Python, Rust, Go, Zig
-- **Type-Directed Synthesis**: 75% reduction in type errors using inhabitation search
-- **Provider Agnostic**: Works with OpenAI, Guidance, vLLM, SGLang, llama.cpp
+- **Type-Directed Synthesis**: Type inhabitation search to reduce type errors
+- **Provider Agnostic**: Supports OpenAI, Guidance, vLLM, SGLang, llama.cpp
 - **Adaptive Learning**: Learns project-specific patterns and conventions
-- **Ecosystem Integration**: Works with mnemosyne (memory), pedantic_raven (validation), and RUNE (execution)
+- **Ecosystem Integration**: Integrates with mnemosyne (memory), pedantic_raven (validation), and RUNE (execution)
 
-## Performance Metrics
+## Development Status
 
-| Metric | Target | Achieved |
-|--------|--------|----------|
-| Token mask computation | <100μs | ✅ 50μs (p99) |
-| Type error reduction | >75% | ✅ 94% |
-| Compilation success | >95% | ✅ 97% |
-| Memory usage | <1GB | ✅ 600MB |
-| Repair convergence | <3 attempts | ✅ 2.1 avg |
+| Component | Status | Test Coverage |
+|-----------|--------|---------------|
+| Core type system | ✅ Complete | 94% |
+| Constraint framework | ✅ Complete | 85% |
+| llguidance integration | ✅ Complete | 42% |
+| TypeScript indexer | 🚧 In progress | 43% |
+| Grammar synthesis | 📋 Planned | - |
+| Provider adapters | 📋 Planned | - |
+
+**Performance Targets**: <100μs mask computation, <50ms grammar compilation, >70% cache hit rate
 
 ## Quick Start
 
 ### Installation
 
 ```bash
-# Using uv (recommended)
-uv pip install maze
-
-# Or using pip
-pip install maze
-
-# For development
+# Clone and install for development
 git clone https://github.com/rand/maze.git
 cd maze
 uv pip install -e ".[dev]"
+
+# Run tests
+uv run pytest tests/unit/ -v
 ```
 
-### Basic Usage
+### Basic Usage (API under development)
 
 ```python
-from maze import MazeGenerator
+from maze.core.types import Type, TypeContext, FunctionSignature
+from maze.core.constraints import SyntacticConstraint, TypeConstraint, ConstraintSet
 
-# Initialize generator
-generator = MazeGenerator(
-    model="gpt-4",
-    language="typescript",
-    constraint_level="strict"
-)
+# Create type context
+context = TypeContext(language="typescript")
+context.add_variable("email", Type("string"))
 
-# Generate type-safe code
-code = generator.generate(
-    prompt="Create a function to validate email addresses",
-    types={"input": "string", "output": "boolean"}
-)
-
-print(code)
-# Output:
-# function validateEmail(email: string): boolean {
-#     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-#     return emailRegex.test(email);
-# }
-```
-
-### With Project Context
-
-```python
-# Index your project for context-aware generation
-code = generator.generate_with_context(
-    prompt="Add user authentication middleware",
-    project_path="./my-app",
-    file_context=["src/types.ts", "src/auth.ts"]
-)
-```
-
-### Type-Directed Hole Filling
-
-```python
-# Fill typed holes in existing code
-code_with_hole = """
-export function formatUserData(user: User): FormattedUser {
-    /*__HOLE__*/
-}
+# Define constraints
+grammar = """
+    ?start: function
+    function: "function" IDENT "(" param ")" ":" type block
+    param: IDENT ":" type
+    type: "string" | "boolean"
+    block: "{" /[^}]*/ "}"
+    IDENT: /[a-zA-Z_][a-zA-Z0-9_]*/
 """
 
-completed = generator.fill_hole(
-    code_with_hole=code_with_hole,
-    hole_type="User => FormattedUser"
+syntactic = SyntacticConstraint(grammar=grammar, language="typescript")
+type_constraint = TypeConstraint(
+    expected_type=Type("function", (Type("string"), Type("boolean"))),
+    context=context
 )
+
+# Combine constraints
+constraints = ConstraintSet()
+constraints.add(syntactic)
+constraints.add(type_constraint)
 ```
 
 ## Architecture
@@ -115,18 +94,20 @@ Maze implements a 5-stage pipeline for constrained code generation:
 3. **Semantic** (Specs) - Behavioral correctness via tests
 4. **Contextual** (Learned) - Project conventions via patterns
 
-## Advanced Features
+## Core Components
 
-### Custom Constraints
+### Constraint System
 
 ```python
 from maze.core.constraints import (
     SyntacticConstraint,
     TypeConstraint,
-    SemanticConstraint
+    SemanticConstraint,
+    ContextualConstraint,
+    ConstraintSet
 )
 
-# Define custom grammar
+# Syntactic constraint using Lark grammar
 grammar = """
     ?start: function
     function: "def" IDENT "(" params ")" "->" type ":" block
@@ -136,53 +117,45 @@ grammar = """
     IDENT: /[a-zA-Z_][a-zA-Z0-9_]*/
 """
 
-constraint = SyntacticConstraint(grammar=grammar, language="python")
+syntactic = SyntacticConstraint(grammar=grammar, language="python")
 
-# Apply constraints
-generator = MazeGenerator()
-generator.add_constraint(constraint)
+# Type constraint
+type_constraint = TypeConstraint(
+    expected_type=Type("function"),
+    context=TypeContext(language="python")
+)
+
+# Semantic constraint with test cases
+semantic = SemanticConstraint(specification="validate input range")
+semantic.add_test_case(input="5", expected_output=True)
+semantic.add_test_case(input="-1", expected_output=False)
+
+# Combine all constraints
+constraints = ConstraintSet()
+constraints.add(syntactic)
+constraints.add(type_constraint)
+constraints.add(semantic)
 ```
 
-### Integration with llguidance
+### llguidance Integration
 
 ```python
-from maze.integrations.llguidance import LLGuidanceAdapter
+from maze.integrations.llguidance import LLGuidanceAdapter, TokenizerConfig
 
-# High-performance constraint engine
+# Initialize adapter
 adapter = LLGuidanceAdapter(
+    tokenizer_config=TokenizerConfig(vocab_size=50257),
     mask_cache_size=100000,
     enable_profiling=True
 )
 
-# Build and use parser
-parser = adapter.build_parser(grammar)
-mask = adapter.compute_mask(parser, current_state)
+# Build parser from grammar (planned)
+# parser = adapter.build_parser(grammar)
+# mask = adapter.compute_mask(parser, current_state)
 
-# Check performance
-stats = adapter.get_performance_summary()
-print(f"Mean mask computation: {stats['mean_us']:.1f}μs")
-```
-
-### Memory Integration (mnemosyne)
-
-```python
-from maze.integrations.mnemosyne import MazeMemory
-
-# Store and recall generation patterns
-memory = MazeMemory(project_id="my-app")
-
-# Store successful patterns
-await memory.store_constraint_pattern(
-    pattern="async-function-with-error-handling",
-    success=True,
-    metrics={"compilation": True, "tests_passed": 10}
-)
-
-# Recall similar contexts
-similar = await memory.recall_similar_contexts(
-    query="error handling patterns",
-    limit=5
-)
+# Performance monitoring
+stats = adapter.get_cache_stats()
+print(f"Cache size: {stats['grammar_cache_size']}")
 ```
 
 ## Project Structure
