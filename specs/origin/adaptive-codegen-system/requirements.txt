@@ -1,0 +1,60 @@
+# Core Dependencies
+llguidance>=0.1.0
+torch>=2.0.0
+transformers>=4.30.0
+numpy>=1.24.0
+scipy>=1.10.0
+
+# Type System Support
+mypy>=1.0.0
+typing-extensions>=4.5.0
+pydantic>=2.0.0
+
+# Parser and Grammar
+lark>=1.1.5
+pyparsing>=3.0.9
+parsimonious>=0.10.0
+
+# Performance and Optimization
+numba>=0.57.0
+cython>=0.29.0
+joblib>=1.2.0
+
+# Async Support
+asyncio>=3.4.3
+aiohttp>=3.8.0
+
+# Testing and Development
+pytest>=7.3.0
+pytest-asyncio>=0.21.0
+pytest-benchmark>=4.0.0
+pytest-cov>=4.1.0
+
+# Code Analysis
+ast-grep-py>=0.3.0
+tree-sitter>=0.20.0
+pygments>=2.15.0
+
+# Model Integration
+openai>=1.0.0
+anthropic>=0.3.0
+cohere>=4.0.0
+
+# Utilities
+tqdm>=4.65.0
+rich>=13.3.0
+click>=8.1.0
+pyyaml>=6.0
+toml>=0.10.0
+
+# Optional: Diffusion Models Support
+# diffusers>=0.16.0
+
+# Optional: SMT Solving
+# z3-solver>=4.12.0
+
+# Development Tools
+black>=23.0.0
+flake8>=6.0.0
+isort>=5.12.0
+pre-commit>=3.3.0

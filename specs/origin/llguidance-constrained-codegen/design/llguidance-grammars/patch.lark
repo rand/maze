@@ -1,0 +1,26 @@
+// Example combined reasoning + JSON using LLGuidance's Lark extension.
+start: <think> "\n" /(.|\n)*/ </think> patch
+
+patch: %json {
+  "type": "object",
+  "properties": {
+    "file": {"type":"string"},
+    "edits": {
+      "type":"array",
+      "items": {
+        "type":"object",
+        "properties": {
+          "range": {"type": "object",
+                    "properties": {"start":{"type":"integer"},"end":{"type":"integer"}},
+                    "required":["start","end"]},
+          "text": {"type":"string"}
+        },
+        "required": ["range","text"]
+      }
+    }
+  },
+  "required": ["file","edits"],
+  "additionalProperties": false
+}
+
+%ignore /[ \t\r\n]+/
