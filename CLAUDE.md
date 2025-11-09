@@ -231,77 +231,24 @@ uv run python benchmarks/baseline.py --compare baseline.json
 
 **Purpose**: High-performance constraint enforcement via CFG grammars
 
-**Grammar Design Principles**:
-```python
-# Use Lark extended syntax
-grammar = """
-    ?start: typescript_function
+**Key Principles**:
+- Use Lark extended syntax for CFG grammar definitions
+- Enable caching with large cache size (100k+ entries)
+- Profile performance to ensure targets met
+- Abstract provider differences (OpenAI, vLLM, SGLang, llama.cpp)
 
-    typescript_function: "export"? "async"? "function" IDENT params ret_type block
+**Critical Requirements**:
+- Cache hit rate MUST exceed 70%
+- P99 mask computation MUST be <100μs
+- Enable profiling during development
+- Test with actual LLM providers (not just mocks)
 
-    params: "(" [param ("," param)*] ")"
-    param: IDENT ":" type
+**When to Use**:
+- All constraint enforcement (syntactic, type-aware, contextual)
+- Grammar-based generation control
+- Provider-agnostic constraint application
 
-    ret_type: ":" type
-    type: IDENT | type "[]" | type "|" type | "Promise" "<" type ">"
-
-    block: "{" statement* "}"
-
-    IDENT: /[a-zA-Z_$][a-zA-Z0-9_$]*/
-
-    %ignore /\\s+/
-    %ignore /\\/\\/[^\\n]*/
-"""
-```
-
-**Mask Computation Caching**:
-```python
-# Always use adapter's built-in caching
-from maze.integrations.llguidance import LLGuidanceAdapter
-
-adapter = LLGuidanceAdapter(
-    mask_cache_size=100000,  # Large cache
-    enable_profiling=True     # Track performance
-)
-
-# Check cache effectiveness
-stats = adapter.get_performance_summary()
-assert stats['cache_hit_rate'] > 0.7  # Must exceed 70%
-```
-
-**Provider Adapter Patterns**:
-```python
-# Abstract provider differences
-from maze.integrations.llguidance import create_adapter
-
-# OpenAI (JSON Schema only)
-openai_adapter = create_adapter("openai")
-schema = openai_adapter.to_structured_output_schema(grammar)
-
-# vLLM (Full CFG support)
-vllm_adapter = create_adapter("vllm")
-config = vllm_adapter.to_vllm_config(grammar)
-
-# SGLang (Native llguidance)
-sglang_adapter = create_adapter("sglang")
-constraint = sglang_adapter.to_sglang_constraint(grammar)
-```
-
-**Performance Profiling**:
-```python
-# Enable profiling during development
-adapter.enable_profiling = True
-
-# After generation session
-summary = adapter.get_performance_summary()
-print(f"Mean: {summary['mean_us']:.1f}μs")
-print(f"P99: {summary['p99_us']:.1f}μs")
-print(f"Cache hit rate: {summary['cache_hit_rate']:.1%}")
-
-# Assert targets
-assert summary['p99_us'] < 100
-assert summary['cache_hit_rate'] > 0.7
-```
+**→ See AGENT_GUIDE.md §5.5 for detailed code examples and implementation patterns**
 
 ---
 
@@ -312,91 +259,26 @@ assert summary['cache_hit_rate'] > 0.7
 **Namespace Strategy**:
 - `project:maze` - General maze project knowledge
 - `project:maze:constraint` - Constraint patterns and success rates
-- `project:maze:language:typescript` - TypeScript-specific patterns
-- `project:maze:language:python` - Python-specific patterns
+- `project:maze:language:{lang}` - Language-specific patterns (typescript, python, rust, go, zig)
 - `project:maze:performance` - Performance optimizations and insights
 - `project:maze:repair` - Repair strategies and lessons
 
-**Store Constraint Patterns**:
-```bash
-# After successful generation
-mnemosyne remember \
-  -c "TypeScript async function with Promise<T> return: 94% compilation success" \
-  -n "project:maze:constraint:typescript" \
-  -i 8 \
-  -t "constraint,typescript,async,success" \
-  --context "Using CFG+type constraints, 2.1 avg repair attempts"
-
-# Store performance insight
-mnemosyne remember \
-  -c "Grammar caching reduced p99 mask computation from 120μs to 45μs" \
-  -n "project:maze:performance" \
-  -i 9 \
-  -t "optimization,llguidance,caching"
-
-# Store repair lesson
-mnemosyne remember \
-  -c "Type error 'Promise<void> not assignable to Promise<User>' fixed by tightening return type constraint" \
-  -n "project:maze:repair:typescript" \
-  -i 7 \
-  -t "repair,typescript,types,promise"
-```
-
-**Recall Similar Contexts**:
-```bash
-# Find similar constraint patterns
-mnemosyne recall \
-  -q "async error handling patterns typescript" \
-  -n "project:maze:constraint:typescript" \
-  -l 10
-
-# Find performance optimizations
-mnemosyne recall \
-  -q "mask computation optimization" \
-  -n "project:maze:performance" \
-  --min-importance 7 \
-  -l 5
-
-# Cross-language pattern search
-mnemosyne recall \
-  -q "generic type constraints" \
-  -n "project:maze:constraint" \
-  -l 5
-```
-
-**Programmatic Integration**:
-```python
-from maze.integrations.mnemosyne import MazeMemory
-
-# Initialize memory client
-memory = MazeMemory(project_id="maze")
-
-# Store successful constraint pattern
-await memory.store_constraint_pattern(
-    pattern="async-function-with-error-handling",
-    success=True,
-    metrics={
-        "compilation_success": True,
-        "tests_passed": 10,
-        "repair_attempts": 2,
-        "mask_computation_us": 45.3
-    }
-)
-
-# Recall for adaptation
-similar = await memory.recall_similar_contexts(
-    query="error handling patterns for async functions",
-    limit=5
-)
-```
-
-**Importance Levels for Maze**:
+**Importance Levels**:
 - 10: Critical architectural decisions
-- 9: Major performance breakthroughs
+- 9: Major performance breakthroughs, releases
 - 8: Successful constraint patterns (>90% success rate)
-- 7: Useful repair strategies
+- 7: Useful repair strategies, performance insights
 - 6: Minor optimizations
-- 5: Contextual observations
+- 5: Contextual observations (don't store below 5)
+
+**Key Storage Triggers** (WHEN to store):
+- After successful constraint pattern application
+- After performance optimization (with metrics)
+- After discovering bug root cause
+- After phase milestone completion
+- After learning integration pattern
+
+**→ See AGENT_GUIDE.md §5.2 for storage/recall commands and §3.6 for templates**
 
 ---
 
@@ -409,45 +291,13 @@ similar = await memory.recall_similar_contexts(
 - `moderate`: Key properties checked, warnings for others (default)
 - `lenient`: Basic behavioral checks only
 
-**Integration Points**:
-```python
-from maze.integrations.pedantic_raven import RavenAdapter
+**When to Use**:
+- Behavioral correctness validation (not just syntax/types)
+- Property-based testing integration
+- Semantic constraint violation detection
+- Feeding repair loop with specific violations
 
-raven = RavenAdapter()
-
-# Validate semantic correctness
-result = await raven.validate_semantic(
-    code=generated_code,
-    spec=specification,
-    mode="moderate"
-)
-
-if not result.passed:
-    # Feed violations back to repair loop
-    for violation in result.violations:
-        print(f"Property violation: {violation.message}")
-        # Use violation to tighten constraints
-```
-
-**Property Specification**:
-```python
-from maze.core.constraints import SemanticConstraint
-
-# Define behavioral properties
-constraint = SemanticConstraint(
-    specification="Function must handle empty arrays gracefully"
-)
-
-# Add test cases
-constraint.add_test_case(
-    input=[],
-    expected_output=None  # Should not throw
-)
-
-# Add properties
-constraint.add_property("Returns null for empty input")
-constraint.add_invariant("Never throws exception")
-```
+**→ See AGENT_GUIDE.md §5.6 for validation code examples and property specification**
 
 ---
 
@@ -455,33 +305,21 @@ constraint.add_invariant("Never throws exception")
 
 **Purpose**: Sandboxed execution for testing generated code safely
 
-**Execution Protocol**:
-```python
-from maze.integrations.rune import RuneAdapter
-
-rune = RuneAdapter()
-
-# Execute tests in isolated sandbox
-result = await rune.execute_tests(
-    code=generated_code,
-    tests=specification.tests,
-    timeout=30,           # 30 second limit
-    memory_limit_mb=512   # 512MB memory limit
-)
-
-# Check results
-if result.passed:
-    print(f"All {len(result.results)} tests passed")
-else:
-    failed = [r for r in result.results if not r.success]
-    # Feed failures to repair loop
-```
-
-**Safety Guarantees**:
+**Safety Guarantees** (NON-NEGOTIABLE):
 - Network isolation (no external calls)
 - Filesystem isolation (temporary sandbox)
 - Resource limits (CPU, memory, time)
 - Deterministic execution (same input → same output)
+
+**Critical Rule**: NEVER execute generated code outside RUNE sandbox
+
+**When to Use**:
+- All test execution for generated code
+- Semantic validation requiring execution
+- Extract diagnostics for repair loop
+- Verify code behavior safely
+
+**→ See AGENT_GUIDE.md §5.7 for sandbox configuration and execution patterns**
 
 ---
 

@@ -1397,6 +1397,203 @@ git log --follow {target}
 
 ---
 
+### 5.5 llguidance Code Patterns
+
+**Grammar Design**:
+
+```python
+# Use Lark extended syntax for CFG grammars
+grammar = """
+    ?start: typescript_function
+
+    typescript_function: "export"? "async"? "function" IDENT params ret_type block
+
+    params: "(" [param ("," param)*] ")"
+    param: IDENT ":" type
+
+    ret_type: ":" type
+    type: IDENT | type "[]" | type "|" type | "Promise" "<" type ">"
+
+    block: "{" statement* "}"
+
+    IDENT: /[a-zA-Z_$][a-zA-Z0-9_$]*/
+
+    %ignore /\\s+/
+    %ignore /\\/\\/[^\\n]*/
+"""
+```
+
+**Mask Computation with Caching**:
+
+```python
+from maze.integrations.llguidance import LLGuidanceAdapter
+
+# Initialize with caching enabled
+adapter = LLGuidanceAdapter(
+    mask_cache_size=100000,  # Large cache for performance
+    enable_profiling=True     # Track metrics
+)
+
+# Build parser from grammar
+parser = adapter.build_parser(grammar)
+
+# Compute masks (automatically cached)
+mask = adapter.compute_mask(parser, current_state)
+
+# Check performance
+stats = adapter.get_performance_summary()
+assert stats['cache_hit_rate'] > 0.7  # Must exceed 70%
+assert stats['p99_us'] < 100          # Must be under 100μs
+```
+
+**Provider Adapter Pattern**:
+
+```python
+from maze.integrations.llguidance import create_adapter
+
+# OpenAI (JSON Schema only)
+openai_adapter = create_adapter("openai")
+schema = openai_adapter.to_structured_output_schema(grammar)
+
+# vLLM (Full CFG support)
+vllm_adapter = create_adapter("vllm")
+config = vllm_adapter.to_vllm_config(grammar)
+
+# SGLang (Native llguidance)
+sglang_adapter = create_adapter("sglang")
+constraint = sglang_adapter.to_sglang_constraint(grammar)
+```
+
+**Performance Profiling**:
+
+```python
+# Enable profiling during development
+adapter.enable_profiling = True
+
+# After generation session
+summary = adapter.get_performance_summary()
+print(f"Mean: {summary['mean_us']:.1f}μs")
+print(f"P99: {summary['p99_us']:.1f}μs")
+print(f"Cache hit rate: {summary['cache_hit_rate']:.1%}")
+
+# Validate targets (from CLAUDE.md)
+assert summary['p99_us'] < 100
+assert summary['cache_hit_rate'] > 0.7
+```
+
+---
+
+### 5.6 pedantic_raven Integration Patterns
+
+**Semantic Validation**:
+
+```python
+from maze.integrations.pedantic_raven import RavenAdapter
+
+raven = RavenAdapter()
+
+# Validate generated code against specification
+result = await raven.validate_semantic(
+    code=generated_code,
+    spec=specification,
+    mode="moderate"  # strict, moderate, or lenient
+)
+
+if not result.passed:
+    # Feed violations back to repair loop
+    for violation in result.violations:
+        print(f"Property violation: {violation.message}")
+        # Use to tighten constraints
+```
+
+**Property Specification**:
+
+```python
+from maze.core.constraints import SemanticConstraint
+
+# Define behavioral properties
+constraint = SemanticConstraint(
+    specification="Function must handle empty arrays gracefully"
+)
+
+# Add test cases
+constraint.add_test_case(
+    input=[],
+    expected_output=None  # Should not throw
+)
+
+# Add properties for validation
+constraint.add_property("Returns null for empty input")
+constraint.add_invariant("Never throws exception")
+```
+
+**Integration Workflow**:
+1. Generate code with syntactic/type constraints
+2. Validate with pedantic_raven (semantic check)
+3. If violations found → tighten constraints
+4. Retry generation
+5. Store successful patterns in mnemosyne
+
+---
+
+### 5.7 RUNE Execution Patterns
+
+**Sandboxed Test Execution**:
+
+```python
+from maze.integrations.rune import RuneAdapter
+
+rune = RuneAdapter()
+
+# Execute tests in isolated sandbox
+result = await rune.execute_tests(
+    code=generated_code,
+    tests=specification.tests,
+    timeout=30,           # 30 second limit
+    memory_limit_mb=512   # 512MB memory limit
+)
+
+# Check results
+if result.passed:
+    print(f"All {len(result.results)} tests passed")
+else:
+    failed = [r for r in result.results if not r.success]
+    # Feed failures to repair loop
+    for test in failed:
+        print(f"Test failed: {test.name}")
+        print(f"Error: {test.error_message}")
+```
+
+**Safety Configuration**:
+
+```python
+# Configure sandbox isolation
+rune_config = {
+    "network_isolation": True,      # No external calls
+    "filesystem_isolation": True,   # Temporary sandbox
+    "cpu_limit_percent": 80,        # Max 80% CPU
+    "memory_limit_mb": 512,         # Max 512MB RAM
+    "timeout_seconds": 30,          # Max 30 seconds
+    "deterministic": True           # Same input → same output
+}
+
+result = await rune.execute_tests(
+    code=generated_code,
+    tests=tests,
+    **rune_config
+)
+```
+
+**Integration Workflow**:
+1. Generate code (syntactic + type + semantic constraints)
+2. Run tests in RUNE sandbox (safety guaranteed)
+3. Extract diagnostics from test results
+4. If failures → analyze and tighten constraints
+5. Retry generation
+6. Never execute untrusted code outside sandbox
+
+---
+
 ## 6. Common Scenarios
 
 ### 6.1 Scenario: Adding New Language Indexer
@@ -2629,6 +2826,9 @@ mnemosyne remember -c "{insight}" -n "project:maze" -i 8 -t "{tags}"
 ### 10.2 Quality Check Commands
 
 ```bash
+# Setup
+uv pip install -e ".[dev]"
+
 # Full quality check
 uv run black src/ tests/
 uv run ruff src/ tests/
@@ -2636,6 +2836,21 @@ uv run mypy src/
 uv run pytest tests/unit -v
 uv run pytest -m performance -v
 uv run pytest --cov=src/maze --cov-report=term --cov-fail-under=70
+
+# Testing (comprehensive)
+uv run pytest                                    # All tests
+uv run pytest tests/unit -v                      # Unit tests
+uv run pytest tests/integration -v               # Integration tests
+uv run pytest tests/e2e -v                       # E2E tests
+uv run pytest -m performance -v                  # Performance benchmarks
+uv run pytest --cov=maze --cov-report=html      # Coverage report
+
+# Performance Validation
+uv run python benchmarks/mask_computation.py     # Mask benchmark
+uv run python benchmarks/end_to_end.py          # E2E benchmark
+uv run python benchmarks/compare_engines.py     # Engine comparison
+uv run python benchmarks/baseline.py --save     # Save baseline
+uv run python benchmarks/baseline.py --compare  # Compare to baseline
 ```
 
 ### 10.3 Beads Commands
