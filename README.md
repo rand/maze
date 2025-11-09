@@ -4,7 +4,7 @@
 [![uv](https://img.shields.io/badge/uv-package%20manager-green.svg)](https://github.com/astral-sh/uv)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**MAZE** is a production-ready adaptive constraint-based code generation system that combines Large Language Models (LLMs) with formal constraint enforcement to produce more accurate and contextually appropriate code. By compiling explicit constraints before decoding, Maze achieves **95%+ compilation success rates** with **<100μs per-token overhead**.
+**MAZE** is an adaptive constraint-based code generation system that combines Large Language Models (LLMs) with formal constraint enforcement to produce more accurate and contextually appropriate code. By compiling explicit constraints before decoding, Maze achieves **95%+ compilation success rates** with **<100μs per-token overhead**.
 
 ## Key Features
 
