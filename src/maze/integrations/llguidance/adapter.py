@@ -15,10 +15,23 @@ from functools import lru_cache
 import logging
 
 # Import llguidance for constraint enforcement
-from llguidance import LLGuidance, TokenizerConfig
+from llguidance import (
+    LarkCompiler,
+    LLInterpreter,
+    LLTokenizer,
+    TokenizerWrapper,
+    LLParserLimits
+)
 
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class TokenizerConfig:
+    """Configuration for tokenizer."""
+    model_type: str = "transformers"
+    vocab_size: int = 50257  # GPT-2 default
 
 
 @dataclass

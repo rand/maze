@@ -544,6 +544,38 @@ class ConstraintSet:
 
         return ",".join(components) if components else "empty"
 
+    def get_all(self) -> List[Constraint]:
+        """
+        Get all constraints as a flat list.
+
+        Returns:
+            List of all constraints in the set
+        """
+        all_constraints = []
+        all_constraints.extend(self.syntactic)
+        all_constraints.extend(self.type_based)
+        all_constraints.extend(self.semantic)
+        all_constraints.extend(self.contextual)
+        all_constraints.extend(self.json_schemas)
+        all_constraints.extend(self.regex_patterns)
+        return all_constraints
+
+    @classmethod
+    def from_list(cls, constraints: List[Constraint]) -> "ConstraintSet":
+        """
+        Create a ConstraintSet from a list of constraints.
+
+        Args:
+            constraints: List of constraints to add
+
+        Returns:
+            New ConstraintSet with all constraints added
+        """
+        constraint_set = cls()
+        for constraint in constraints:
+            constraint_set.add(constraint)
+        return constraint_set
+
     def cache_key(self) -> str:
         """Generate cache key for this constraint set."""
         content = self.to_pattern()
