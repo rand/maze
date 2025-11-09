@@ -4,6 +4,7 @@ Learning module for adaptive constraint-based code generation.
 Provides pattern mining, constraint learning, and project adaptation.
 """
 
+# Core pattern mining (no circular dependencies)
 from maze.learning.pattern_mining import (
     PatternMiningEngine,
     SyntacticPattern,
@@ -11,6 +12,8 @@ from maze.learning.pattern_mining import (
     SemanticPattern,
     PatternSet
 )
+
+# Constraint learning (no circular dependencies)
 from maze.learning.constraint_learning import (
     ConstraintLearningSystem,
     ConstraintRefinement,
@@ -20,17 +23,16 @@ from maze.learning.constraint_learning import (
     RepairResult,
     LearningEvent,
 )
+
+# Project adaptation (no circular dependencies)
 from maze.learning.project_adaptation import (
     ProjectAdaptationManager,
     ProjectProfile,
     ConventionSet,
     AdaptationStats,
 )
-from maze.learning.feedback_orchestrator import (
-    FeedbackLoopOrchestrator,
-    FeedbackResult,
-    FeedbackStats,
-)
+
+# Hybrid weighting (no circular dependencies)
 from maze.learning.hybrid_weighting import (
     HybridConstraintWeighter,
     WeightedConstraintSet,
@@ -38,6 +40,10 @@ from maze.learning.hybrid_weighting import (
     ConstraintSet,
     GenerationState,
 )
+
+# Feedback orchestrator uses lazy import to avoid circular dependency
+# (imports mnemosyne which imports pattern_mining)
+# Import directly: from maze.learning.feedback_orchestrator import FeedbackLoopOrchestrator
 
 __all__ = [
     # Pattern mining
@@ -59,14 +65,14 @@ __all__ = [
     "ProjectProfile",
     "ConventionSet",
     "AdaptationStats",
-    # Feedback orchestration
-    "FeedbackLoopOrchestrator",
-    "FeedbackResult",
-    "FeedbackStats",
     # Hybrid weighting
     "HybridConstraintWeighter",
     "WeightedConstraintSet",
     "TokenWeights",
     "ConstraintSet",
     "GenerationState",
+    # Feedback orchestration (use direct import to avoid circular dependency)
+    # "FeedbackLoopOrchestrator",
+    # "FeedbackResult",
+    # "FeedbackStats",
 ]
