@@ -162,11 +162,18 @@ class DataProcessor:
         assert len(learner.constraints) > 0
         assert profile.generation_count == 1
 
-    def test_cross_session_persistence(self, tmp_path, memory):
+    def test_cross_session_persistence(self, tmp_path):
         """Test pattern persistence across sessions."""
         from maze.learning.pattern_mining import SyntacticPattern
 
+        cache_path = tmp_path / "cache.jsonl"
+
         # Session 1: Store patterns
+        memory1 = MnemosyneIntegration(
+            enable_orchestration=False,
+            local_cache_path=cache_path
+        )
+
         pattern = SyntacticPattern(
             pattern_type="function",
             template="def foo(): ...",
@@ -175,21 +182,25 @@ class DataProcessor:
             context={"args": 0}
         )
 
-        memory.store_pattern(
+        memory1.store_pattern(
             pattern=pattern,
             namespace="project:test",
             importance=7,
             tags=["function", "test"]
         )
 
-        # Verify stored
-        assert len(memory.pattern_cache) > 0
+        # Verify stored in memory and file
+        assert len(memory1.pattern_cache) > 0
+        assert cache_path.exists()
 
         # Session 2: Create new instance (simulating new session)
         memory2 = MnemosyneIntegration(
             enable_orchestration=False,
-            local_cache_path=tmp_path / "cache.jsonl"
+            local_cache_path=cache_path
         )
+
+        # Verify loaded from file
+        assert len(memory2.pattern_cache) > 0
 
         # Recall patterns
         context = GenerationContext(
