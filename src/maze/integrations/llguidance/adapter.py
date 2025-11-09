@@ -14,26 +14,8 @@ from dataclasses import dataclass, field
 from functools import lru_cache
 import logging
 
-# Note: In production, would import from llguidance
-# For now, we'll create mock interfaces
-try:
-    from llguidance import LLGuidance, TokenizerConfig
-except ImportError:
-    # Mock interfaces for development
-    class LLGuidance:
-        def __init__(self, grammar: str, tokenizer: Any, model_type: str = "transformers"):
-            self.grammar = grammar
-            self.tokenizer = tokenizer
-            self.model_type = model_type
-
-        def compute_mask_for_state(self, state: str) -> Any:
-            # Mock implementation
-            return {"allowed": set(range(100)), "forbidden": set()}
-
-    @dataclass
-    class TokenizerConfig:
-        vocab_size: int = 50000
-        model_type: str = "transformers"
+# Import llguidance for constraint enforcement
+from llguidance import LLGuidance, TokenizerConfig
 
 
 logger = logging.getLogger(__name__)
