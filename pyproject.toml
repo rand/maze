@@ -36,6 +36,7 @@ dependencies = [
     "orjson>=3.9.13",
     "lz4>=4.3.3",
     "tree-sitter-javascript>=0.25.0",
+    "zensical>=0.0.5",
 ]
 
 [project.optional-dependencies]

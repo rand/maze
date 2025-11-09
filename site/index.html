@@ -1,0 +1,1620 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A research-backed system for type-correct, semantically sound code generation">
+      
+      
+      
+        <link rel="canonical" href="https://rand.github.io/maze/">
+      
+      
+      
+        <link rel="next" href="whitepaper/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="assets/favicon.svg">
+      <meta name="generator" content="zensical-0.0.5">
+    
+    
+      
+        <title>MAZE - Adaptive Constrained Code Generation - MAZE</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="assets/stylesheets/modern/main.1357c24d.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="assets/stylesheets/modern/palette.dfe2e883.min.css">
+      
+      
+  
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+  
+  <style>:root{}</style>
+
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Geist:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Geist";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="stylesheets/shared.css">
+    
+      <link rel="stylesheet" href="stylesheets/orange.css">
+    
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#maze-adaptive-constrained-code-generation" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="." title="MAZE" class="md-header__button md-logo" aria-label="MAZE" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 7v14M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            MAZE
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              MAZE - Adaptive Constrained Code Generation
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="." class="md-tabs__link">
+        
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="whitepaper/" class="md-tabs__link">
+        
+  
+  Whitepaper
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="https://github.com/rand/maze" class="md-tabs__link">
+        
+  
+  GitHub
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="." title="MAZE" class="md-nav__button md-logo" aria-label="MAZE" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 7v14M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>
+
+    </a>
+    MAZE
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="." class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#abstract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Abstract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-paradigm-shift" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Paradigm Shift
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The Paradigm Shift">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#traditional-approach-generate-then-fix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Traditional Approach: Generate, Then Fix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#maze-approach-constrain-then-generate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MAZE Approach: Constrain, Then Generate
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#stage-1-context-indexer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage 1: Context Indexer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stage-2-constraint-synthesis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage 2: Constraint Synthesis
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stage-3-decode-orchestrator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage 3: Decode Orchestrator
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stage-4-post-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage 4: Post-Validation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stage-5-repair-loop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage 5: Repair Loop
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-tier-constraint-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4-Tier Constraint System
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4-Tier Constraint System">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tier-1-syntactic-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 1: Syntactic Constraints
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tier-2-type-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 2: Type Constraints
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tier-3-semantic-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 3: Semantic Constraints
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tier-4-contextual-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 4: Contextual Constraints
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#integration-ecosystem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Integration Ecosystem
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Integration Ecosystem">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#llguidance-microsoft-research" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        llguidance (Microsoft Research)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mnemosyne-persistent-memory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mnemosyne (Persistent Memory)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rune-sandboxed-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RUNE (Sandboxed Execution)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pedantic_raven-quality-enforcement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pedantic_raven (Quality Enforcement)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementation-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation Status
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Implementation Status">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phases-1-3-core-system-complete" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phases 1-3: Core System (Complete)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-4-validation-and-repair-60-percent-complete" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 4: Validation and Repair (60 percent complete)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-5-adaptive-learning-planned" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 5: Adaptive Learning (Planned)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-6-production-planned" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 6: Production (Planned)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#research-foundation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Research Foundation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Research Foundation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#type-constrained-code-generation-pldi-2025" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Type-Constrained Code Generation (PLDI 2025)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#statically-contextualizing-llms-with-typed-holes-oopsla-2024" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Statically Contextualizing LLMs with Typed Holes (OOPSLA 2024)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#llguidance-microsoft-research_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LLGuidance (Microsoft Research)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architecture-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture Validation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Architecture Validation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#code-statistics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Code Statistics
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#component-verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Component Verification
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-started" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting Started
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Getting Started">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Installation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resources
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="whitepaper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Whitepaper
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/rand/maze" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GitHub
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#abstract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Abstract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-paradigm-shift" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Paradigm Shift
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The Paradigm Shift">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#traditional-approach-generate-then-fix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Traditional Approach: Generate, Then Fix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#maze-approach-constrain-then-generate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MAZE Approach: Constrain, Then Generate
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#stage-1-context-indexer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage 1: Context Indexer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stage-2-constraint-synthesis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage 2: Constraint Synthesis
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stage-3-decode-orchestrator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage 3: Decode Orchestrator
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stage-4-post-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage 4: Post-Validation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stage-5-repair-loop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage 5: Repair Loop
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-tier-constraint-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4-Tier Constraint System
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4-Tier Constraint System">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tier-1-syntactic-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 1: Syntactic Constraints
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tier-2-type-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 2: Type Constraints
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tier-3-semantic-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 3: Semantic Constraints
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tier-4-contextual-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 4: Contextual Constraints
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#integration-ecosystem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Integration Ecosystem
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Integration Ecosystem">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#llguidance-microsoft-research" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        llguidance (Microsoft Research)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mnemosyne-persistent-memory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mnemosyne (Persistent Memory)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rune-sandboxed-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RUNE (Sandboxed Execution)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pedantic_raven-quality-enforcement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pedantic_raven (Quality Enforcement)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementation-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation Status
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Implementation Status">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phases-1-3-core-system-complete" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phases 1-3: Core System (Complete)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-4-validation-and-repair-60-percent-complete" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 4: Validation and Repair (60 percent complete)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-5-adaptive-learning-planned" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 5: Adaptive Learning (Planned)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-6-production-planned" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 6: Production (Planned)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#research-foundation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Research Foundation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Research Foundation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#type-constrained-code-generation-pldi-2025" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Type-Constrained Code Generation (PLDI 2025)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#statically-contextualizing-llms-with-typed-holes-oopsla-2024" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Statically Contextualizing LLMs with Typed Holes (OOPSLA 2024)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#llguidance-microsoft-research_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LLGuidance (Microsoft Research)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architecture-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture Validation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Architecture Validation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#code-statistics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Code Statistics
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#component-verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Component Verification
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-started" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting Started
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Getting Started">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Installation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resources
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+<h1 id="maze-adaptive-constrained-code-generation">MAZE: Adaptive Constrained Code Generation<a class="headerlink" href="#maze-adaptive-constrained-code-generation" title="Permanent link">&para;</a></h1>
+<p>A research-backed system for type-correct, semantically sound code generation</p>
+<p><strong>Version</strong>: v0.1.0-whitepaper
+<strong>Date</strong>: November 2025
+<strong>Repository</strong>: <a href="https://github.com/rand/maze">github.com/rand/maze</a></p>
+<h2 id="abstract">Abstract<a class="headerlink" href="#abstract" title="Permanent link">&para;</a></h2>
+<p>Large Language Models demonstrate remarkable code generation capabilities, yet suffer from high error rates when generating complex, type-correct code. Unconstrained generation produces syntactically valid but semantically incorrect or type-unsafe code, requiring expensive post-hoc validation and multiple repair iterations.</p>
+<p><strong>MAZE</strong> introduces a paradigm shift: compile constraints before decoding, rather than hoping for correctness after generation. Through a novel 4-tier constraint hierarchy—syntactic (CFG grammars), type (inhabitation search), semantic (test-driven), and contextual (learned patterns)—MAZE guides LLM generation toward valid, type-correct, and project-conformant code from the start.</p>
+<p>Built on research from PLDI 2025 (Type-Constrained Code Generation) and OOPSLA 2024 (Typed Holes), MAZE integrates with multiple LLM providers (OpenAI, vLLM, SGLang, llama.cpp) through llguidance for constraint enforcement, mnemosyne for persistent learning, and RUNE for sandboxed validation.</p>
+<p><strong>Current status</strong>: Core constraint system complete (Phases 1-3), validation pipeline in active development (Phase 4: 6/10 tasks complete), with adaptive learning and production hardening planned (Phases 5-6).</p>
+<h2 id="the-paradigm-shift">The Paradigm Shift<a class="headerlink" href="#the-paradigm-shift" title="Permanent link">&para;</a></h2>
+<h3 id="traditional-approach-generate-then-fix">Traditional Approach: Generate, Then Fix<a class="headerlink" href="#traditional-approach-generate-then-fix" title="Permanent link">&para;</a></h3>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Generate (unconstrained) → Validate → Find errors → Fix → Repeat
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a># 3-5 iterations common
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a># High latency, token waste, context overflow
+</span></code></pre></div>
+<h3 id="maze-approach-constrain-then-generate">MAZE Approach: Constrain, Then Generate<a class="headerlink" href="#maze-approach-constrain-then-generate" title="Permanent link">&para;</a></h3>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Build constraints → Generate (constrained) → Minimal validation → Done
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a># Correct by construction
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a># Single iteration, predictable cost
+</span></code></pre></div>
+<p>By enforcing constraints during decoding rather than after generation, MAZE reduces error rates, minimizes repair iterations, and produces higher-quality code with less computational overhead.</p>
+<h2 id="architecture">Architecture<a class="headerlink" href="#architecture" title="Permanent link">&para;</a></h2>
+<p>MAZE's architecture consists of five integrated stages that transform a code generation request into validated, type-correct code.</p>
+<p><img alt="MAZE Pipeline" src="whitepaper/assets/diagrams/01-pipeline-light.svg" /></p>
+<h3 id="stage-1-context-indexer">Stage 1: Context Indexer<a class="headerlink" href="#stage-1-context-indexer" title="Permanent link">&para;</a></h3>
+<p><strong>Purpose</strong>: Extract structured information from source code to inform constraint synthesis</p>
+<p><strong>Status</strong>: Complete for TypeScript; Python, Rust, Go, Zig planned</p>
+<ul>
+<li>Extracts functions, classes, interfaces, type aliases</li>
+<li>Parses type annotations and generic parameters</li>
+<li>Detects project style and test patterns</li>
+</ul>
+<h3 id="stage-2-constraint-synthesis">Stage 2: Constraint Synthesis<a class="headerlink" href="#stage-2-constraint-synthesis" title="Permanent link">&para;</a></h3>
+<p><strong>Purpose</strong>: Build hierarchical constraints from indexed context and generation request</p>
+<p><strong>Status</strong>: Complete</p>
+<ul>
+<li><strong>GrammarBuilder</strong>: Generates CFG grammars in Lark format</li>
+<li><strong>TypeToGrammarConverter</strong>: Converts type constraints into grammar rules</li>
+<li><strong>SchemaBuilder</strong>: Generates JSON Schema for OpenAI compatibility</li>
+</ul>
+<h3 id="stage-3-decode-orchestrator">Stage 3: Decode Orchestrator<a class="headerlink" href="#stage-3-decode-orchestrator" title="Permanent link">&para;</a></h3>
+<p><strong>Purpose</strong>: Generate code under constraints using provider-specific adapters</p>
+<p><strong>Status</strong>: Complete (OpenAI, vLLM, SGLang, llama.cpp)</p>
+<p>Integration with llguidance for token-level constraint enforcement. Upstream performance: approximately 50μs per token mask computation.</p>
+<h3 id="stage-4-post-validation">Stage 4: Post-Validation<a class="headerlink" href="#stage-4-post-validation" title="Permanent link">&para;</a></h3>
+<p><strong>Purpose</strong>: Validate generated code across multiple dimensions in parallel</p>
+<p><strong>Status</strong>: 60 percent complete (6 of 10 tasks)</p>
+<ul>
+<li><strong>SyntaxValidator</strong>: Language-specific syntax checking</li>
+<li><strong>TypeValidator</strong>: Type checking via compiler APIs</li>
+<li><strong>TestValidator</strong>: RUNE sandbox test execution</li>
+<li><strong>LintValidator</strong>: Style and quality checking</li>
+<li><strong>ValidationPipeline</strong>: Parallel validation orchestration</li>
+<li>RepairOrchestrator, DiagnosticAnalyzer, ConstraintRefinement in progress</li>
+</ul>
+<h3 id="stage-5-repair-loop">Stage 5: Repair Loop<a class="headerlink" href="#stage-5-repair-loop" title="Permanent link">&para;</a></h3>
+<p><strong>Purpose</strong>: Refine constraints and regenerate if validation fails</p>
+<p><strong>Status</strong>: Planned (Phase 4)</p>
+<h2 id="4-tier-constraint-system">4-Tier Constraint System<a class="headerlink" href="#4-tier-constraint-system" title="Permanent link">&para;</a></h2>
+<p>MAZE's core innovation is a hierarchical constraint system that progressively narrows the space of valid programs.</p>
+<p><img alt="4-Tier Constraint Hierarchy" src="whitepaper/assets/diagrams/02-constraints-light.svg" /></p>
+<h3 id="tier-1-syntactic-constraints">Tier 1: Syntactic Constraints<a class="headerlink" href="#tier-1-syntactic-constraints" title="Permanent link">&para;</a></h3>
+<p><strong>Implementation</strong>: Context-Free Grammars</p>
+<p><strong>Status</strong>: TypeScript complete, Python and Rust partial</p>
+<p>Ensures generated code is syntactically valid through CFG grammars integrated with llguidance for token-level enforcement during decoding.</p>
+<h3 id="tier-2-type-constraints">Tier 2: Type Constraints<a class="headerlink" href="#tier-2-type-constraints" title="Permanent link">&para;</a></h3>
+<p><strong>Implementation</strong>: Type Inhabitation Search</p>
+<p><strong>Status</strong>: Complete (2,124 lines)</p>
+<p><strong>Research Foundation</strong>: Mündler et al., PLDI 2025</p>
+<p>Given source type S and target type T, finds valid transformation paths through property access, method calls, and function applications to construct type-correct expressions.</p>
+<p><img alt="Type Inhabitation Example" src="whitepaper/assets/diagrams/03-type-light.svg" /></p>
+<h3 id="tier-3-semantic-constraints">Tier 3: Semantic Constraints<a class="headerlink" href="#tier-3-semantic-constraints" title="Permanent link">&para;</a></h3>
+<p><strong>Implementation</strong>: Test-Driven Validation</p>
+<p><strong>Status</strong>: Validators complete, orchestration planned</p>
+<p>Ensures generated code implements specified behavior through concrete test cases and property-based invariants. All test execution happens in RUNE sandboxes for safety isolation.</p>
+<h3 id="tier-4-contextual-constraints">Tier 4: Contextual Constraints<a class="headerlink" href="#tier-4-contextual-constraints" title="Permanent link">&para;</a></h3>
+<p><strong>Implementation</strong>: Learned Patterns</p>
+<p><strong>Status</strong>: Planned (Phase 5)</p>
+<p>Ensures generated code matches project conventions through pattern mining. Integrated with mnemosyne for persistent learning across sessions.</p>
+<h2 id="integration-ecosystem">Integration Ecosystem<a class="headerlink" href="#integration-ecosystem" title="Permanent link">&para;</a></h2>
+<p>MAZE integrates with four external systems, each providing complementary capabilities.</p>
+<p><img alt="Integration Ecosystem" src="whitepaper/assets/diagrams/04-integrations-light.svg" /></p>
+<h3 id="llguidance-microsoft-research">llguidance (Microsoft Research)<a class="headerlink" href="#llguidance-microsoft-research" title="Permanent link">&para;</a></h3>
+<p><strong>Status</strong>: Complete</p>
+<p>Efficient constraint enforcement during LLM decoding. Compiles CFG grammars into finite-state automata for token-level masking. Performance: approximately 50μs per token (p99), grammar compilation under 50ms.</p>
+<h3 id="mnemosyne-persistent-memory">mnemosyne (Persistent Memory)<a class="headerlink" href="#mnemosyne-persistent-memory" title="Permanent link">&para;</a></h3>
+<p><strong>Status</strong>: Basic integration complete</p>
+<p>Semantic memory and learning across sessions. Stores successful constraint patterns, recalls relevant contexts for new tasks, updates pattern weights based on outcomes.</p>
+<h3 id="rune-sandboxed-execution">RUNE (Sandboxed Execution)<a class="headerlink" href="#rune-sandboxed-execution" title="Permanent link">&para;</a></h3>
+<p><strong>Status</strong>: Complete</p>
+<p>Safe, isolated execution for test validation with network isolation, filesystem isolation, and resource limits. Deterministic execution ensures same input produces same output.</p>
+<h3 id="pedantic_raven-quality-enforcement">pedantic_raven (Quality Enforcement)<a class="headerlink" href="#pedantic_raven-quality-enforcement" title="Permanent link">&para;</a></h3>
+<p><strong>Status</strong>: Planned</p>
+<p>Deep semantic validation and code quality checks beyond syntax and types.</p>
+<h2 id="implementation-status">Implementation Status<a class="headerlink" href="#implementation-status" title="Permanent link">&para;</a></h2>
+<h3 id="phases-1-3-core-system-complete">Phases 1-3: Core System (Complete)<a class="headerlink" href="#phases-1-3-core-system-complete" title="Permanent link">&para;</a></h3>
+<p><strong>10,847 lines across 43 source files; 2,124 lines type system</strong></p>
+<ul>
+<li>Core type system and constraint abstractions</li>
+<li>TypeScript indexer with full symbol extraction</li>
+<li>Grammar builder, schema builder, provider adapters</li>
+<li>Type inference, inhabitation solver, typed holes</li>
+<li>llguidance and mnemosyne integration</li>
+</ul>
+<h3 id="phase-4-validation-and-repair-60-percent-complete">Phase 4: Validation and Repair (60 percent complete)<a class="headerlink" href="#phase-4-validation-and-repair-60-percent-complete" title="Permanent link">&para;</a></h3>
+<p><strong>Recent Progress</strong> (as of November 8, 2025):</p>
+<ul>
+<li>SyntaxValidator: Language-specific syntax checking</li>
+<li>TypeValidator: Type checking via TypeScript compiler API</li>
+<li>TestValidator: RUNE sandbox test execution</li>
+<li>LintValidator: ESLint, Ruff, Clippy integration</li>
+<li>ValidationPipeline: Parallel validation orchestration</li>
+<li>RuneExecutor: Safe sandboxed execution</li>
+<li>RepairOrchestrator, DiagnosticAnalyzer, ConstraintRefinement in progress</li>
+</ul>
+<p><strong>Expected Completion</strong>: December 2025</p>
+<h3 id="phase-5-adaptive-learning-planned">Phase 5: Adaptive Learning (Planned)<a class="headerlink" href="#phase-5-adaptive-learning-planned" title="Permanent link">&para;</a></h3>
+<p><strong>Timeline</strong>: Q1 2026</p>
+<ul>
+<li>Pattern mining from existing codebases</li>
+<li>Constraint learning from generation outcomes</li>
+<li>Full mnemosyne integration for persistent learning</li>
+<li>Project-specific pattern adaptation</li>
+</ul>
+<h3 id="phase-6-production-planned">Phase 6: Production (Planned)<a class="headerlink" href="#phase-6-production-planned" title="Permanent link">&para;</a></h3>
+<p><strong>Timeline</strong>: Q2 2026</p>
+<ul>
+<li>Performance optimization (speculative decoding, parallelization)</li>
+<li>Multi-language indexers (Python, Rust, Go, Zig)</li>
+<li>IDE integrations (VSCode, IntelliJ)</li>
+<li>Comprehensive benchmarking (HumanEval, MBPP, SWE-bench)</li>
+</ul>
+<p><img alt="Development Roadmap" src="whitepaper/assets/diagrams/06-roadmap-light.svg" /></p>
+<h2 id="research-foundation">Research Foundation<a class="headerlink" href="#research-foundation" title="Permanent link">&para;</a></h2>
+<h3 id="type-constrained-code-generation-pldi-2025">Type-Constrained Code Generation (PLDI 2025)<a class="headerlink" href="#type-constrained-code-generation-pldi-2025" title="Permanent link">&para;</a></h3>
+<p><strong>Paper</strong>: Mündler et al.</p>
+<p><strong>Venue</strong>: PLDI 2025</p>
+<p><strong>arXiv</strong>: <a href="https://arxiv.org/abs/2504.09246">2504.09246</a></p>
+<p>Type constraints as prefix automata, bidirectional type inference for LLM guidance. Reported reduction of compilation errors by over 50 percent.</p>
+<h3 id="statically-contextualizing-llms-with-typed-holes-oopsla-2024">Statically Contextualizing LLMs with Typed Holes (OOPSLA 2024)<a class="headerlink" href="#statically-contextualizing-llms-with-typed-holes-oopsla-2024" title="Permanent link">&para;</a></h3>
+<p><strong>Paper</strong>: Blinn et al.</p>
+<p><strong>Venue</strong>: OOPSLA 2024</p>
+<p><strong>arXiv</strong>: <a href="https://arxiv.org/abs/2409.00921">2409.00921</a></p>
+<p>Typed holes for partial code completion with static context extraction. Evaluation on real-world TypeScript codebases.</p>
+<h3 id="llguidance-microsoft-research_1">LLGuidance (Microsoft Research)<a class="headerlink" href="#llguidance-microsoft-research_1" title="Permanent link">&para;</a></h3>
+<p><strong>Source</strong>: <a href="https://github.com/guidance-ai/llguidance">github.com/guidance-ai/llguidance</a></p>
+<p>Efficient CFG grammar enforcement during decoding. Sub-100μs token mask computation, provider-agnostic integration.</p>
+<h2 id="architecture-validation">Architecture Validation<a class="headerlink" href="#architecture-validation" title="Permanent link">&para;</a></h2>
+<p>All claims in this whitepaper are validated against the codebase at tag <code>v0.1.0-whitepaper</code>.</p>
+<h3 id="code-statistics">Code Statistics<a class="headerlink" href="#code-statistics" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Total source files</td>
+<td>43</td>
+</tr>
+<tr>
+<td>Total source lines</td>
+<td>10,847</td>
+</tr>
+<tr>
+<td>Test files</td>
+<td>29</td>
+</tr>
+<tr>
+<td>Type system lines</td>
+<td>2,124</td>
+</tr>
+</tbody>
+</table>
+<h3 id="component-verification">Component Verification<a class="headerlink" href="#component-verification" title="Permanent link">&para;</a></h3>
+<ul>
+<li><a href="https://github.com/rand/maze/tree/v0.1.0-whitepaper/src/maze/core/types.py">Core Types</a></li>
+<li><a href="https://github.com/rand/maze/tree/v0.1.0-whitepaper/src/maze/type_system/">Type System</a></li>
+<li><a href="https://github.com/rand/maze/tree/v0.1.0-whitepaper/src/maze/synthesis/">Synthesis</a></li>
+<li><a href="https://github.com/rand/maze/tree/v0.1.0-whitepaper/src/maze/validation/">Validation</a></li>
+<li><a href="https://github.com/rand/maze/tree/v0.1.0-whitepaper/src/maze/integrations/">Integrations</a></li>
+</ul>
+<p><strong>Note on Performance Claims</strong>: The CHANGELOG.md documents performance achievements. These metrics are documented but the benchmarks directory is currently empty. This whitepaper focuses on architectural design rather than specific performance numbers pending benchmark suite implementation.</p>
+<h2 id="getting-started">Getting Started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h2>
+<h3 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Clone repository</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/rand/maze
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="nb">cd</span><span class="w"> </span>maze
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># Install dependencies</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[dev]&quot;</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="c1"># Verify installation</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import maze; print(&#39;MAZE installed successfully&#39;)&quot;</span>
+</span></code></pre></div>
+<h3 id="resources">Resources<a class="headerlink" href="#resources" title="Permanent link">&para;</a></h3>
+<ul>
+<li><a href="whitepaper/">Full Whitepaper (Markdown)</a></li>
+<li><a href="https://github.com/rand/maze">GitHub Repository</a></li>
+<li><a href="https://github.com/rand/maze/blob/main/CLAUDE.md">Development Guide</a></li>
+<li><a href="https://github.com/rand/maze/tree/v0.1.0-whitepaper">Tagged Code (v0.1.0-whitepaper)</a></li>
+</ul>
+<hr />
+<p>MAZE is open-source software. For questions or contributions, visit the <a href="https://github.com/rand/maze">GitHub repository</a>.</p>
+
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright © 2025
+    </div>
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      
+      <script id="__config" type="application/json">{"annotate":null,"base":".","features":["navigation.instant","navigation.tabs","navigation.tracking","navigation.top","search.suggest","search.highlight","search.share"],"search":"assets/javascripts/workers/search.5e1f2129.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="assets/javascripts/bundle.1193bd74.min.js"></script>
+      
+        <script src="javascripts/theme.js"></script>
+      
+    
+  </body>
+</html>

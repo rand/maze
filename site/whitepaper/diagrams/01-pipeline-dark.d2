@@ -1,0 +1,102 @@
+direction: right
+
+# Simple 5-stage pipeline - dark theme
+indexer: {
+  label: Context Indexer
+  shape: rectangle
+  style: {
+    fill: "#1a1a1a"
+    stroke: "#666"
+    font-color: "#ededed"
+  }
+}
+
+synthesis: {
+  label: Constraint Synthesis
+  shape: rectangle
+  style: {
+    fill: "#1a1a1a"
+    stroke: "#666"
+    font-color: "#ededed"
+  }
+}
+
+orchestrator: {
+  label: Decode Orchestrator
+  shape: rectangle
+  style: {
+    fill: "#1a1a1a"
+    stroke: "#666"
+    font-color: "#ededed"
+  }
+}
+
+validation: {
+  label: Post-Validation
+  shape: rectangle
+  style: {
+    fill: "#1a1a1a"
+    stroke: "#666"
+    font-color: "#ededed"
+  }
+}
+
+repair: {
+  label: Repair Loop
+  shape: rectangle
+  style: {
+    fill: "#1a1a1a"
+    stroke: "#666"
+    font-color: "#ededed"
+  }
+}
+
+output: {
+  label: Output
+  shape: oval
+  style: {
+    fill: "#2a2a2a"
+    stroke: "#888"
+    font-color: "#ededed"
+  }
+}
+
+# Flow
+indexer -> synthesis: Type context {
+  style: {
+    stroke: "#888"
+    font-color: "#aaa"
+  }
+}
+synthesis -> orchestrator: Constraints {
+  style: {
+    stroke: "#888"
+    font-color: "#aaa"
+  }
+}
+orchestrator -> validation: Generated code {
+  style: {
+    stroke: "#888"
+    font-color: "#aaa"
+  }
+}
+validation -> repair: Diagnostics {
+  style: {
+    stroke: "#666"
+    stroke-dash: 3
+    font-color: "#aaa"
+  }
+}
+repair -> synthesis: Refined constraints {
+  style: {
+    stroke: "#666"
+    stroke-dash: 3
+    font-color: "#aaa"
+  }
+}
+validation -> output: Valid code {
+  style: {
+    stroke: "#888"
+    font-color: "#aaa"
+  }
+}

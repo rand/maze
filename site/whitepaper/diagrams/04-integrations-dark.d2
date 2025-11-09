@@ -1,0 +1,105 @@
+direction: right
+
+maze: {
+  label: MAZE
+  shape: rectangle
+  style: {
+    fill: "#2a2a2a"
+    stroke: "#888"
+    font-color: "#ededed"
+  }
+}
+
+llguidance: {
+  label: llguidance\nConstraint Enforcement
+  shape: rectangle
+  style: {
+    fill: "#1a1a1a"
+    stroke: "#666"
+    font-color: "#ededed"
+  }
+}
+
+mnemosyne: {
+  label: mnemosyne\nPersistent Memory
+  shape: rectangle
+  style: {
+    fill: "#1a1a1a"
+    stroke: "#666"
+    font-color: "#ededed"
+  }
+}
+
+rune: {
+  label: RUNE\nSandboxed Execution
+  shape: rectangle
+  style: {
+    fill: "#1a1a1a"
+    stroke: "#666"
+    font-color: "#ededed"
+  }
+}
+
+raven: {
+  label: pedantic_raven\nQuality Enforcement
+  shape: rectangle
+  style: {
+    fill: "#1a1a1a"
+    stroke: "#666"
+    font-color: "#ededed"
+  }
+}
+
+maze -> llguidance: Grammars {
+  style: {
+    stroke: "#888"
+    font-color: "#aaa"
+  }
+}
+llguidance -> maze: Token masks {
+  style: {
+    stroke: "#888"
+    font-color: "#aaa"
+  }
+}
+
+maze -> mnemosyne: Store patterns {
+  style: {
+    stroke: "#888"
+    font-color: "#aaa"
+  }
+}
+mnemosyne -> maze: Recall context {
+  style: {
+    stroke: "#888"
+    font-color: "#aaa"
+  }
+}
+
+maze -> rune: Execute tests {
+  style: {
+    stroke: "#888"
+    font-color: "#aaa"
+  }
+}
+rune -> maze: Results {
+  style: {
+    stroke: "#888"
+    font-color: "#aaa"
+  }
+}
+
+maze -> raven: Validate {
+  style: {
+    stroke: "#666"
+    stroke-dash: 3
+    font-color: "#aaa"
+  }
+}
+raven -> maze: Findings {
+  style: {
+    stroke: "#666"
+    stroke-dash: 3
+    font-color: "#aaa"
+  }
+}
