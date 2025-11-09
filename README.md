@@ -25,7 +25,7 @@
 | llguidance integration | ✅ Complete | 42% |
 | TypeScript indexer | ✅ Complete | 83% |
 | Grammar synthesis | ✅ Complete | 88% |
-| Provider adapters | 🚧 In progress | - |
+| Provider adapters | ✅ Complete | 88% |
 | Pattern mining | ✅ Complete | 100% |
 | Constraint learning | ✅ Complete | 100% |
 | Project adaptation | ✅ Complete | 100% |
