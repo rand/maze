@@ -136,7 +136,7 @@ class DataProcessor:
         profile = adapter.profiles["sample_project"]
 
         assert profile is not None
-        assert len(profile.patterns) > 0
+        assert profile.patterns.total_patterns > 0
 
         # Step 3: Generate code (simulated)
         generation = GenerationResult(

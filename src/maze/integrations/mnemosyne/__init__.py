@@ -377,6 +377,10 @@ class MnemosyneIntegration:
                 memories = json.loads(output) if output else []
 
                 for mem in memories:
+                    # Skip non-dict entries
+                    if not isinstance(mem, dict):
+                        continue
+
                     # Parse pattern from content
                     content = mem.get("content", "")
                     if not content.startswith("Pattern:"):
