@@ -193,6 +193,15 @@ class DataProcessor:
         assert len(memory1.pattern_cache) > 0
         assert cache_path.exists()
 
+        # Verify file contents
+        import json
+        with open(cache_path, 'r') as f:
+            lines = f.readlines()
+            assert len(lines) > 0, "Cache file is empty"
+            # Verify JSON is valid
+            data = json.loads(lines[0])
+            assert "pattern_id" in data
+
         # Session 2: Create new instance (simulating new session)
         memory2 = MnemosyneIntegration(
             enable_orchestration=False,
@@ -200,7 +209,7 @@ class DataProcessor:
         )
 
         # Verify loaded from file
-        assert len(memory2.pattern_cache) > 0
+        assert len(memory2.pattern_cache) > 0, f"Failed to load from {cache_path}, use_local_cache={memory2.use_local_cache}"
 
         # Recall patterns
         context = GenerationContext(

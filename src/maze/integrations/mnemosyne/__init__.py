@@ -129,7 +129,9 @@ class MnemosyneIntegration:
         # Check mnemosyne availability
         if not self._ensure_mnemosyne_available():
             self.use_local_cache = True
-            self._load_local_cache()
+
+        # Always load from local cache if file exists (warm cache)
+        self._load_local_cache()
 
     def _ensure_mnemosyne_available(self) -> bool:
         """Check if mnemosyne CLI is available."""
