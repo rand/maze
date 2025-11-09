@@ -255,13 +255,13 @@ class ValidationPipeline:
             else:
                 stages_failed.append("security")
                 # Convert pedantic_raven findings to diagnostics
-                for finding in security_result.findings:
+                for finding in security_result.security_findings:
                     diagnostics.append(
                         Diagnostic(
-                            level="error" if finding.severity == "high" else "warning",
+                            level="error" if finding.severity in ["critical", "high"] else "warning",
                             message=finding.message,
-                            line=finding.line or 0,
-                            column=finding.column or 0,
+                            line=finding.line,
+                            column=finding.column,
                             source="security",
                             code=finding.category,
                         )

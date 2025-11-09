@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="MAZE: Adaptive Constrained Code Generation - A research-backed system for type-correct, semantically sound code generation">
+    <meta name="keywords" content="code generation, LLM, constraints, type system, TypeScript, programming">
+    <meta name="author" content="Rand Arete">
+    <title>MAZE: Adaptive Constrained Code Generation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <span class="nav-logo">🧩</span>
+                <span class="nav-title">MAZE</span>
+            </div>
+            <div class="nav-links">
+                <a href="#overview">Overview</a>
+                <a href="#architecture">Architecture</a>
+                <a href="#constraints">Constraints</a>
+                <a href="#status">Status</a>
+                <a href="#research">Research</a>
+                <a href="https://github.com/rand/maze" target="_blank">GitHub</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-content">
+            <h1>MAZE</h1>
+            <h2>Adaptive Constrained Code Generation</h2>
+            <p class="hero-tagline">Compile constraints before decoding, rather than hoping for correctness after generation</p>
+            <div class="hero-meta">
+                <span class="version">Version: v0.1.0-whitepaper</span>
+                <span class="date">November 2025</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <section id="overview" class="section">
+            <h2>Abstract</h2>
+            <p>Large Language Models (LLMs) have demonstrated remarkable capabilities in code generation, yet they suffer from high error rates when generating complex, type-correct code. Unconstrained generation often produces syntactically valid but semantically incorrect or type-unsafe code, requiring expensive post-hoc validation and multiple repair iterations.</p>
+
+            <p>MAZE introduces a paradigm shift: <strong>compile constraints before decoding, rather than hoping for correctness after generation</strong>. Through a novel 4-tier constraint hierarchy—syntactic (CFG grammars), type (inhabitation search), semantic (test-driven), and contextual (learned patterns)—MAZE guides LLM generation toward valid, type-correct, and project-conformant code from the start.</p>
+
+            <div class="status-banner">
+                <div class="status-item status-complete">
+                    <span class="status-icon">✅</span>
+                    <span class="status-text">Phases 1-3 Complete</span>
+                </div>
+                <div class="status-item status-progress">
+                    <span class="status-icon">🚧</span>
+                    <span class="status-text">Phase 4: 60% Complete</span>
+                </div>
+                <div class="status-item status-planned">
+                    <span class="status-icon">📋</span>
+                    <span class="status-text">Phases 5-6 Planned</span>
+                </div>
+            </div>
+
+            <div class="key-facts">
+                <div class="fact">
+                    <div class="fact-number">10,847</div>
+                    <div class="fact-label">Lines of Code</div>
+                </div>
+                <div class="fact">
+                    <div class="fact-number">43</div>
+                    <div class="fact-label">Source Files</div>
+                </div>
+                <div class="fact">
+                    <div class="fact-number">2,124</div>
+                    <div class="fact-label">Type System Lines</div>
+                </div>
+                <div class="fact">
+                    <div class="fact-number">4</div>
+                    <div class="fact-label">External Integrations</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="paradigm" class="section">
+            <h2>The Paradigm Shift</h2>
+
+            <div class="comparison">
+                <div class="comparison-col comparison-traditional">
+                    <h3>Traditional Approach</h3>
+                    <div class="flow">
+                        <div class="flow-step">Generate (unconstrained)</div>
+                        <div class="flow-arrow">↓</div>
+                        <div class="flow-step">Validate</div>
+                        <div class="flow-arrow">↓</div>
+                        <div class="flow-step">Find errors</div>
+                        <div class="flow-arrow">↓</div>
+                        <div class="flow-step">Fix</div>
+                        <div class="flow-arrow">↓</div>
+                        <div class="flow-step">Repeat</div>
+                    </div>
+                    <div class="comparison-note">Multiple expensive iterations</div>
+                </div>
+
+                <div class="comparison-col comparison-maze">
+                    <h3>MAZE Approach</h3>
+                    <div class="flow">
+                        <div class="flow-step">Build constraints</div>
+                        <div class="flow-arrow">↓</div>
+                        <div class="flow-step">Generate (constrained)</div>
+                        <div class="flow-arrow">↓</div>
+                        <div class="flow-step">Minimal validation</div>
+                        <div class="flow-arrow">↓</div>
+                        <div class="flow-step">Done</div>
+                    </div>
+                    <div class="comparison-note">Correct by construction</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="architecture" class="section">
+            <h2>Architecture Overview</h2>
+            <p>MAZE's architecture consists of five integrated stages that transform a code generation request into validated, type-correct code:</p>
+
+            <div class="diagram-container">
+                <img src="whitepaper/assets/diagrams/01-pipeline.svg" alt="MAZE Pipeline" class="diagram">
+            </div>
+
+            <div class="stages">
+                <div class="stage">
+                    <div class="stage-number">1</div>
+                    <div class="stage-content">
+                        <h3>Context Indexer</h3>
+                        <p>Extract structured information from source code to inform constraint synthesis</p>
+                        <span class="stage-status status-complete">✅ TypeScript Complete</span>
+                    </div>
+                </div>
+
+                <div class="stage">
+                    <div class="stage-number">2</div>
+                    <div class="stage-content">
+                        <h3>Constraint Synthesis</h3>
+                        <p>Build hierarchical constraints from indexed context and generation request</p>
+                        <span class="stage-status status-complete">✅ Complete</span>
+                    </div>
+                </div>
+
+                <div class="stage">
+                    <div class="stage-number">3</div>
+                    <div class="stage-content">
+                        <h3>Decode Orchestrator</h3>
+                        <p>Generate code under constraints using provider-specific adapters</p>
+                        <span class="stage-status status-complete">✅ Complete</span>
+                    </div>
+                </div>
+
+                <div class="stage">
+                    <div class="stage-number">4</div>
+                    <div class="stage-content">
+                        <h3>Post-Validation</h3>
+                        <p>Validate generated code across multiple dimensions in parallel</p>
+                        <span class="stage-status status-progress">🚧 60% Complete</span>
+                    </div>
+                </div>
+
+                <div class="stage">
+                    <div class="stage-number">5</div>
+                    <div class="stage-content">
+                        <h3>Repair Loop</h3>
+                        <p>Refine constraints and regenerate if validation fails</p>
+                        <span class="stage-status status-planned">📋 Planned</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="constraints" class="section">
+            <h2>4-Tier Constraint System</h2>
+            <p>MAZE's core innovation is a hierarchical constraint system that progressively narrows the space of valid programs:</p>
+
+            <div class="diagram-container">
+                <img src="whitepaper/assets/diagrams/02-constraint-hierarchy.svg" alt="4-Tier Constraint Hierarchy" class="diagram">
+            </div>
+
+            <div class="tiers">
+                <div class="tier tier-1">
+                    <h3>Tier 1: Syntactic Constraints</h3>
+                    <p class="tier-tech">CFG Grammars (Lark)</p>
+                    <p>Ensure generated code is syntactically valid through context-free grammars</p>
+                    <span class="tier-status">✅ TypeScript complete, Python/Rust partial</span>
+                </div>
+
+                <div class="tier tier-2">
+                    <h3>Tier 2: Type Constraints</h3>
+                    <p class="tier-tech">Type Inhabitation Search</p>
+                    <p>Ensure generated code is type-correct through bidirectional type inference</p>
+                    <span class="tier-status">✅ Complete (2,124 lines)</span>
+                </div>
+
+                <div class="tier tier-3">
+                    <h3>Tier 3: Semantic Constraints</h3>
+                    <p class="tier-tech">Test-Driven Validation</p>
+                    <p>Ensure generated code implements specified behavior through executable tests</p>
+                    <span class="tier-status">✅ Validators complete, orchestration planned</span>
+                </div>
+
+                <div class="tier tier-4">
+                    <h3>Tier 4: Contextual Constraints</h3>
+                    <p class="tier-tech">Learned Patterns</p>
+                    <p>Ensure generated code matches project conventions through pattern mining</p>
+                    <span class="tier-status">📋 Planned (Phase 5)</span>
+                </div>
+            </div>
+
+            <div class="diagram-container">
+                <img src="whitepaper/assets/diagrams/03-type-inhabitation.svg" alt="Type Inhabitation Example" class="diagram">
+                <p class="diagram-caption">Type Inhabitation Example: Finding valid User → string transformation paths</p>
+            </div>
+        </section>
+
+        <section id="integrations" class="section">
+            <h2>Integration Ecosystem</h2>
+            <p>MAZE integrates with four external systems, each providing complementary capabilities:</p>
+
+            <div class="diagram-container">
+                <img src="whitepaper/assets/diagrams/04-integration-ecosystem.svg" alt="Integration Ecosystem" class="diagram">
+            </div>
+
+            <div class="integrations">
+                <div class="integration">
+                    <h3>llguidance</h3>
+                    <p class="integration-org">Microsoft Research</p>
+                    <p>Efficient constraint enforcement during LLM decoding. Compiles CFG grammars into finite-state automata for token-level masking.</p>
+                    <span class="integration-status">✅ Complete</span>
+                </div>
+
+                <div class="integration">
+                    <h3>mnemosyne</h3>
+                    <p class="integration-org">Persistent Memory</p>
+                    <p>Semantic memory and learning across sessions. Stores successful patterns and recalls relevant contexts.</p>
+                    <span class="integration-status">🚧 Basic integration complete</span>
+                </div>
+
+                <div class="integration">
+                    <h3>RUNE</h3>
+                    <p class="integration-org">Sandboxed Execution</p>
+                    <p>Safe, isolated execution for test validation. Network isolation, filesystem isolation, resource limits.</p>
+                    <span class="integration-status">✅ Complete</span>
+                </div>
+
+                <div class="integration">
+                    <h3>pedantic_raven</h3>
+                    <p class="integration-org">Quality Enforcement</p>
+                    <p>Deep semantic validation and code quality checks beyond syntax and types.</p>
+                    <span class="integration-status">📋 Planned</span>
+                </div>
+            </div>
+        </section>
+
+        <section id="status" class="section">
+            <h2>Implementation Status</h2>
+
+            <div class="diagram-container">
+                <img src="whitepaper/assets/diagrams/06-roadmap.svg" alt="Development Roadmap" class="diagram">
+            </div>
+
+            <div class="phases">
+                <div class="phase phase-complete">
+                    <div class="phase-header">
+                        <h3>Phases 1-3: Core System</h3>
+                        <span class="phase-status">✅ Complete</span>
+                    </div>
+                    <ul>
+                        <li>Core type system and constraint abstractions</li>
+                        <li>TypeScript indexer with symbol extraction</li>
+                        <li>Grammar builder and JSON Schema synthesis</li>
+                        <li>Provider adapters (OpenAI, vLLM, SGLang, llama.cpp)</li>
+                        <li>Type inference, inhabitation solver, typed holes</li>
+                        <li>llguidance and mnemosyne integration</li>
+                    </ul>
+                    <div class="phase-stats">
+                        <span>10,847 lines</span>
+                        <span>43 source files</span>
+                        <span>2,124 type system lines</span>
+                    </div>
+                </div>
+
+                <div class="phase phase-progress">
+                    <div class="phase-header">
+                        <h3>Phase 4: Validation & Repair</h3>
+                        <span class="phase-status">🚧 60% Complete</span>
+                    </div>
+                    <ul>
+                        <li>✅ SyntaxValidator - Language-specific syntax checking</li>
+                        <li>✅ TypeValidator - Type checking via compiler APIs</li>
+                        <li>✅ TestValidator - RUNE sandbox test execution</li>
+                        <li>✅ LintValidator - Style and quality checking</li>
+                        <li>✅ ValidationPipeline - Parallel validation orchestration</li>
+                        <li>✅ RuneExecutor - Safe sandboxed execution</li>
+                        <li>📋 RepairOrchestrator - Repair iteration logic</li>
+                        <li>📋 DiagnosticAnalyzer - Failure interpretation</li>
+                        <li>📋 ConstraintRefinement - Constraint tightening</li>
+                        <li>📋 Full pedantic_raven integration</li>
+                    </ul>
+                    <div class="phase-timeline">Expected: December 2025</div>
+                </div>
+
+                <div class="phase phase-planned">
+                    <div class="phase-header">
+                        <h3>Phase 5: Adaptive Learning</h3>
+                        <span class="phase-status">📋 Planned</span>
+                    </div>
+                    <ul>
+                        <li>Pattern mining from existing codebases</li>
+                        <li>Constraint learning from generation outcomes</li>
+                        <li>Full mnemosyne integration for persistent learning</li>
+                        <li>Project-specific pattern adaptation</li>
+                        <li>Success rate tracking and weight adjustment</li>
+                    </ul>
+                    <div class="phase-timeline">Timeline: Q1 2026</div>
+                </div>
+
+                <div class="phase phase-planned">
+                    <div class="phase-header">
+                        <h3>Phase 6: Production</h3>
+                        <span class="phase-status">📋 Planned</span>
+                    </div>
+                    <ul>
+                        <li>Performance optimization (speculative decoding, parallelization)</li>
+                        <li>Multi-language indexers (Python, Rust, Go, Zig)</li>
+                        <li>IDE integrations (VSCode, IntelliJ plugins)</li>
+                        <li>Comprehensive benchmarking (HumanEval, MBPP, SWE-bench)</li>
+                        <li>Production deployment guides</li>
+                    </ul>
+                    <div class="phase-timeline">Timeline: Q2 2026</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="research" class="section">
+            <h2>Research Foundation</h2>
+            <p>MAZE builds on established research in constrained generation, program synthesis, and type theory:</p>
+
+            <div class="papers">
+                <div class="paper">
+                    <h3>Type-Constrained Code Generation</h3>
+                    <p class="paper-authors">Mündler et al.</p>
+                    <p class="paper-venue">PLDI 2025</p>
+                    <p>Type constraints as prefix automata, bidirectional type inference for LLM guidance</p>
+                    <a href="https://arxiv.org/abs/2504.09246" target="_blank" class="paper-link">arXiv:2504.09246</a>
+                </div>
+
+                <div class="paper">
+                    <h3>Statically Contextualizing LLMs with Typed Holes</h3>
+                    <p class="paper-authors">Blinn et al.</p>
+                    <p class="paper-venue">OOPSLA 2024</p>
+                    <p>Typed holes for partial code completion with static context extraction</p>
+                    <a href="https://arxiv.org/abs/2409.00921" target="_blank" class="paper-link">arXiv:2409.00921</a>
+                </div>
+
+                <div class="paper">
+                    <h3>LLGuidance</h3>
+                    <p class="paper-authors">Microsoft Research</p>
+                    <p class="paper-venue">GitHub</p>
+                    <p>Efficient CFG grammar enforcement during decoding with sub-100μs token mask computation</p>
+                    <a href="https://github.com/guidance-ai/llguidance" target="_blank" class="paper-link">GitHub Repository</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="validation" class="section">
+            <h2>Architecture Validation</h2>
+            <p>All claims in this whitepaper are validated against the codebase at tag <code>v0.1.0-whitepaper</code>.</p>
+
+            <div class="validation-grid">
+                <div class="validation-item">
+                    <h4>Code Statistics</h4>
+                    <table class="stats-table">
+                        <tr><td>Total source files</td><td>43</td></tr>
+                        <tr><td>Total source lines</td><td>10,847</td></tr>
+                        <tr><td>Test files</td><td>29</td></tr>
+                        <tr><td>Type system lines</td><td>2,124</td></tr>
+                    </table>
+                </div>
+
+                <div class="validation-item">
+                    <h4>Component Links</h4>
+                    <ul class="component-links">
+                        <li><a href="https://github.com/rand/maze/tree/v0.1.0-whitepaper/src/maze/core/types.py">Core Types</a></li>
+                        <li><a href="https://github.com/rand/maze/tree/v0.1.0-whitepaper/src/maze/type_system/">Type System</a></li>
+                        <li><a href="https://github.com/rand/maze/tree/v0.1.0-whitepaper/src/maze/synthesis/">Synthesis</a></li>
+                        <li><a href="https://github.com/rand/maze/tree/v0.1.0-whitepaper/src/maze/validation/">Validation</a></li>
+                        <li><a href="https://github.com/rand/maze/tree/v0.1.0-whitepaper/src/maze/integrations/">Integrations</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="note-box">
+                <h4>Note on Performance Claims</h4>
+                <p>The CHANGELOG.md documents performance achievements (50μs p99 masks, 97% compilation success, etc.). These metrics are documented but the benchmarks/ directory is currently empty. This whitepaper focuses on architectural design rather than specific performance numbers pending benchmark suite implementation.</p>
+            </div>
+        </section>
+
+        <section id="getting-started" class="section">
+            <h2>Getting Started</h2>
+
+            <div class="install-box">
+                <h3>Installation</h3>
+                <pre><code># Clone repository
+git clone https://github.com/rand/maze
+cd maze
+
+# Install dependencies
+uv pip install -e ".[dev]"
+
+# Verify installation
+uv run python -c "import maze; print('MAZE installed successfully')"</code></pre>
+            </div>
+
+            <div class="links-grid">
+                <a href="whitepaper/whitepaper.md" class="link-card">
+                    <h4>📄 Full Whitepaper</h4>
+                    <p>Read the complete technical whitepaper in Markdown format</p>
+                </a>
+
+                <a href="https://github.com/rand/maze" class="link-card">
+                    <h4>💻 GitHub Repository</h4>
+                    <p>Explore source code, contribute, and report issues</p>
+                </a>
+
+                <a href="https://github.com/rand/maze/blob/main/CLAUDE.md" class="link-card">
+                    <h4>📚 Development Guide</h4>
+                    <p>Comprehensive development guidelines and protocols</p>
+                </a>
+
+                <a href="https://github.com/rand/maze/tree/v0.1.0-whitepaper" class="link-card">
+                    <h4>🏷️ v0.1.0-whitepaper</h4>
+                    <p>Browse code at tagged whitepaper version</p>
+                </a>
+            </div>
+        </section>
+
+        <section id="contribute" class="section">
+            <h2>Contribute</h2>
+            <p>MAZE is developed as an open-source project. We welcome contributions in:</p>
+
+            <div class="contribute-areas">
+                <div class="contribute-area">
+                    <h4>🔬 Benchmarking</h4>
+                    <p>Validate performance claims, run evaluations on HumanEval, MBPP, SWE-bench</p>
+                </div>
+                <div class="contribute-area">
+                    <h4>🌐 Language Support</h4>
+                    <p>Add indexers for Python, Rust, Go, Zig</p>
+                </div>
+                <div class="contribute-area">
+                    <h4>🧩 Constraint Synthesis</h4>
+                    <p>Improve grammar templates, type inference algorithms</p>
+                </div>
+                <div class="contribute-area">
+                    <h4>✅ Testing</h4>
+                    <p>Expand test coverage, add property-based tests</p>
+                </div>
+                <div class="contribute-area">
+                    <h4>📖 Documentation</h4>
+                    <p>Improve guides, add tutorials, create examples</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>Project</h4>
+                <ul>
+                    <li><a href="https://github.com/rand/maze">GitHub</a></li>
+                    <li><a href="https://github.com/rand/maze/issues">Issues</a></li>
+                    <li><a href="https://github.com/rand/maze/discussions">Discussions</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="whitepaper/whitepaper.md">Full Whitepaper</a></li>
+                    <li><a href="https://github.com/rand/maze/blob/main/CLAUDE.md">Development Guide</a></li>
+                    <li><a href="whitepaper/validation-manifest.md">Validation Manifest</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Related Projects</h4>
+                <ul>
+                    <li><a href="https://github.com/guidance-ai/llguidance">llguidance</a></li>
+                    <li><a href="https://rand.github.io/mnemosyne">mnemosyne</a></li>
+                    <li><a href="https://rand.github.io/RUNE">RUNE</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Research</h4>
+                <ul>
+                    <li><a href="https://arxiv.org/abs/2504.09246">PLDI 2025 Paper</a></li>
+                    <li><a href="https://arxiv.org/abs/2409.00921">OOPSLA 2024 Paper</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>MAZE: Adaptive Constrained Code Generation | Version v0.1.0-whitepaper | November 2025</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
