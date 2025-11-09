@@ -251,6 +251,9 @@ class ConstraintLearningSystem:
 
         if feedback.validation_result.success:
             score += 1.0
+        else:
+            # Penalize failures
+            score -= 0.5
 
         if feedback.repair_result:
             # Fewer repair attempts = better
