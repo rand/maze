@@ -535,7 +535,7 @@ class PatternMiningEngine:
         patterns = []
 
         for node in ast.walk(tree):
-            if isinstance(node, ast.FunctionDef):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 template = self._generalize_function(node)
 
                 patterns.append(SyntacticPattern(
