@@ -1,0 +1,274 @@
+direction: down
+
+title: MAZE Integration Ecosystem {
+  near: top-center
+  shape: text
+  style: {
+    font-size: 28
+    bold: true
+  }
+}
+
+maze_core: {
+  label: "MAZE Core"
+  shape: rectangle
+  style: {
+    fill: "#1E3A8A"
+    stroke: "#1E3A8A"
+    stroke-width: 4
+    font-color: white
+    font-size: 18
+    bold: true
+  }
+
+  components: "• 4-Tier Constraint System\n• Decode Orchestrator\n• Validation Pipeline\n• Repair Loop" {
+    shape: text
+    style.font-size: 13
+  }
+
+  stats: "10,847 lines | 43 files" {
+    shape: text
+    style: {
+      font-size: 11
+      italic: true
+    }
+  }
+}
+
+# External integrations
+llguidance: {
+  label: "llguidance"
+  shape: rectangle
+  style: {
+    fill: "#059669"
+    stroke: "#059669"
+    stroke-width: 3
+    font-color: white
+  }
+
+  source: "Microsoft Research" {
+    shape: text
+    style: {
+      font-size: 12
+      bold: true
+    }
+  }
+
+  role: "CFG grammar enforcement\nToken mask computation" {
+    shape: text
+    style.font-size: 11
+  }
+
+  perf: "~50μs per token (upstream)" {
+    shape: text
+    style: {
+      font-size: 10
+      italic: true
+    }
+  }
+}
+
+mnemosyne_sys: {
+  label: "mnemosyne"
+  shape: rectangle
+  style: {
+    fill: "#D97706"
+    stroke: "#D97706"
+    stroke-width: 3
+    font-color: white
+  }
+
+  role: "Persistent semantic memory\nPattern storage & recall" {
+    shape: text
+    style.font-size: 11
+  }
+
+  features: "• Hybrid search\n• Memory consolidation\n• Cross-session learning" {
+    shape: text
+    style.font-size: 10
+  }
+}
+
+rune_sys: {
+  label: "RUNE"
+  shape: rectangle
+  style: {
+    fill: "#7C3AED"
+    stroke: "#7C3AED"
+    stroke-width: 3
+    font-color: white
+  }
+
+  role: "Sandboxed execution\nSafe test validation" {
+    shape: text
+    style.font-size: 11
+  }
+
+  safety: "• Network isolation\n• Filesystem isolation\n• Resource limits" {
+    shape: text
+    style.font-size: 10
+  }
+}
+
+pedantic_raven_sys: {
+  label: "pedantic_raven"
+  shape: rectangle
+  style: {
+    fill: "#EC4899"
+    stroke: "#EC4899"
+    stroke-width: 3
+    font-color: white
+  }
+
+  role: "Quality enforcement\nDeep semantic validation" {
+    shape: text
+    style.font-size: 11
+  }
+
+  status: "Planned integration 📋" {
+    shape: text
+    style: {
+      font-size: 10
+      italic: true
+    }
+  }
+}
+
+# LLM Providers
+providers: {
+  label: "LLM Providers"
+  shape: rectangle
+  style: {
+    fill: "#475569"
+    stroke: "#475569"
+    stroke-width: 3
+    font-color: white
+  }
+
+  openai: "• OpenAI (JSON Schema)" {
+    shape: text
+    style.font-size: 11
+  }
+
+  vllm: "• vLLM (CFG)" {
+    shape: text
+    style.font-size: 11
+  }
+
+  sglang: "• SGLang (native llguidance)" {
+    shape: text
+    style.font-size: 11
+  }
+
+  llamacpp: "• llama.cpp (grammar)" {
+    shape: text
+    style.font-size: 11
+  }
+}
+
+# Integration flows
+maze_core -> llguidance: {
+  label: "Grammars\n(CFG/Lark)"
+  style: {
+    stroke-width: 3
+    font-size: 11
+  }
+}
+
+llguidance -> providers: {
+  label: "Constraint\nmasks"
+  style: {
+    stroke-width: 3
+    font-size: 11
+  }
+}
+
+providers -> maze_core: {
+  label: "Generated\ncode"
+  style: {
+    stroke-width: 3
+    font-size: 11
+    stroke-dash: 3
+  }
+}
+
+maze_core -> mnemosyne_sys: {
+  label: "Store patterns\nSuccess/failure metrics"
+  style: {
+    stroke-width: 2
+    font-size: 10
+  }
+}
+
+mnemosyne_sys -> maze_core: {
+  label: "Recall context\nSimilar patterns"
+  style: {
+    stroke-width: 2
+    font-size: 10
+    stroke-dash: 3
+  }
+}
+
+maze_core -> rune_sys: {
+  label: "Execute tests\n(sandboxed)"
+  style: {
+    stroke-width: 2
+    font-size: 10
+  }
+}
+
+rune_sys -> maze_core: {
+  label: "Test results\nDiagnostics"
+  style: {
+    stroke-width: 2
+    font-size: 10
+    stroke-dash: 3
+  }
+}
+
+maze_core -> pedantic_raven_sys: {
+  label: "Validate quality\n(planned)"
+  style: {
+    stroke-width: 2
+    font-size: 10
+    stroke-dash: 5
+  }
+}
+
+pedantic_raven_sys -> maze_core: {
+  label: "Quality report\n(planned)"
+  style: {
+    stroke-width: 2
+    font-size: 10
+    stroke-dash: 5
+  }
+}
+
+# Legend
+legend: {
+  near: bottom-right
+  shape: rectangle
+  style: {
+    fill: "#F9FAFB"
+    stroke: "#E5E7EB"
+    stroke-width: 1
+  }
+
+  title: "Legend" {
+    shape: text
+    style: {
+      font-size: 12
+      bold: true
+    }
+  }
+
+  complete: "Solid line: ✅ Complete" {
+    shape: text
+    style.font-size: 10
+  }
+
+  planned: "Dashed line: 📋 Planned" {
+    shape: text
+    style.font-size: 10
+  }
+}

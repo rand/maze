@@ -1,0 +1,32 @@
+direction: down
+
+tier1: {
+  label: Tier 1: Syntactic\nCFG Grammars
+  shape: rectangle
+}
+
+tier2: {
+  label: Tier 2: Type\nInhabitation Search
+  shape: rectangle
+}
+
+tier3: {
+  label: Tier 3: Semantic\nTest-Driven
+  shape: rectangle
+}
+
+tier4: {
+  label: Tier 4: Contextual\nLearned Patterns
+  shape: rectangle
+}
+
+output: {
+  label: Type-Correct Code
+  shape: oval
+  style.fill: "#f0f0f0"
+}
+
+tier1 -> tier2: Narrows
+tier2 -> tier3: Narrows
+tier3 -> tier4: Narrows
+tier4 -> output

@@ -1,0 +1,43 @@
+direction: right
+
+maze: {
+  label: MAZE
+  shape: rectangle
+  style.fill: "#f0f0f0"
+}
+
+llguidance: {
+  label: llguidance\nConstraint Enforcement
+  shape: rectangle
+}
+
+mnemosyne: {
+  label: mnemosyne\nPersistent Memory
+  shape: rectangle
+}
+
+rune: {
+  label: RUNE\nSandboxed Execution
+  shape: rectangle
+}
+
+raven: {
+  label: pedantic_raven\nQuality Enforcement
+  shape: rectangle
+}
+
+maze -> llguidance: Grammars
+llguidance -> maze: Token masks
+
+maze -> mnemosyne: Store patterns
+mnemosyne -> maze: Recall context
+
+maze -> rune: Execute tests
+rune -> maze: Results
+
+maze -> raven: Validate {
+  style.stroke-dash: 3
+}
+raven -> maze: Findings {
+  style.stroke-dash: 3
+}
