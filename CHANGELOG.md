@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Documentation
+- Added comprehensive AGENT_GUIDE.md with decision trees, workflows, templates, and repository management guidelines for agentic systems
+- Updated CLAUDE.md with section 12 referencing AGENT_GUIDE.md and clarifying the relationship between development protocols (CLAUDE.md) and operational workflows (AGENT_GUIDE.md)
+
 ### Phase 2: Syntactic Constraints (In Progress)
 - CFG/Lark grammar builder implementation
 - Multi-language grammar templates

@@ -1669,6 +1669,65 @@ echo "✅ Pre-commit checks passed"
 
 ---
 
+## 12. Agent Operations Guide
+
+For detailed operational workflows, decision trees, templates, and repository management guidelines, see **[AGENT_GUIDE.md](AGENT_GUIDE.md)**.
+
+### What AGENT_GUIDE.md Provides
+
+AGENT_GUIDE.md complements this CLAUDE.md with **operational details**:
+
+**This CLAUDE.md**: High-level protocols, principles, and targets (WHAT and WHY)
+- Work Plan Protocol phases and requirements
+- Performance targets and rationale
+- Integration principles
+- Anti-patterns to avoid
+
+**AGENT_GUIDE.md**: Step-by-step workflows and execution (HOW and WHEN)
+- Decision trees for task classification and routing
+- Detailed checklists for code changes, documentation, releases
+- Templates for commits, PRs, Beads issues, mnemosyne storage
+- Repository tidying workflows (non-destructive)
+- Common scenarios with complete workflows
+- Integration patterns with Beads, mnemosyne, Git
+- Observability and health monitoring
+
+### When to Consult AGENT_GUIDE.md
+
+**Consult AGENT_GUIDE.md when you need**:
+- Task classification: What type of work is this? (§1.1)
+- Documentation triggers: Which docs need updates? (§1.2)
+- Release decisions: Should we release? What version? (§1.3)
+- Repository organization: Where does this file belong? (§1.4)
+- Step-by-step workflows: How do I execute this? (§2)
+- Templates: How should I format this commit/PR/issue? (§3)
+- Tidying: How do I reorganize without breaking things? (§4)
+- Common scenarios: Similar situation examples (§6)
+- Observability: How do I check project health? (§8)
+
+**Consult CLAUDE.md when you need**:
+- Phase requirements: What must be done in each phase?
+- Performance targets: What are the benchmarks?
+- Integration principles: How should I integrate with external systems?
+- Constraint development: How do I design constraints?
+- Language indexers: What are the guidelines for new languages?
+- Anti-patterns: What should I avoid?
+
+### Key Cross-References
+
+| CLAUDE.md Section | AGENT_GUIDE.md Section |
+|-------------------|------------------------|
+| §1 Work Plan Protocol | §2.1 Code Change Workflow |
+| §2 Performance-First | §6.2 Performance Optimization Scenario |
+| §3 Integration Guidelines | §5 Integration Points |
+| §4 Constraint Development | §1.1 Task Classification (constraint tasks) |
+| §5 Language Indexers | §6.1 Adding New Language Indexer |
+| §6 Testing Protocols | §2.1 Code Change Workflow (steps 7-10) |
+| §7 Beads Integration | §5.3 Integration with Beads |
+| §8 Anti-Patterns | §7 Anti-Patterns for Agents |
+
+---
+
 ## Summary
 
 This CLAUDE.md extends the global development guidelines with **maze-specific protocols** for:
