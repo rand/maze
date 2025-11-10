@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MAZE Whitepaper</title>
-    <meta name="description" content="Technical whitepaper for MAZE: architecture, design, and implementation details.">
+    <title>MAZE: Constrained Code Generation & Configuration Engine</title>
+    <meta name="description" content="A principled authorization and configuration system combining Datalog and Cedar policies. Sub-millisecond decisions at 5M+ ops/sec.">
 
     <!-- Favicons -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -25,6 +25,7 @@
     <meta name="twitter:description" content="A principled authorization and configuration system combining Datalog and Cedar policies. Sub-millisecond decisions at 5M+ ops/sec.">
     <meta name="twitter:image" content="https://rand.github.io/maze/og-image.png">
 
+    <!-- Fonts -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.0.0/dist/geist.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -41,7 +42,7 @@
     <nav class="navbar">
         <div class="container">
             <a href="index.html" class="nav-brand">
-                <span class="logo-glyph"></span>
+                <span class="logo-glyph">∇</span>
                 <strong>MAZE</strong> v0.1.0
             </a>
             <div class="nav-links">
@@ -63,8 +64,10 @@
 
     <aside class="sidebar">
         <div class="sidebar-content">
-            <div class="sidebar-tagline">// Constrained Code Generation</div>
-            <div class="sidebar-toc"></div>
+            <div class="sidebar-status">
+                <span class="status-glyph"></span>
+                <span class="sidebar-tagline">// Constrained Code Generation</span>
+            </div>
         </div>
     </aside>
 
@@ -588,17 +591,14 @@ uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </sp
 <strong>Last Updated</strong>: November 2025
 <strong>License</strong>: [To be determined]</p>
 
-<footer class="footer">
-    <p>
-        MAZE is open-source software. For questions or contributions, visit the
-        <a href="https://github.com/rand/maze">GitHub repository</a>.
-    </p>
-</footer>
-
     </main>
 
-    <script src="js/theme.js"></script>
+    <!-- Project-specific sidebar comments (load BEFORE sidebar-base.js) -->
     <script src="js/sidebar.js"></script>
+
+    <!-- Shared Scripts -->
+    <script src="js/theme.js"></script>
+    <script src="js/sidebar-base.js"></script>
     <script src="js/toc.js"></script>
 </body>
 </html>
