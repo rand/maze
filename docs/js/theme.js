@@ -1,96 +1,113 @@
-// Theme toggle functionality - Simple two-state light/dark toggle
+// Theme toggle functionality
 (function() {
-    // Theme key should be project-specific when used
-    // Override THEME_KEY in project-specific wrapper if needed
-    const THEME_KEY = window.THEME_KEY || 'docs-theme';
+    'use strict';
 
-    // Get saved theme, default to light
-    function getSavedTheme() {
-        return localStorage.getItem(THEME_KEY) || 'light';
+    const THEME_KEY = 'maze-theme';
+    const LIGHT = 'light-theme';
+    const DARK = 'dark-theme';
+
+    // Get saved theme or system preference
+    function getInitialTheme() {
+        const saved = localStorage.getItem(THEME_KEY);
+        if (saved === 'light' || saved === 'dark') {
+            return saved === 'light' ? LIGHT : DARK;
+        }
+        // No saved preference, use system
+        return null;
     }
 
-    // Save theme to localStorage
-    function saveTheme(theme) {
-        localStorage.setItem(THEME_KEY, theme);
-    }
-
-    // Update SVG diagrams based on theme
-    function updateDiagrams(theme) {
-        // Update all img tags that reference SVG diagrams
-        const images = document.querySelectorAll('img[src*=".svg"]');
-        images.forEach(img => {
-            const currentSrc = img.getAttribute('src');
-            if (!currentSrc) return;
-
-            // Extract base path by removing any existing -light or -dark suffix
-            let basePath = currentSrc.replace(/-light\.svg$/, '.svg').replace(/-dark\.svg$/, '.svg');
-
-            // Construct the new themed path
-            const themedPath = basePath.replace(/\.svg$/, theme === 'dark' ? '-dark.svg' : '-light.svg');
-
-            // Only update if the new path is different
-            if (currentSrc !== themedPath) {
-                img.setAttribute('src', themedPath);
-            }
-        });
-
-        // Also handle picture elements if they exist
-        const pictures = document.querySelectorAll('picture');
-        pictures.forEach(picture => {
-            const sources = picture.querySelectorAll('source');
-            const img = picture.querySelector('img');
-
-            // Update source elements to match current theme
-            sources.forEach(source => {
-                const media = source.getAttribute('media');
-                if (media && media.includes('prefers-color-scheme')) {
-                    // Disable sources that don't match current theme
-                    const isDarkSource = media.includes('dark');
-                    source.disabled = (theme === 'dark') ? !isDarkSource : isDarkSource;
-                }
-            });
-
-            // Force picture element to re-evaluate sources
-            if (img && img.src) {
-                const currentSrc = img.src;
-                img.src = '';
-                img.src = currentSrc;
-            }
-        });
-    }
-
-    // Apply theme to body
+    // Apply theme
     function applyTheme(theme) {
-        document.body.classList.remove('light-theme', 'dark-theme');
-        document.body.classList.add(theme + '-theme');
-        updateDiagrams(theme);
-    }
-
-    // Toggle between light and dark
-    function toggleTheme() {
-        const currentTheme = getSavedTheme();
-        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-
-        saveTheme(newTheme);
-        applyTheme(newTheme);
-    }
-
-    // Initialize theme on page load
-    function initTheme() {
-        const savedTheme = getSavedTheme();
-        applyTheme(savedTheme);
-
-        // Add event listener to theme toggle button
-        const toggleButton = document.querySelector('.theme-toggle');
-        if (toggleButton) {
-            toggleButton.addEventListener('click', toggleTheme);
+        document.body.classList.remove(LIGHT, DARK);
+        if (theme) {
+            document.body.classList.add(theme);
         }
     }
 
-    // Run on DOMContentLoaded
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initTheme);
-    } else {
-        initTheme();
+    // Toggle theme
+    function toggleTheme() {
+        const currentTheme = document.body.classList.contains(DARK) ? DARK :
+                           document.body.classList.contains(LIGHT) ? LIGHT : null;
+
+        let newTheme;
+        if (currentTheme === DARK) {
+            newTheme = LIGHT;
+            localStorage.setItem(THEME_KEY, 'light');
+        } else {
+            newTheme = DARK;
+            localStorage.setItem(THEME_KEY, 'dark');
+        }
+
+        applyTheme(newTheme);
     }
+
+    // Initialize
+    function init() {
+        const initialTheme = getInitialTheme();
+        if (initialTheme) {
+            applyTheme(initialTheme);
+        }
+
+        // Add toggle listener
+        const toggle = document.querySelector('.theme-toggle');
+        if (toggle) {
+            toggle.addEventListener('click', toggleTheme);
+        }
+
+        // Listen for system theme changes
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        mediaQuery.addEventListener('change', (e) => {
+            // Only update if user hasn't set a manual preference
+            if (!localStorage.getItem(THEME_KEY)) {
+                applyTheme(null); // Remove manual classes, let CSS handle it
+            }
+        });
+    }
+
+    // Run on DOM ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+
+// Diagram theme switching
+(function() {
+    'use strict';
+
+    function updateDiagramVisibility() {
+        const isDark = document.body.classList.contains('dark-theme') ||
+                      (!document.body.classList.contains('light-theme') &&
+                       window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+        document.querySelectorAll('.diagram-light').forEach(img => {
+            img.style.display = isDark ? 'none' : 'block';
+        });
+
+        document.querySelectorAll('.diagram-dark').forEach(img => {
+            img.style.display = isDark ? 'block' : 'none';
+        });
+    }
+
+    // Update on page load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', updateDiagramVisibility);
+    } else {
+        updateDiagramVisibility();
+    }
+
+    // Update when theme toggle is clicked
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.theme-toggle');
+        if (toggle) {
+            toggle.addEventListener('click', function() {
+                setTimeout(updateDiagramVisibility, 0);
+            });
+        }
+    });
+
+    // Update when system theme changes
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    mediaQuery.addEventListener('change', updateDiagramVisibility);
 })();
