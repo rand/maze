@@ -1,0 +1,265 @@
+{
+  "name": "Phase 6 Performance Validation",
+  "timestamp": "2025-11-11 11:53:09",
+  "results": [
+    {
+      "name": "Small Project Indexing",
+      "category": "indexing",
+      "duration_ms": 3.4397088456898928,
+      "memory_mb": 0.171875,
+      "metrics": {
+        "files": 10,
+        "symbols": 110,
+        "errors": 0
+      },
+      "success": true,
+      "error": null
+    },
+    {
+      "name": "Medium Project Indexing",
+      "category": "indexing",
+      "duration_ms": 19.446290796622634,
+      "memory_mb": 0.734375,
+      "metrics": {
+        "files": 100,
+        "symbols": 1100,
+        "errors": 0
+      },
+      "success": true,
+      "error": null
+    },
+    {
+      "name": "Large Project Indexing",
+      "category": "indexing",
+      "duration_ms": 188.3727079257369,
+      "memory_mb": 6.953125,
+      "metrics": {
+        "files": 1000,
+        "symbols": 11000,
+        "errors": 0
+      },
+      "success": true,
+      "error": null
+    },
+    {
+      "name": "Generation: Create a function that adds two numbers...",
+      "category": "generation",
+      "duration_ms": 2288.103291609635,
+      "memory_mb": 0.052083333333333336,
+      "metrics": {
+        "iterations": 3,
+        "min_duration": 2021.2913749273866,
+        "max_duration": 2792.4106249120086
+      },
+      "success": true,
+      "error": null
+    },
+    {
+      "name": "Generation: Create a TypeScript class with getter an...",
+      "category": "generation",
+      "duration_ms": 2200.257944641635,
+      "memory_mb": 0.06770833333333333,
+      "metrics": {
+        "iterations": 3,
+        "min_duration": 2035.4591668583453,
+        "max_duration": 2442.7326670847833
+      },
+      "success": true,
+      "error": null
+    },
+    {
+      "name": "Generation: Create an async function with error hand...",
+      "category": "generation",
+      "duration_ms": 2240.9538195158043,
+      "memory_mb": -2.5729166666666665,
+      "metrics": {
+        "iterations": 3,
+        "min_duration": 2032.7997498679906,
+        "max_duration": 2487.957833800465
+      },
+      "success": true,
+      "error": null
+    },
+    {
+      "name": "Generation: Create an interface with generic types...",
+      "category": "generation",
+      "duration_ms": 2214.349514339119,
+      "memory_mb": -0.6041666666666666,
+      "metrics": {
+        "iterations": 3,
+        "min_duration": 2046.0029591340572,
+        "max_duration": 2444.381291978061
+      },
+      "success": true,
+      "error": null
+    },
+    {
+      "name": "Generation: Create a function with complex return ty...",
+      "category": "generation",
+      "duration_ms": 2258.4579722800604,
+      "memory_mb": 0.041666666666666664,
+      "metrics": {
+        "iterations": 3,
+        "min_duration": 2078.264750074595,
+        "max_duration": 2474.0172089077532
+      },
+      "success": true,
+      "error": null
+    },
+    {
+      "name": "Validation: Test 1",
+      "category": "validation",
+      "duration_ms": 468.17138723563403,
+      "memory_mb": 0,
+      "metrics": {
+        "iterations": 10,
+        "throughput": 2.1359699188466057,
+        "p95": 831.3479591161013,
+        "p99": 831.3479591161013
+      },
+      "success": true,
+      "error": null
+    },
+    {
+      "name": "Validation: Test 2",
+      "category": "validation",
+      "duration_ms": 476.07957089785486,
+      "memory_mb": 0,
+      "metrics": {
+        "iterations": 10,
+        "throughput": 2.1004892062771474,
+        "p95": 854.1093340609223,
+        "p99": 854.1093340609223
+      },
+      "success": true,
+      "error": null
+    },
+    {
+      "name": "Validation: Test 3",
+      "category": "validation",
+      "duration_ms": 498.49068336188793,
+      "memory_mb": 0,
+      "metrics": {
+        "iterations": 10,
+        "throughput": 2.0060555460251854,
+        "p95": 866.6098332032561,
+        "p99": 866.6098332032561
+      },
+      "success": true,
+      "error": null
+    },
+    {
+      "name": "Concurrent 10x",
+      "category": "stress",
+      "duration_ms": 25445.279040839523,
+      "memory_mb": 0.296875,
+      "metrics": {
+        "prompts": 10,
+        "completed": 10,
+        "avg_per_prompt": 2544.5279040839523
+      },
+      "success": true,
+      "error": null
+    },
+    {
+      "name": "Memory Profile 30 ops",
+      "category": "stress",
+      "duration_ms": 0,
+      "memory_mb": 31.15625,
+      "metrics": {
+        "peak_memory": 31.15625,
+        "avg_memory": 30.956770833333334,
+        "operations": 30
+      },
+      "success": true,
+      "error": null
+    }
+  ],
+  "statistics": {
+    "overall": {
+      "count": 13,
+      "duration": {
+        "mean": 2946.2616870991696,
+        "median": 498.49068336188793,
+        "min": 0,
+        "max": 25445.279040839523,
+        "stdev": 6834.0378359984925
+      },
+      "memory": {
+        "mean": 2.7920673076923075,
+        "median": 0.052083333333333336,
+        "min": -2.5729166666666665,
+        "max": 31.15625
+      },
+      "success_rate": 1.0
+    },
+    "indexing": {
+      "count": 3,
+      "duration": {
+        "mean": 70.41956918934982,
+        "median": 19.446290796622634,
+        "min": 3.4397088456898928,
+        "max": 188.3727079257369,
+        "stdev": 102.46345626496316
+      },
+      "memory": {
+        "mean": 2.6197916666666665,
+        "median": 0.734375,
+        "min": 0.171875,
+        "max": 6.953125
+      },
+      "success_rate": 1.0
+    },
+    "generation": {
+      "count": 5,
+      "duration": {
+        "mean": 2240.4245084772506,
+        "median": 2240.9538195158043,
+        "min": 2200.257944641635,
+        "max": 2288.103291609635,
+        "stdev": 34.97145449345768
+      },
+      "memory": {
+        "mean": -0.6031249999999999,
+        "median": 0.041666666666666664,
+        "min": -2.5729166666666665,
+        "max": 0.06770833333333333
+      },
+      "success_rate": 1.0
+    },
+    "validation": {
+      "count": 3,
+      "duration": {
+        "mean": 480.9138804984589,
+        "median": 476.07957089785486,
+        "min": 468.17138723563403,
+        "max": 498.49068336188793,
+        "stdev": 15.727137100684864
+      },
+      "memory": {
+        "mean": 0,
+        "median": 0,
+        "min": 0,
+        "max": 0
+      },
+      "success_rate": 1.0
+    },
+    "stress": {
+      "count": 2,
+      "duration": {
+        "mean": 12722.639520419762,
+        "median": 12722.639520419762,
+        "min": 0,
+        "max": 25445.279040839523,
+        "stdev": 17992.529358961558
+      },
+      "memory": {
+        "mean": 15.7265625,
+        "median": 15.7265625,
+        "min": 0.296875,
+        "max": 31.15625
+      },
+      "success_rate": 1.0
+    }
+  }
+}
