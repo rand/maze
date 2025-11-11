@@ -301,8 +301,47 @@ class LLGuidanceAdapter:
             %ignore /\\s+/
         '''
 
-        # TODO: Add schema-specific constraints
-        # For now, return base JSON grammar
+        # Add schema-specific constraints based on JSON Schema
+        if schema:
+            # Extract constraints from schema
+            constraints = []
+            
+            # Object type with specific properties
+            if schema.get("type") == "object" and "properties" in schema:
+                props = schema["properties"]
+                required = schema.get("required", [])
+                
+                # Build object grammar with specific properties
+                prop_rules = []
+                for prop_name, prop_schema in props.items():
+                    is_required = prop_name in required
+                    prop_type = prop_schema.get("type", "any")
+                    
+                    # Add property grammar based on type
+                    if prop_type == "string":
+                        prop_rules.append(f'    "{prop_name}": string')
+                    elif prop_type == "number":
+                        prop_rules.append(f'    "{prop_name}": number')
+                    elif prop_type == "boolean":
+                        prop_rules.append(f'    "{prop_name}": boolean')
+                    elif prop_type == "array":
+                        prop_rules.append(f'    "{prop_name}": array')
+                
+                if prop_rules:
+                    # Add specific object grammar
+                    object_grammar = "{\n" + ",\n".join(prop_rules) + "\n}"
+                    constraints.append(f"?start: {object_grammar}")
+            
+            # Array type with item schema
+            elif schema.get("type") == "array" and "items" in schema:
+                item_type = schema["items"].get("type", "any")
+                constraints.append(f"?start: array")
+            
+            # If we have specific constraints, use them
+            if constraints:
+                return base_grammar + "\n\n" + "\n".join(constraints)
+        
+        # Otherwise, return base JSON grammar
         return base_grammar
 
     def grammar_from_regex(self, pattern: str, name: str = "PATTERN") -> str:
