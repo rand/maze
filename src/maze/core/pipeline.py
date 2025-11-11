@@ -40,6 +40,11 @@ from maze.synthesis.grammars.python import (
     PYTHON_FUNCTION,
     PYTHON_MODULE,
 )
+from maze.synthesis.grammars.rust import (
+    RUST_FUNCTION,
+    RUST_IMPL,
+    RUST_STRUCT,
+)
 from maze.synthesis.grammars.typescript import (
     TYPESCRIPT_FILE,
     TYPESCRIPT_FUNCTION,
@@ -421,6 +426,28 @@ class Pipeline:
             else:
                 # Use module-level grammar for general code
                 template = PYTHON_MODULE
+            
+            # Build grammar
+            builder = GrammarBuilder(language=language)
+            builder.add_template(template)
+            grammar = builder.load_template(template.name).build()
+            
+            # Cache it
+            self._grammar_cache[cache_key] = grammar
+            
+            return grammar
+            
+        elif language == "rust":
+            # Determine which template based on prompt keywords
+            if "struct" in prompt.lower():
+                template = RUST_STRUCT
+            elif "impl" in prompt.lower() or "trait" in prompt.lower():
+                template = RUST_IMPL
+            elif "function" in prompt.lower() or "fn" in prompt.lower():
+                template = RUST_FUNCTION
+            else:
+                # Default to function for Rust
+                template = RUST_FUNCTION
             
             # Build grammar
             builder = GrammarBuilder(language=language)
