@@ -32,6 +32,16 @@ Rust-specific examples:
 4. **[04-error-handling.py](rust/04-error-handling.py)** - Custom error type with thiserror
 5. **[05-test-generation.py](rust/05-test-generation.py)** - Test generation with #[test]
 
+## Basic Examples - Go
+
+Go-specific examples:
+
+1. **[01-function-error.py](go/01-function-error.py)** - Function with error return (Go idiom)
+2. **[02-struct-methods.py](go/02-struct-methods.py)** - Struct with pointer and value receivers
+3. **[03-interface.py](go/03-interface.py)** - Interface definition and implementation
+4. **[04-goroutines.py](go/04-goroutines.py)** - Goroutines and channels for concurrency
+5. **[05-test-generation.py](go/05-test-generation.py)** - Table-driven tests
+
 ## Advanced Examples
 
 Complex real-world scenarios:

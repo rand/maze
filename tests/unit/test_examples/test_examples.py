@@ -299,6 +299,76 @@ class TestRustExamples:
         assert result.returncode == 0
 
 
+class TestGoExamples:
+    """Tests for Go examples."""
+
+    def test_01_function_error(self):
+        """Test Go function with error example runs."""
+        example = EXAMPLES_DIR / "go" / "01-function-error.py"
+        assert example.exists()
+
+        result = subprocess.run(
+            [sys.executable, str(example)],
+            capture_output=True,
+            timeout=30,
+        )
+
+        assert result.returncode == 0
+        assert b"Example complete" in result.stdout
+
+    def test_02_struct_methods(self):
+        """Test struct with methods example runs."""
+        example = EXAMPLES_DIR / "go" / "02-struct-methods.py"
+        assert example.exists()
+
+        result = subprocess.run(
+            [sys.executable, str(example)],
+            capture_output=True,
+            timeout=30,
+        )
+
+        assert result.returncode == 0
+
+    def test_03_interface(self):
+        """Test interface example runs."""
+        example = EXAMPLES_DIR / "go" / "03-interface.py"
+        assert example.exists()
+
+        result = subprocess.run(
+            [sys.executable, str(example)],
+            capture_output=True,
+            timeout=30,
+        )
+
+        assert result.returncode == 0
+
+    def test_04_goroutines(self):
+        """Test goroutines example runs."""
+        example = EXAMPLES_DIR / "go" / "04-goroutines.py"
+        assert example.exists()
+
+        result = subprocess.run(
+            [sys.executable, str(example)],
+            capture_output=True,
+            timeout=30,
+        )
+
+        assert result.returncode == 0
+
+    def test_05_test_generation(self):
+        """Test test generation example runs."""
+        example = EXAMPLES_DIR / "go" / "05-test-generation.py"
+        assert example.exists()
+
+        result = subprocess.run(
+            [sys.executable, str(example)],
+            capture_output=True,
+            timeout=30,
+        )
+
+        assert result.returncode == 0
+
+
 class TestExampleStructure:
     """Tests for example structure and documentation."""
 
@@ -354,6 +424,20 @@ class TestExampleStructure:
 
         for filename in expected:
             path = EXAMPLES_DIR / "rust" / filename
+            assert path.exists(), f"Missing example: {filename}"
+
+    def test_all_go_examples_exist(self):
+        """Test all Go examples exist."""
+        expected = [
+            "01-function-error.py",
+            "02-struct-methods.py",
+            "03-interface.py",
+            "04-goroutines.py",
+            "05-test-generation.py",
+        ]
+
+        for filename in expected:
+            path = EXAMPLES_DIR / "go" / filename
             assert path.exists(), f"Missing example: {filename}"
 
     def test_all_integration_examples_exist(self):
