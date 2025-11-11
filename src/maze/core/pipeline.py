@@ -418,14 +418,25 @@ class Pipeline:
             Generated code
 
         Raises:
-            Exception: If provider fails
+            Exception: If provider fails after retries
         """
         # Get or create provider
         if self.provider is None:
+            import os
+            
             try:
+                # Get API key from environment
+                api_key = None
+                if self.config.generation.provider == "openai":
+                    api_key = os.getenv("OPENAI_API_KEY")
+                    if not api_key:
+                        self.logger.log_warning("api_key_missing", provider="openai")
+                        return f"// OpenAI API key not found in OPENAI_API_KEY\n// Set: export OPENAI_API_KEY=sk-..."
+                
                 self.provider = create_provider_adapter(
                     provider=self.config.generation.provider,
                     model=self.config.generation.model,
+                    api_key=api_key,
                 )
             except ValueError as e:
                 # Provider not available, return placeholder
@@ -440,15 +451,51 @@ class Pipeline:
             temperature=self.config.generation.temperature,
         )
         
-        try:
-            # Generate with provider
-            response = self.provider.generate(request)
-            return response.text
-            
-        except Exception as e:
-            # Log error and return placeholder
-            self.logger.log_error("generation_failed", error=str(e), provider=self.config.generation.provider)
-            return f"// Generation failed: {str(e)}\n// Prompt was: {prompt}"
+        # Retry logic
+        max_retries = self.config.generation.retry_attempts
+        last_error = None
+        
+        for attempt in range(max_retries):
+            try:
+                # Generate with provider
+                start = time.perf_counter()
+                response = self.provider.generate(request)
+                duration_ms = (time.perf_counter() - start) * 1000
+                
+                # Record metrics
+                self.metrics.record_latency("provider_call", duration_ms)
+                self.metrics.increment_counter("successful_generations")
+                
+                return response.text
+                
+            except Exception as e:
+                last_error = e
+                self.logger.log_warning(
+                    "generation_attempt_failed",
+                    attempt=attempt + 1,
+                    max_attempts=max_retries,
+                    error=str(e),
+                )
+                
+                # Don't retry on certain errors
+                if "API key" in str(e) or "authentication" in str(e).lower():
+                    break
+                
+                # Wait before retry (exponential backoff)
+                if attempt < max_retries - 1:
+                    wait_time = 2 ** attempt  # 1s, 2s, 4s
+                    time.sleep(wait_time)
+        
+        # All retries failed
+        self.logger.log_error(
+            "generation_failed",
+            error=str(last_error),
+            provider=self.config.generation.provider,
+            attempts=max_retries,
+        )
+        self.metrics.record_error("generation_failure")
+        
+        return f"// Generation failed after {max_retries} attempts: {str(last_error)}\n// Prompt was: {prompt}"
 
     def run(self, prompt: str, config: Optional[PipelineConfig] = None) -> PipelineResult:
         """Run complete generation pipeline.
