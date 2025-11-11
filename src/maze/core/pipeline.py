@@ -19,6 +19,7 @@ from typing import Any, Dict, List, Optional
 from maze.config import Config
 from maze.core.types import TypeContext
 from maze.indexer.base import BaseIndexer, IndexingResult
+from maze.indexer.languages.go import GoIndexer
 from maze.indexer.languages.python import PythonIndexer
 from maze.indexer.languages.rust import RustIndexer
 from maze.indexer.languages.typescript import TypeScriptIndexer
@@ -190,6 +191,8 @@ class Pipeline:
             self.indexer = PythonIndexer(project_path=path)
         elif language == "rust":
             self.indexer = RustIndexer(project_path=path)
+        elif language == "go":
+            self.indexer = GoIndexer(project_path=path)
         else:
             raise ValueError(f"Language '{language}' not yet supported for indexing")
 
