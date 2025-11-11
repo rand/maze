@@ -400,10 +400,10 @@ class LlamaCppProviderAdapter(ProviderAdapter):
         if request.grammar:
             payload["grammar"] = request.grammar
 
-        # For JSON Schema, would need to convert to GBNF
+        # For JSON Schema, convert to GBNF grammar
         if request.schema:
-            # TODO: Convert JSON Schema to GBNF grammar
-            logger.warning("JSON Schema support for llama.cpp requires GBNF conversion (not yet implemented)")
+            gbnf_grammar = self._schema_to_gbnf(request.schema)
+            payload["grammar"] = gbnf_grammar
 
         # Make API call
         response = requests.post(
@@ -422,6 +422,44 @@ class LlamaCppProviderAdapter(ProviderAdapter):
                 "truncated": data.get("truncated", False)
             }
         )
+
+    def _schema_to_gbnf(self, schema: Dict[str, Any]) -> str:
+        """Convert JSON Schema to GBNF grammar.
+
+        Args:
+            schema: JSON Schema dictionary
+
+        Returns:
+            GBNF grammar string
+        """
+        # Basic GBNF grammar for JSON Schema types
+        if schema.get("type") == "object" and "properties" in schema:
+            # Object with specific properties
+            props = schema["properties"]
+            
+            rules = ['root ::= "{"']
+            prop_list = []
+            
+            for i, (prop_name, prop_schema) in enumerate(props.items()):
+                sep = ' ","' if i > 0 else ""
+                prop_type = prop_schema.get("type", "string")
+                
+                if prop_type == "string":
+                    prop_list.append(f'{sep} "\\"" {prop_name} "\\"" ":" "\\"" [^"]* "\\""')
+                elif prop_type == "number":
+                    prop_list.append(f'{sep} "\\"" {prop_name} "\\"" ":" [0-9]+ ("." [0-9]+)?')
+                elif prop_type == "boolean":
+                    prop_list.append(f'{sep} "\\"" {prop_name} "\\"" ":" ("true" | "false")')
+            
+            rules.append(" ".join(prop_list) + ' "}"')
+            return "\n".join(rules)
+        
+        # Array type
+        elif schema.get("type") == "array":
+            return 'root ::= "[" json_value ("," json_value)* "]"'
+        
+        # Fallback: generic JSON
+        return 'root ::= json_value'
 
 
 def create_provider_adapter(
