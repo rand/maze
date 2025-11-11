@@ -25,6 +25,12 @@ from maze.logging import (
     MetricsCollector,
     StructuredLogger,
 )
+from maze.orchestrator.providers import (
+    GenerationRequest,
+    GenerationResponse,
+    ProviderAdapter,
+    create_provider_adapter,
+)
 from maze.repair.orchestrator import RepairContext, RepairOrchestrator
 from maze.synthesis.grammar_builder import GrammarBuilder
 from maze.synthesis.grammars.typescript import (
@@ -138,6 +144,7 @@ class Pipeline:
         self.grammar_builder = GrammarBuilder()
         self.validator = ValidationPipeline()
         self.repair_orchestrator: Optional[RepairOrchestrator] = None
+        self.provider: Optional[ProviderAdapter] = None
 
         # Cached context from indexing
         self._indexed_context: Optional[IndexingResult] = None
@@ -145,6 +152,7 @@ class Pipeline:
         
         # Grammar cache
         self._grammar_cache: Dict[str, str] = {}
+        self._last_grammar: str = ""  # Store for repair
 
     def index_project(self, project_path: Optional[Path] = None) -> IndexingResult:
         """Index project to extract context.
@@ -225,8 +233,9 @@ class Pipeline:
         try:
             # Step 1: Constraint synthesis (build grammar)
             grammar = self._synthesize_constraints(prompt, type_ctx)
+            self._last_grammar = grammar  # Store for repair
 
-            # Step 2: Code generation (placeholder - needs provider integration)
+            # Step 2: Code generation
             gen_start = time.perf_counter()
             code = self._generate_with_constraints(prompt, grammar, type_ctx)
             gen_duration_ms = (time.perf_counter() - gen_start) * 1000
@@ -336,11 +345,10 @@ class Pipeline:
         )
 
         # RepairOrchestrator.repair signature: (code, prompt, grammar, language, context)
-        # For now, use empty grammar (full implementation requires grammar from generation)
         result = self.repair_orchestrator.repair(
             code=code,
             prompt=prompt,
-            grammar="",  # TODO: Pass actual grammar from generation step
+            grammar=self._last_grammar,  # Use grammar from generation
             language=self.config.project.language,
             context=repair_ctx
         )
@@ -401,8 +409,6 @@ class Pipeline:
     ) -> str:
         """Generate code with constraints.
 
-        This is a placeholder - actual implementation requires provider integration.
-
         Args:
             prompt: Generation prompt
             grammar: Grammar constraints
@@ -410,10 +416,39 @@ class Pipeline:
 
         Returns:
             Generated code
+
+        Raises:
+            Exception: If provider fails
         """
-        # TODO: Integrate with provider adapters (OpenAI, vLLM, etc.)
-        # For now, return placeholder
-        return f"// Generated code for: {prompt}\n// TODO: Implement provider integration"
+        # Get or create provider
+        if self.provider is None:
+            try:
+                self.provider = create_provider_adapter(
+                    provider=self.config.generation.provider,
+                    model=self.config.generation.model,
+                )
+            except ValueError as e:
+                # Provider not available, return placeholder
+                self.logger.log_warning("provider_unavailable", error=str(e))
+                return f"// Generated code for: {prompt}\n// Provider '{self.config.generation.provider}' not available"
+        
+        # Create generation request
+        request = GenerationRequest(
+            prompt=prompt,
+            grammar=grammar if grammar else None,
+            max_tokens=self.config.generation.max_tokens,
+            temperature=self.config.generation.temperature,
+        )
+        
+        try:
+            # Generate with provider
+            response = self.provider.generate(request)
+            return response.text
+            
+        except Exception as e:
+            # Log error and return placeholder
+            self.logger.log_error("generation_failed", error=str(e), provider=self.config.generation.provider)
+            return f"// Generation failed: {str(e)}\n// Prompt was: {prompt}"
 
     def run(self, prompt: str, config: Optional[PipelineConfig] = None) -> PipelineResult:
         """Run complete generation pipeline.
