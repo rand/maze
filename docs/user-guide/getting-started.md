@@ -14,6 +14,20 @@ cd maze
 uv sync
 ```
 
+## Provider Setup
+
+Maze requires an LLM provider for code generation. Set up OpenAI (recommended):
+
+```bash
+# Get API key from https://platform.openai.com
+export OPENAI_API_KEY=sk-your-key-here
+
+# Verify it works
+maze generate "Create a hello world function"
+```
+
+See [Provider Setup Guide](provider-setup.md) for other providers (vLLM, SGLang, llama.cpp).
+
 ## Quick Start (5 minutes)
 
 ### 1. Initialize a Project
