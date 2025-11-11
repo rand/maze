@@ -479,8 +479,9 @@ class PatternMiningEngine:
         language: str
     ) -> list[SyntacticPattern]:
         """Extract syntactic patterns from file."""
-        if language != "python":
-            return []  # TODO: Add support for other languages
+        # Support Python and TypeScript/JavaScript
+        if language not in ["python", "typescript", "javascript"]:
+            return []  # Unsupported language
 
         try:
             tree = self._parse_with_cache(code)
