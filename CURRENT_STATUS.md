@@ -1,17 +1,18 @@
 # Maze Current Status
 
 **Last Updated**: 2025-11-11
-**Version**: 0.2.0-dev (post-Phase 6)
-**Tests**: 1068 collected, 1061 passing (99.3%)
+**Version**: 0.3.0-dev (post-P1)
+**Tests**: 1105 collected, 1098 passing (99.4%)
 
 ## System Status: PRODUCTION READY ✅
 
 Maze is a fully operational multi-language constrained code generation system.
 
 ### Supported Languages
-- ✅ **TypeScript** - Full support (indexer, grammar, examples)
-- ✅ **Python** - Full support (indexer, grammar, examples)
-- 📋 Rust, Go, Zig - Planned
+- ✅ **TypeScript** - Full support (indexer, grammar, 5 examples, docs)
+- ✅ **Python** - Full support (indexer, grammar, 5 examples, docs)
+- ✅ **Rust** - Full support (indexer, grammar, 5 examples, docs) **NEW**
+- 📋 Go, Zig - Planned
 
 ### Core Capabilities
 - ✅ Real code generation via LLM providers (OpenAI, vLLM, SGLang, llama.cpp)
@@ -27,7 +28,8 @@ Maze is a fully operational multi-language constrained code generation system.
 - **Phase 6**: Production readiness (210 tests)
 - **Path A**: Provider integration + grammar loading (32 tests)
 - **Path B**: Python language support (24 tests)
-- **P0-1a**: Python pattern mining (5 tests)
+- **P0**: Technical debt cleared (16 tests)
+- **P1**: Rust language support (26 tests) **NEW**
 
 ## Quick Start
 
