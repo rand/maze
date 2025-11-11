@@ -22,6 +22,16 @@ Python-specific examples:
 4. **[04-fastapi-endpoint.py](python/04-fastapi-endpoint.py)** - FastAPI endpoint with Pydantic
 5. **[05-test-generation.py](python/05-test-generation.py)** - Pytest test generation
 
+## Basic Examples - Rust
+
+Rust-specific examples:
+
+1. **[01-function-result.py](rust/01-function-result.py)** - Function with Result type and error handling
+2. **[02-struct-trait.py](rust/02-struct-trait.py)** - Struct with Display trait implementation
+3. **[03-async-tokio.py](rust/03-async-tokio.py)** - Async function with tokio runtime
+4. **[04-error-handling.py](rust/04-error-handling.py)** - Custom error type with thiserror
+5. **[05-test-generation.py](rust/05-test-generation.py)** - Test generation with #[test]
+
 ## Advanced Examples
 
 Complex real-world scenarios:

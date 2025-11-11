@@ -229,6 +229,76 @@ class TestPythonExamples:
         assert result.returncode == 0
 
 
+class TestRustExamples:
+    """Tests for Rust examples."""
+
+    def test_01_function_result(self):
+        """Test Rust function with Result example runs."""
+        example = EXAMPLES_DIR / "rust" / "01-function-result.py"
+        assert example.exists()
+
+        result = subprocess.run(
+            [sys.executable, str(example)],
+            capture_output=True,
+            timeout=30,
+        )
+
+        assert result.returncode == 0
+        assert b"Example complete" in result.stdout
+
+    def test_02_struct_trait(self):
+        """Test struct with trait example runs."""
+        example = EXAMPLES_DIR / "rust" / "02-struct-trait.py"
+        assert example.exists()
+
+        result = subprocess.run(
+            [sys.executable, str(example)],
+            capture_output=True,
+            timeout=30,
+        )
+
+        assert result.returncode == 0
+
+    def test_03_async_tokio(self):
+        """Test async tokio example runs."""
+        example = EXAMPLES_DIR / "rust" / "03-async-tokio.py"
+        assert example.exists()
+
+        result = subprocess.run(
+            [sys.executable, str(example)],
+            capture_output=True,
+            timeout=30,
+        )
+
+        assert result.returncode == 0
+
+    def test_04_error_handling(self):
+        """Test error handling example runs."""
+        example = EXAMPLES_DIR / "rust" / "04-error-handling.py"
+        assert example.exists()
+
+        result = subprocess.run(
+            [sys.executable, str(example)],
+            capture_output=True,
+            timeout=30,
+        )
+
+        assert result.returncode == 0
+
+    def test_05_test_generation(self):
+        """Test test generation example runs."""
+        example = EXAMPLES_DIR / "rust" / "05-test-generation.py"
+        assert example.exists()
+
+        result = subprocess.run(
+            [sys.executable, str(example)],
+            capture_output=True,
+            timeout=30,
+        )
+
+        assert result.returncode == 0
+
+
 class TestExampleStructure:
     """Tests for example structure and documentation."""
 
@@ -270,6 +340,20 @@ class TestExampleStructure:
 
         for filename in expected:
             path = EXAMPLES_DIR / "advanced" / filename
+            assert path.exists(), f"Missing example: {filename}"
+
+    def test_all_rust_examples_exist(self):
+        """Test all Rust examples exist."""
+        expected = [
+            "01-function-result.py",
+            "02-struct-trait.py",
+            "03-async-tokio.py",
+            "04-error-handling.py",
+            "05-test-generation.py",
+        ]
+
+        for filename in expected:
+            path = EXAMPLES_DIR / "rust" / filename
             assert path.exists(), f"Missing example: {filename}"
 
     def test_all_integration_examples_exist(self):
