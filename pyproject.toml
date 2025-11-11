@@ -64,7 +64,7 @@ llamacpp = [
 ]
 
 [project.scripts]
-maze = "maze.api.cli:app"
+maze = "maze.cli.main:main"
 
 [build-system]
 requires = ["uv_build>=0.9.8,<0.10.0"]
