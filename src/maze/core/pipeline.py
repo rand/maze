@@ -34,6 +34,11 @@ from maze.orchestrator.providers import (
 )
 from maze.repair.orchestrator import RepairContext, RepairOrchestrator
 from maze.synthesis.grammar_builder import GrammarBuilder
+from maze.synthesis.grammars.python import (
+    PYTHON_CLASS,
+    PYTHON_FUNCTION,
+    PYTHON_MODULE,
+)
 from maze.synthesis.grammars.typescript import (
     TYPESCRIPT_FILE,
     TYPESCRIPT_FUNCTION,
@@ -403,6 +408,27 @@ class Pipeline:
             self._grammar_cache[cache_key] = grammar
             
             return grammar
+            
+        elif language == "python":
+            # Determine which template based on prompt keywords
+            if "class" in prompt.lower():
+                template = PYTHON_CLASS
+            elif "function" in prompt.lower() or "def" in prompt.lower():
+                template = PYTHON_FUNCTION
+            else:
+                # Use module-level grammar for general code
+                template = PYTHON_MODULE
+            
+            # Build grammar
+            builder = GrammarBuilder(language=language)
+            builder.add_template(template)
+            grammar = builder.load_template(template.name).build()
+            
+            # Cache it
+            self._grammar_cache[cache_key] = grammar
+            
+            return grammar
+            
         else:
             # No grammar for other languages yet
             return ""
