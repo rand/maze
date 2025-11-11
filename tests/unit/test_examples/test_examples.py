@@ -159,11 +159,81 @@ class TestIntegrationExamples:
         assert b"Example complete" in result.stdout
 
 
+class TestPythonExamples:
+    """Tests for Python examples."""
+
+    def test_01_function_generation(self):
+        """Test Python function generation example runs."""
+        example = EXAMPLES_DIR / "python" / "01-function-generation.py"
+        assert example.exists()
+
+        result = subprocess.run(
+            [sys.executable, str(example)],
+            capture_output=True,
+            timeout=30,
+        )
+
+        assert result.returncode == 0
+        assert b"Example complete" in result.stdout
+
+    def test_02_dataclass(self):
+        """Test dataclass example runs."""
+        example = EXAMPLES_DIR / "python" / "02-dataclass.py"
+        assert example.exists()
+
+        result = subprocess.run(
+            [sys.executable, str(example)],
+            capture_output=True,
+            timeout=30,
+        )
+
+        assert result.returncode == 0
+
+    def test_03_async_function(self):
+        """Test async function example runs."""
+        example = EXAMPLES_DIR / "python" / "03-async-function.py"
+        assert example.exists()
+
+        result = subprocess.run(
+            [sys.executable, str(example)],
+            capture_output=True,
+            timeout=30,
+        )
+
+        assert result.returncode == 0
+
+    def test_04_fastapi_endpoint(self):
+        """Test FastAPI endpoint example runs."""
+        example = EXAMPLES_DIR / "python" / "04-fastapi-endpoint.py"
+        assert example.exists()
+
+        result = subprocess.run(
+            [sys.executable, str(example)],
+            capture_output=True,
+            timeout=30,
+        )
+
+        assert result.returncode == 0
+
+    def test_05_test_generation(self):
+        """Test pytest test generation example runs."""
+        example = EXAMPLES_DIR / "python" / "05-test-generation.py"
+        assert example.exists()
+
+        result = subprocess.run(
+            [sys.executable, str(example)],
+            capture_output=True,
+            timeout=30,
+        )
+
+        assert result.returncode == 0
+
+
 class TestExampleStructure:
     """Tests for example structure and documentation."""
 
-    def test_all_basic_examples_exist(self):
-        """Test all basic examples exist."""
+    def test_all_typescript_examples_exist(self):
+        """Test all TypeScript examples exist."""
         expected = [
             "01-function-generation.py",
             "02-class-generation.py",
@@ -174,6 +244,20 @@ class TestExampleStructure:
 
         for filename in expected:
             path = EXAMPLES_DIR / "typescript" / filename
+            assert path.exists(), f"Missing example: {filename}"
+
+    def test_all_python_examples_exist(self):
+        """Test all Python examples exist."""
+        expected = [
+            "01-function-generation.py",
+            "02-dataclass.py",
+            "03-async-function.py",
+            "04-fastapi-endpoint.py",
+            "05-test-generation.py",
+        ]
+
+        for filename in expected:
+            path = EXAMPLES_DIR / "python" / filename
             assert path.exists(), f"Missing example: {filename}"
 
     def test_all_advanced_examples_exist(self):
