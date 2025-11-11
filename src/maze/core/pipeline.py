@@ -327,8 +327,14 @@ class Pipeline:
             max_attempts=self.config.constraints.adaptive_weighting and 3 or 1,
         )
 
+        # RepairOrchestrator.repair signature: (code, prompt, grammar, language, context)
+        # For now, use empty grammar (full implementation requires grammar from generation)
         result = self.repair_orchestrator.repair(
-            code, errors, self.config.project.language, repair_ctx
+            code=code,
+            prompt=prompt,
+            grammar="",  # TODO: Pass actual grammar from generation step
+            language=self.config.project.language,
+            context=repair_ctx
         )
 
         return result
