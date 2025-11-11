@@ -27,6 +27,11 @@ from maze.logging import (
 )
 from maze.repair.orchestrator import RepairContext, RepairOrchestrator
 from maze.synthesis.grammar_builder import GrammarBuilder
+from maze.synthesis.grammars.typescript import (
+    TYPESCRIPT_FILE,
+    TYPESCRIPT_FUNCTION,
+    TYPESCRIPT_INTERFACE,
+)
 from maze.validation.pipeline import ValidationContext, ValidationPipeline
 
 
@@ -137,6 +142,9 @@ class Pipeline:
         # Cached context from indexing
         self._indexed_context: Optional[IndexingResult] = None
         self._type_context: Optional[TypeContext] = None
+        
+        # Grammar cache
+        self._grammar_cache: Dict[str, str] = {}
 
     def index_project(self, project_path: Optional[Path] = None) -> IndexingResult:
         """Index project to extract context.
@@ -354,12 +362,39 @@ class Pipeline:
         if not self.config.constraints.syntactic_enabled:
             return ""
 
-        # For now, return empty grammar (full implementation requires grammar templates)
-        # TODO: Load language-specific templates
-        # TODO: Add type constraints if enabled
-        # TODO: Add contextual patterns if available
+        language = self.config.project.language
+        
+        # Check cache first
+        cache_key = f"{language}:basic"
+        if cache_key in self._grammar_cache:
+            self.metrics.record_cache_hit("grammar")
+            return self._grammar_cache[cache_key]
+        
+        self.metrics.record_cache_miss("grammar")
 
-        return ""
+        # Load language-specific grammar templates
+        if language == "typescript" or language == "javascript":
+            # Determine which template based on prompt keywords
+            if "interface" in prompt.lower():
+                template = TYPESCRIPT_INTERFACE
+            elif "function" in prompt.lower() or "method" in prompt.lower():
+                template = TYPESCRIPT_FUNCTION
+            else:
+                # Use file-level grammar for general code
+                template = TYPESCRIPT_FILE
+            
+            # Build grammar
+            builder = GrammarBuilder(language=language)
+            builder.add_template(template)
+            grammar = builder.load_template(template.name).build()
+            
+            # Cache it
+            self._grammar_cache[cache_key] = grammar
+            
+            return grammar
+        else:
+            # No grammar for other languages yet
+            return ""
 
     def _generate_with_constraints(
         self, prompt: str, grammar: str, context: Optional[TypeContext]
