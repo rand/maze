@@ -1,0 +1,73 @@
+{
+  "total_problems": 2,
+  "results": [
+    {
+      "task_id": "HumanEval/0",
+      "attempts": [
+        {
+          "attempt": 1,
+          "generated_code": "// OpenAI API key not found in OPENAI_API_KEY\n// Set: export OPENAI_API_KEY=sk-...",
+          "syntax_valid": false,
+          "duration_seconds": 0.8490540981292725,
+          "success": false
+        },
+        {
+          "attempt": 2,
+          "generated_code": "// OpenAI API key not found in OPENAI_API_KEY\n// Set: export OPENAI_API_KEY=sk-...",
+          "syntax_valid": false,
+          "duration_seconds": 0.0002338886260986328,
+          "success": false
+        },
+        {
+          "attempt": 3,
+          "generated_code": "// OpenAI API key not found in OPENAI_API_KEY\n// Set: export OPENAI_API_KEY=sk-...",
+          "syntax_valid": false,
+          "duration_seconds": 0.0001442432403564453,
+          "success": false
+        }
+      ],
+      "best_attempt": {
+        "attempt": 1,
+        "generated_code": "// OpenAI API key not found in OPENAI_API_KEY\n// Set: export OPENAI_API_KEY=sk-...",
+        "syntax_valid": false,
+        "duration_seconds": 0.8490540981292725,
+        "success": false
+      }
+    },
+    {
+      "task_id": "HumanEval/1",
+      "attempts": [
+        {
+          "attempt": 1,
+          "generated_code": "// OpenAI API key not found in OPENAI_API_KEY\n// Set: export OPENAI_API_KEY=sk-...",
+          "syntax_valid": false,
+          "duration_seconds": 0.00013709068298339844,
+          "success": false
+        },
+        {
+          "attempt": 2,
+          "generated_code": "// OpenAI API key not found in OPENAI_API_KEY\n// Set: export OPENAI_API_KEY=sk-...",
+          "syntax_valid": false,
+          "duration_seconds": 0.00013494491577148438,
+          "success": false
+        },
+        {
+          "attempt": 3,
+          "generated_code": "// OpenAI API key not found in OPENAI_API_KEY\n// Set: export OPENAI_API_KEY=sk-...",
+          "syntax_valid": false,
+          "duration_seconds": 0.00012993812561035156,
+          "success": false
+        }
+      ],
+      "best_attempt": {
+        "attempt": 1,
+        "generated_code": "// OpenAI API key not found in OPENAI_API_KEY\n// Set: export OPENAI_API_KEY=sk-...",
+        "syntax_valid": false,
+        "duration_seconds": 0.00013709068298339844,
+        "success": false
+      }
+    }
+  ],
+  "pass@1": 0.0,
+  "pass@3": 0.0
+}
