@@ -2,7 +2,7 @@
 
 This directory contains working examples demonstrating Maze's capabilities for adaptive constrained code generation.
 
-## Basic Examples (TypeScript)
+## Basic Examples - TypeScript
 
 Simple, focused examples demonstrating core features:
 
@@ -11,6 +11,16 @@ Simple, focused examples demonstrating core features:
 3. **[03-interface-generation.py](typescript/03-interface-generation.py)** - Generate interfaces with generics
 4. **[04-api-endpoint.py](typescript/04-api-endpoint.py)** - Generate REST API endpoints
 5. **[05-type-safe-refactor.py](typescript/05-type-safe-refactor.py)** - Refactor code with type safety
+
+## Basic Examples - Python
+
+Python-specific examples:
+
+1. **[01-function-generation.py](python/01-function-generation.py)** - Function with type hints and validation
+2. **[02-dataclass.py](python/02-dataclass.py)** - Dataclass with __post_init__ validation
+3. **[03-async-function.py](python/03-async-function.py)** - Async/await with error handling
+4. **[04-fastapi-endpoint.py](python/04-fastapi-endpoint.py)** - FastAPI endpoint with Pydantic
+5. **[05-test-generation.py](python/05-test-generation.py)** - Pytest test generation
 
 ## Advanced Examples
 
