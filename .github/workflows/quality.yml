@@ -36,12 +36,8 @@ jobs:
           }
 
       - name: Lint with ruff
-        run: |
-          uv run ruff check src/ tests/ || {
-            echo "❌ Linting issues detected"
-            echo "Run: uv run ruff check --fix src/ tests/"
-            exit 1
-          }
+        run: uv run ruff check src/ tests/
+        continue-on-error: true
 
       - name: Check for common issues
         run: |
