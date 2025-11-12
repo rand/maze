@@ -4,9 +4,8 @@ Grammar-constrained code generation using vLLM + llguidance.
 
 ## What It Does
 
-Enforces Lark grammars during LLM code generation to guarantee syntactic validity.
+Uses Lark grammars during LLM code generation to enforce syntactic validity.
 
-**Measured result**: 100% valid Python completions (vs 0% unconstrained on test cases).
 
 ## Status
 
