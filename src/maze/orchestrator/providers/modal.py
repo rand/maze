@@ -42,10 +42,12 @@ class ModalProviderAdapter(ProviderAdapter):
         """
         super().__init__(model, api_key)
         
+        # Try to get endpoint from multiple sources
         self.api_base = (
             api_base
             or os.getenv("MODAL_ENDPOINT_URL")
-            or "https://modal-endpoint-not-configured.modal.run"
+            # Default to deployed endpoint
+            or "https://rand--maze-inference-fastapi-app.modal.run"
         )
         
         if "not-configured" in self.api_base:

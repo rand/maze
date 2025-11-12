@@ -51,8 +51,8 @@ class IndexerConfig:
 class GenerationConfig:
     """Code generation configuration."""
 
-    provider: str = "openai"
-    model: str = "gpt-4"
+    provider: str = "modal"  # Default to Modal (only provider with grammar support)
+    model: str = "qwen2.5-coder-32b"
     temperature: float = 0.7
     max_tokens: int = 2048
     timeout_seconds: int = 30
