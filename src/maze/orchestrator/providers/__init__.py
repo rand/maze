@@ -486,12 +486,22 @@ def create_provider_adapter(
         >>> request = GenerationRequest(prompt="Write a function", schema={...})
         >>> response = adapter.generate(request)
     """
+    # Import Modal adapter lazily
+    try:
+        from maze.orchestrator.providers.modal import ModalProviderAdapter
+    except ImportError:
+        ModalProviderAdapter = None
+    
     adapters = {
         "openai": OpenAIProviderAdapter,
         "vllm": VLLMProviderAdapter,
         "sglang": SGLangProviderAdapter,
         "llamacpp": LlamaCppProviderAdapter,
     }
+    
+    # Add Modal if available
+    if ModalProviderAdapter:
+        adapters["modal"] = ModalProviderAdapter
 
     if provider not in adapters:
         raise ValueError(f"Unknown provider: {provider}. Available: {list(adapters.keys())}")
