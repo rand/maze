@@ -23,6 +23,7 @@ from maze.indexer.languages.go import GoIndexer
 from maze.indexer.languages.python import PythonIndexer
 from maze.indexer.languages.rust import RustIndexer
 from maze.indexer.languages.typescript import TypeScriptIndexer
+from maze.indexer.languages.zig import ZigIndexer
 from maze.logging import (
     GenerationResult as LogGenerationResult,
     MetricsCollector,
@@ -193,6 +194,8 @@ class Pipeline:
             self.indexer = RustIndexer(project_path=path)
         elif language == "go":
             self.indexer = GoIndexer(project_path=path)
+        elif language == "zig":
+            self.indexer = ZigIndexer(project_path=path)
         else:
             raise ValueError(f"Language '{language}' not yet supported for indexing")
 

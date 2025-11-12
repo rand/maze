@@ -38,6 +38,7 @@ dependencies = [
     "tree-sitter-javascript>=0.25.0",
     "zensical>=0.0.5",
     "tomli-w>=1.2.0",
+    "tree-sitter-zig>=1.1.2",
 ]
 
 [project.optional-dependencies]
