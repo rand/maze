@@ -126,22 +126,22 @@ MODAL_MODE = os.getenv("MODAL_MODE", "dev").lower()
 
 if MODAL_MODE == "demo":
     SCALEDOWN_WINDOW = 600  # 10 min for presentations
-    GPU_CONFIG = "l40s"  # 48GB, $1.20/hr
-    print("🎬 DEMO MODE: 10 min scaledown, L40S GPU")
+    GPU_CONFIG = "a100-80gb"  # 80GB VRAM for 32B model
+    print("🎬 DEMO MODE: 10 min scaledown, A100-80GB GPU")
 elif MODAL_MODE == "prod":
     SCALEDOWN_WINDOW = 300  # 5 min balanced
-    GPU_CONFIG = "l40s"
-    print("🚀 PROD MODE: 5 min scaledown, L40S GPU")
+    GPU_CONFIG = "a100-80gb"
+    print("🚀 PROD MODE: 5 min scaledown, A100-80GB GPU")
 else:
     # Dev mode: aggressive scaledown for cost savings
     SCALEDOWN_WINDOW = 120  # 2 min aggressive
-    GPU_CONFIG = "l40s"
-    print("💻 DEV MODE: 2 min scaledown (cost-optimized)")
+    GPU_CONFIG = "a100-80gb"  # 32B model needs 80GB
+    print("💻 DEV MODE: 2 min scaledown, A100-80GB GPU ($4/hr)")
 
 print(f"Scaledown: {SCALEDOWN_WINDOW}s")
 
 @app.cls(
-    gpu=GPU_CONFIG,  # L40S: 48GB VRAM, ~$1.20/hour
+    gpu=GPU_CONFIG,  # A100-80GB: Required for 32B model
     image=image,
     timeout=3600,  # 1 hour max
     scaledown_window=SCALEDOWN_WINDOW,  # Modal 1.0 API (was container_idle_timeout)
