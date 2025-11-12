@@ -40,16 +40,19 @@ from maze.synthesis.grammar_builder import GrammarBuilder
 from maze.synthesis.grammars.python import (
     PYTHON_CLASS,
     PYTHON_FUNCTION,
+    PYTHON_FUNCTION_BODY,
     PYTHON_MODULE,
 )
 from maze.synthesis.grammars.rust import (
     RUST_FUNCTION,
+    RUST_FUNCTION_BODY,
     RUST_IMPL,
     RUST_STRUCT,
 )
 from maze.synthesis.grammars.typescript import (
     TYPESCRIPT_FILE,
     TYPESCRIPT_FUNCTION,
+    TYPESCRIPT_FUNCTION_BODY,
     TYPESCRIPT_INTERFACE,
 )
 from maze.validation.pipeline import ValidationContext, ValidationPipeline
@@ -377,6 +380,54 @@ class Pipeline:
 
         return result
 
+    def _is_completion_prompt(self, prompt: str, language: str) -> bool:
+        """Detect if prompt is for completion (partial code) vs full generation.
+        
+        CRITICAL: This determines which grammar template to use.
+        - Completion mode: Use *_BODY grammars (PYTHON_FUNCTION_BODY, etc.)
+        - Full generation mode: Use full grammars (PYTHON_FUNCTION, etc.)
+        
+        Why this matters:
+        - Using full grammar for completion causes signature duplication
+        - Using completion grammar for full generation produces incomplete code
+        
+        Completion prompts end with colons, semicolons, or braces indicating
+        the user wants to complete existing code structure.
+        
+        Args:
+            prompt: Generation prompt
+            language: Programming language
+            
+        Returns:
+            True if completion mode, False if full generation
+            
+        See: docs/GRAMMAR_CONSTRAINTS.md for details
+        """
+        prompt_stripped = prompt.rstrip()
+        
+        # Python: Ends with colon (function/class signature)
+        if language == "python":
+            return prompt_stripped.endswith(":")
+        
+        # TypeScript/JavaScript: Ends with ) or type annotation
+        elif language in ("typescript", "javascript"):
+            # "function foo(a: number): string" -> completion
+            # "function foo" without closing ) -> full generation
+            return "function" in prompt and ")" in prompt
+        
+        # Rust: Ends with block or type
+        elif language == "rust":
+            # "fn foo() -> bool" -> completion
+            # "fn foo" -> full generation
+            return "fn" in prompt and ("->" in prompt or ")" in prompt)
+        
+        # Go: Similar to Rust
+        elif language == "go":
+            return "func" in prompt and (")" in prompt or "{" in prompt)
+        
+        # Default: Assume full generation
+        return False
+
     def _synthesize_constraints(
         self, prompt: str, context: Optional[TypeContext]
     ) -> str:
@@ -394,80 +445,88 @@ class Pipeline:
 
         language = self.config.project.language
         
-        # Check cache first
-        cache_key = f"{language}:basic"
+        # Detect completion vs full generation
+        is_completion = self._is_completion_prompt(prompt, language)
+        mode = "completion" if is_completion else "full"
+        
+        # Check cache with mode-aware key
+        cache_key = f"{language}:{mode}"
         if cache_key in self._grammar_cache:
             self.metrics.record_cache_hit("grammar")
+            self.logger.log_info(
+                "grammar_cache_hit",
+                language=language,
+                mode=mode,
+                prompt_preview=prompt[:50]
+            )
             return self._grammar_cache[cache_key]
         
         self.metrics.record_cache_miss("grammar")
 
         # Load language-specific grammar templates
+        template = None
+        
         if language == "typescript" or language == "javascript":
-            # Determine which template based on prompt keywords
-            if "interface" in prompt.lower():
-                template = TYPESCRIPT_INTERFACE
-            elif "function" in prompt.lower() or "method" in prompt.lower():
-                template = TYPESCRIPT_FUNCTION
+            if is_completion:
+                # Completing function body
+                template = TYPESCRIPT_FUNCTION_BODY
             else:
-                # Use file-level grammar for general code
-                template = TYPESCRIPT_FILE
-            
-            # Build grammar
-            builder = GrammarBuilder(language=language)
-            builder.add_template(template)
-            grammar = builder.load_template(template.name).build()
-            
-            # Cache it
-            self._grammar_cache[cache_key] = grammar
-            
-            return grammar
+                # Determine which template based on prompt keywords
+                if "interface" in prompt.lower():
+                    template = TYPESCRIPT_INTERFACE
+                elif "function" in prompt.lower() or "method" in prompt.lower():
+                    template = TYPESCRIPT_FUNCTION
+                else:
+                    template = TYPESCRIPT_FILE
             
         elif language == "python":
-            # Determine which template based on prompt keywords
-            if "class" in prompt.lower():
-                template = PYTHON_CLASS
-            elif "function" in prompt.lower() or "def" in prompt.lower():
-                template = PYTHON_FUNCTION
+            if is_completion:
+                # Completing function/method body
+                template = PYTHON_FUNCTION_BODY
             else:
-                # Use module-level grammar for general code
-                template = PYTHON_MODULE
-            
-            # Build grammar
-            builder = GrammarBuilder(language=language)
-            builder.add_template(template)
-            grammar = builder.load_template(template.name).build()
-            
-            # Cache it
-            self._grammar_cache[cache_key] = grammar
-            
-            return grammar
+                # Determine which template based on prompt keywords
+                if "class" in prompt.lower():
+                    template = PYTHON_CLASS
+                elif "function" in prompt.lower() or "def" in prompt.lower():
+                    template = PYTHON_FUNCTION
+                else:
+                    template = PYTHON_MODULE
             
         elif language == "rust":
-            # Determine which template based on prompt keywords
-            if "struct" in prompt.lower():
-                template = RUST_STRUCT
-            elif "impl" in prompt.lower() or "trait" in prompt.lower():
-                template = RUST_IMPL
-            elif "function" in prompt.lower() or "fn" in prompt.lower():
-                template = RUST_FUNCTION
+            if is_completion:
+                # Completing function body
+                template = RUST_FUNCTION_BODY
             else:
-                # Default to function for Rust
-                template = RUST_FUNCTION
-            
-            # Build grammar
-            builder = GrammarBuilder(language=language)
-            builder.add_template(template)
-            grammar = builder.load_template(template.name).build()
-            
-            # Cache it
-            self._grammar_cache[cache_key] = grammar
-            
-            return grammar
-            
-        else:
-            # No grammar for other languages yet
+                # Determine which template based on prompt keywords
+                if "struct" in prompt.lower():
+                    template = RUST_STRUCT
+                elif "impl" in prompt.lower() or "trait" in prompt.lower():
+                    template = RUST_IMPL
+                else:
+                    template = RUST_FUNCTION
+        
+        if template is None:
+            # No grammar for this language yet
             return ""
+        
+        # Build grammar
+        builder = GrammarBuilder(language=language)
+        builder.add_template(template)
+        grammar = builder.load_template(template.name).build()
+        
+        # Cache it
+        self._grammar_cache[cache_key] = grammar
+        
+        # Log selection
+        self.logger.log_info(
+            "grammar_selected",
+            language=language,
+            mode=mode,
+            template=template.name,
+            grammar_size=len(grammar)
+        )
+        
+        return grammar
 
     def _generate_with_constraints(
         self, prompt: str, grammar: str, context: Optional[TypeContext]

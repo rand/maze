@@ -1,0 +1,15 @@
+{
+  "endpoint": "https://rand--maze-inference-mazeinferenceserver-fastapi-app.modal.run",
+  "timestamp": "2025-11-12 07:56:40",
+  "tests": {
+    "health": true,
+    "simple_generation": true,
+    "grammar_generation": true,
+    "languages": {
+      "python": true,
+      "typescript": true,
+      "rust": true,
+      "go": true
+    }
+  }
+}

@@ -184,6 +184,29 @@ maze/
 └── benchmarks/             # Performance benchmarks
 ```
 
+## Important Documentation
+
+- **[Grammar Constraints Guide](docs/GRAMMAR_CONSTRAINTS.md)**: Complete guide to llguidance integration, grammar design, completion vs full generation, and common pitfalls
+- **[Agent Guide](AGENT_GUIDE.md)**: Operational guide for AI agents working on Maze (includes anti-patterns and best practices)
+- **[Deployment Guide](deployment/modal/README.md)**: Modal deployment with vLLM + llguidance
+
+### Key Learnings (Read Before Contributing)
+
+**Grammar Design**:
+- ❌ **NEVER use `?start:` inline rules** - llguidance doesn't support them
+- ✅ Use `start:` instead
+- ✅ Understand completion vs full generation patterns (see docs/GRAMMAR_CONSTRAINTS.md)
+
+**Testing**:
+- ❌ Don't test with `assert result is not None` - meaningless
+- ✅ Validate grammar enforcement (check forbidden constructs are absent)
+- ✅ Test with real Modal endpoint, not just mocks
+
+**vLLM V1 API**:
+- ❌ Don't use deprecated `guided_grammar` parameter
+- ✅ Use `StructuredOutputsParams(grammar=...)`
+- ✅ Set `structured_outputs_config={"backend": "guidance"}`
+
 ## Testing
 
 ```bash
@@ -192,6 +215,9 @@ uv run pytest
 
 # Run unit tests only
 uv run pytest tests/unit -v
+
+# Run constraint enforcement tests (validates grammars work end-to-end)
+uv run pytest tests/validation/test_constraint_enforcement.py -v
 
 # Run performance benchmarks
 uv run pytest tests/unit/test_core/test_llguidance_performance.py -v

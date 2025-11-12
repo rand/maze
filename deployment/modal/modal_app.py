@@ -6,8 +6,23 @@ This deploys a production-ready inference server with:
 - llguidance for Lark grammar-constrained generation (NOT XGrammar)
 - FastAPI for HTTP endpoints
 
-CRITICAL: llguidance is required for Lark grammars (Maze's native format).
-XGrammar only supports JSON Schema and is NOT sufficient for Maze's use case.
+CRITICAL REQUIREMENTS:
+1. llguidance is REQUIRED for Lark grammars (Maze's native format)
+   - XGrammar only supports JSON Schema - NOT sufficient
+   - llguidance supports "a variant of Lark syntax" but NOT inline rules (?start:)
+
+2. vLLM V1 API (0.11.0+):
+   - Use StructuredOutputsParams (not deprecated guided_grammar)
+   - Set structured_outputs_config={"backend": "guidance"}
+   - llguidance version: >=0.7.11,<0.8.0
+
+3. Performance characteristics:
+   - Cold start: 60-120s (model loading)
+   - Warm latency: 1-3s with grammar, 0.4s without
+   - Throughput: 10-12 tok/s with grammar, 70-80 tok/s without
+   - Worth it: 100% syntax validity vs 60-80% unconstrained
+
+See docs/GRAMMAR_CONSTRAINTS.md for full details.
 
 Deployment:
     ./deployment/modal/scripts/deploy.sh
@@ -169,8 +184,8 @@ class MazeInferenceServer:
             print(f"GPU: {torch.cuda.get_device_name(0)}")
             print(f"VRAM: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
         
-        # Initialize vLLM with llguidance backend
-        # llguidance supports Lark grammars (Maze's native format)
+        # Initialize vLLM with V1 structured outputs support
+        # V1 engine is enabled by default in vLLM 0.11.0
         self.llm = LLM(
             model="Qwen/Qwen2.5-Coder-32B-Instruct",
             revision="main",
@@ -180,8 +195,8 @@ class MazeInferenceServer:
             dtype="bfloat16",
             trust_remote_code=True,
             download_dir="/cache/models",
-            # llguidance for Lark grammar support
-            guided_decoding_backend="llguidance",
+            # V1 structured outputs backend - use guidance for Lark grammar support
+            structured_outputs_config={"backend": "guidance"},
         )
         
         print("✅ Model loaded successfully")
@@ -194,8 +209,7 @@ class MazeInferenceServer:
         print(f"Headroom: {48 - reserved:.2f} GB")
         print("=" * 60)
 
-    @modal.method()
-    def generate(
+    def _generate_internal(
         self,
         prompt: str,
         grammar: Optional[str] = None,
@@ -214,24 +228,29 @@ class MazeInferenceServer:
             Generated code and metadata
         """
         from vllm import SamplingParams
+        from vllm.sampling_params import StructuredOutputsParams
         import time
         
         start = time.time()
         
-        # Configure sampling parameters
-        sampling_params = SamplingParams(
-            temperature=temperature,
-            max_tokens=max_tokens,
-            top_p=0.95,
-            repetition_penalty=1.05,
-        )
-        
-        # Add grammar constraint if provided
+        # Configure sampling parameters with grammar constraint (vLLM 0.11.0 API)
         if grammar:
-            # llguidance supports Lark grammars directly
-            # This is what Maze uses natively (TypeScript, Python, Rust grammars)
-            sampling_params.guided_decoding_backend = "llguidance"
-            sampling_params.guided_grammar = grammar
+            # CORRECT vLLM 0.11.0 API: Use StructuredOutputsParams
+            sampling_params = SamplingParams(
+                temperature=temperature,
+                max_tokens=max_tokens,
+                top_p=0.95,
+                repetition_penalty=1.05,
+                structured_outputs=StructuredOutputsParams(grammar=grammar),
+            )
+        else:
+            # No grammar constraint
+            sampling_params = SamplingParams(
+                temperature=temperature,
+                max_tokens=max_tokens,
+                top_p=0.95,
+                repetition_penalty=1.05,
+            )
         
         # Generate with vLLM
         try:
@@ -261,6 +280,20 @@ class MazeInferenceServer:
                 "finish_reason": "error",
                 "error": str(e),
             }
+
+    @modal.method()
+    def generate(
+        self,
+        prompt: str,
+        grammar: Optional[str] = None,
+        max_tokens: int = 2048,
+        temperature: float = 0.7,
+    ) -> dict:
+        """Generate code (callable via .remote()).
+        
+        For programmatic access from Python clients.
+        """
+        return self._generate_internal(prompt, grammar, max_tokens, temperature)
 
     @modal.method()
     def generate_batch(
@@ -312,7 +345,7 @@ class MazeInferenceServer:
             for output in outputs
         ]
 
-    @modal.fastapi_endpoint(method="POST")  # Modal 1.0 API
+    @modal.web_endpoint(method="POST")
     def generate_endpoint(self, request: dict):
         """HTTP endpoint for code generation.
 
@@ -320,7 +353,7 @@ class MazeInferenceServer:
         Body: {"prompt": str, "grammar": str, "max_tokens": int, "temperature": float}
         Returns: {"success": bool, "code": str, "metadata": dict}
         """
-        result = self.generate(
+        result = self._generate_internal(
             prompt=request.get("prompt"),
             grammar=request.get("grammar"),
             max_tokens=request.get("max_tokens", 2048),
@@ -368,9 +401,33 @@ class MazeInferenceServer:
             }
         
         @web_app.post("/generate")
-        def generate(request: dict):
+        def generate_handler(request: dict):
             """Generate code with optional grammar constraints."""
-            return self.generate_endpoint(request)
+            result = self._generate_internal(
+                prompt=request.get("prompt"),
+                grammar=request.get("grammar"),
+                max_tokens=request.get("max_tokens", 2048),
+                temperature=request.get("temperature", 0.7),
+            )
+            
+            if not result["success"]:
+                return {
+                    "success": False,
+                    "code": result.get("text", ""),
+                    "metadata": {"error": result.get("error", "Unknown error")}
+                }
+            
+            return {
+                "success": result["success"],
+                "code": result["text"],
+                "metadata": {
+                    "tokens_generated": result["tokens_generated"],
+                    "duration_seconds": result["duration_seconds"],
+                    "finish_reason": result["finish_reason"],
+                    "grammar_applied": result["grammar_applied"],
+                    "language": request.get("language", "unknown"),
+                }
+            }
         
         @web_app.get("/")
         def root():

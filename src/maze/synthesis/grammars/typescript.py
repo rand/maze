@@ -12,7 +12,7 @@ TYPESCRIPT_FUNCTION = GrammarTemplate(
     language="typescript",
     description="Grammar for TypeScript function declarations",
     grammar="""
-?start: function_decl
+start: function_decl
 
 function_decl: export_modifier? async_modifier? "function" IDENT type_params? "(" params? ")" return_type? block
 
@@ -134,7 +134,7 @@ TYPESCRIPT_INTERFACE = GrammarTemplate(
     language="typescript",
     description="Grammar for TypeScript interface declarations",
     grammar="""
-?start: interface_decl
+start: interface_decl
 
 interface_decl: export_modifier? "interface" IDENT type_params? extends_clause? "{" interface_members? "}"
 
@@ -196,7 +196,7 @@ TYPESCRIPT_TYPE_ALIAS = GrammarTemplate(
     language="typescript",
     description="Grammar for TypeScript type alias declarations",
     grammar="""
-?start: type_alias
+start: type_alias
 
 type_alias: export_modifier? "type" IDENT type_params? "=" type_expr ";"?
 
@@ -250,7 +250,7 @@ TYPESCRIPT_FILE = GrammarTemplate(
     language="typescript",
     description="Grammar for complete TypeScript files",
     grammar="""
-?start: file
+start: file
 
 file: (import_stmt | export_stmt | declaration)*
 
@@ -302,9 +302,116 @@ STRING: /"([^"\\\\]|\\\\.)*"/ | /'([^'\\\\]|\\\\.)*'/
 """
 )
 
+# Function BODY grammar (for completing partial signatures)
+TYPESCRIPT_FUNCTION_BODY = GrammarTemplate(
+    name="typescript_function_body",
+    language="typescript",
+    description="Grammar for TypeScript function body (completion after signature)",
+    grammar="""
+start: block
+
+block: "{" statement* "}"
+
+statement: return_stmt
+         | var_decl
+         | expr_stmt
+         | if_stmt
+         | for_stmt
+         | while_stmt
+
+return_stmt: "return" expression? ";"
+var_decl: const_var | let_var
+const_var: "const" IDENT type_annotation? "=" expression ";"
+let_var: "let" IDENT type_annotation? ("=" expression)? ";"
+type_annotation: ":" type_expr
+expr_stmt: expression ";"
+
+if_stmt: "if" "(" expression ")" block ("else" block)?
+for_stmt: "for" "(" for_init? ";" expression? ";" expression? ")" block
+for_init: var_decl | expression
+while_stmt: "while" "(" expression ")" block
+
+expression: literal
+          | IDENT
+          | call_expr
+          | member_expr
+          | binary_expr
+          | unary_expr
+          | paren_expr
+          | template_literal
+          | object_literal
+          | array_literal
+          | arrow_function
+
+call_expr: expression "(" args? ")"
+args: expression ("," expression)*
+
+member_expr: expression "." IDENT
+           | expression "[" expression "]"
+
+binary_expr: expression binary_op expression
+binary_op: "+" | "-" | "*" | "/" | "%" | "===" | "!==" | "==" | "!=" | "<" | ">" | "<=" | ">=" | "&&" | "||" | "??" | "&" | "|"
+
+unary_expr: unary_op expression
+unary_op: "!" | "-" | "+" | "typeof" | "void" | "await"
+
+paren_expr: "(" expression ")"
+
+template_literal: "`" template_part* "`"
+template_part: /[^`$]+/ | "${" expression "}"
+
+object_literal: "{" object_props? "}"
+object_props: object_prop ("," object_prop)* ","?
+object_prop: IDENT ":" expression
+           | IDENT
+
+array_literal: "[" array_elements? "]"
+array_elements: expression ("," expression)* ","?
+
+arrow_function: arrow_params "=>" (block | expression)
+arrow_params: IDENT | "(" params? ")"
+params: param ("," param)*
+param: IDENT ":" type_expr
+
+literal: NUMBER | STRING | BOOLEAN | NULL | UNDEFINED
+
+type_expr: basic_type
+         | union_type
+         | generic_type
+         | function_type
+         | object_type
+         | array_type
+
+basic_type: "string" | "number" | "boolean" | "any" | "void" | "never" | "unknown" | IDENT
+union_type: type_expr ("|" type_expr)+
+generic_type: IDENT "<" type_args ">"
+type_args: type_expr ("," type_expr)*
+function_type: "(" function_params? ")" "=>" type_expr
+function_params: function_param ("," function_param)*
+function_param: IDENT ":" type_expr
+object_type: "{" object_type_members? "}"
+object_type_members: object_type_member ("," object_type_member)* ","?
+object_type_member: IDENT optional_marker? ":" type_expr
+optional_marker: "?"
+array_type: type_expr "[" "]"
+
+IDENT: /[a-zA-Z_$][a-zA-Z0-9_$]*/
+NUMBER: /-?\d+(\.\d+)?([eE][+-]?\d+)?/
+STRING: /"([^"\\\\]|\\\\.)*"/ | /'([^'\\\\]|\\\\.)*'/
+BOOLEAN: "true" | "false"
+NULL: "null"
+UNDEFINED: "undefined"
+
+%ignore /\s+/
+%ignore /\/\/.*/
+%ignore /\/\*[\s\S]*?\*\//
+"""
+)
+
 # Export all templates
 ALL_TEMPLATES = [
     TYPESCRIPT_FUNCTION,
+    TYPESCRIPT_FUNCTION_BODY,
     TYPESCRIPT_INTERFACE,
     TYPESCRIPT_TYPE_ALIAS,
     TYPESCRIPT_FILE,
@@ -312,6 +419,7 @@ ALL_TEMPLATES = [
 
 __all__ = [
     'TYPESCRIPT_FUNCTION',
+    'TYPESCRIPT_FUNCTION_BODY',
     'TYPESCRIPT_INTERFACE',
     'TYPESCRIPT_TYPE_ALIAS',
     'TYPESCRIPT_FILE',

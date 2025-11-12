@@ -2241,6 +2241,138 @@ result = await rune.execute_tests(
 
 ## 7. Anti-Patterns for Agents
 
+### 7.1 Grammar Design Anti-Patterns
+
+**❌ CRITICAL: Never Use Inline Rules with llguidance**
+
+```lark
+# ❌ WRONG - llguidance does NOT support ?start:
+?start: function_body
+function_body: statement+
+
+# ✅ CORRECT - Use standard start rule
+start: function_body
+function_body: statement+
+```
+
+**Why**: llguidance supports "a variant of Lark syntax" but NOT inline rules (`?rule:`). This will cause "Failed to convert the grammar from GBNF to Lark" errors.
+
+**❌ CRITICAL: Don't Use Full Generation Grammars for Completion**
+
+```python
+# ❌ WRONG - Using full function grammar for completion
+prompt = "def calculate_sum(a: int, b: int) -> int:"
+grammar = PYTHON_FUNCTION  # Starts with "def" IDENT ...
+# Result: Signature duplication, invalid code
+
+# ✅ CORRECT - Use completion grammar
+prompt = "def calculate_sum(a: int, b: int) -> int:"
+grammar = PYTHON_FUNCTION_BODY  # Starts with suite/body only
+# Result: Completes body correctly
+```
+
+**Why**: Maze's primary use case is **code completion** (completing partial code), not full generation from scratch. The prompt already contains the signature.
+
+**❌ Don't Test Constraints with "assert code is not None"**
+
+```python
+# ❌ WRONG - Meaningless test
+def test_generation():
+    result = generate_with_grammar(prompt, grammar)
+    assert result.code is not None  # Doesn't validate constraints!
+
+# ✅ CORRECT - Validate grammar enforcement
+def test_generation():
+    grammar = "start: simple\nsimple: \"return \" NUMBER\nNUMBER: /[0-9]+/"
+    result = generate_with_grammar(prompt, grammar)
+    
+    # 1. Parse successfully
+    ast.parse(result.code)
+    
+    # 2. Verify it followed grammar
+    assert "return" in result.code
+    assert any(c.isdigit() for c in result.code)
+    
+    # 3. Verify it did NOT violate grammar
+    assert "#" not in result.code  # Grammar forbids comments
+    assert "if" not in result.code  # Grammar forbids conditionals
+```
+
+**Why**: The value proposition is that grammars ENFORCE constraints. Tests must validate this.
+
+### 7.2 vLLM API Anti-Patterns
+
+**❌ Don't Use Deprecated guided_grammar Parameter**
+
+```python
+# ❌ WRONG - Old vLLM 0.8.x API
+sampling_params = SamplingParams(
+    guided_grammar=grammar,  # DEPRECATED
+)
+
+# ✅ CORRECT - vLLM 0.11.0+ V1 API
+from vllm.sampling_params import StructuredOutputsParams
+
+sampling_params = SamplingParams(
+    structured_outputs=StructuredOutputsParams(grammar=grammar),
+)
+```
+
+**Why**: vLLM V1 engine (default in 0.11.0+) uses new API. Old API is deprecated.
+
+**❌ Don't Forget to Set Backend to "guidance"**
+
+```python
+# ❌ WRONG - No backend specified
+llm = LLM(model="Qwen/Qwen2.5-Coder-32B-Instruct")
+
+# ✅ CORRECT - Enable llguidance backend
+llm = LLM(
+    model="Qwen/Qwen2.5-Coder-32B-Instruct",
+    structured_outputs_config={"backend": "guidance"},
+)
+```
+
+**Why**: vLLM V1 supports multiple backends (guidance, outlines, lm-format-enforcer). Must explicitly set to "guidance" for Lark grammar support.
+
+### 7.3 Testing Anti-Patterns
+
+**❌ Don't Test Only with Mocks**
+
+```python
+# ❌ WRONG - Mock hides real issues
+def test_with_mock():
+    mock_llm = Mock()
+    mock_llm.generate.return_value = "return 42"
+    # Passes but doesn't validate actual grammar enforcement
+
+# ✅ CORRECT - Test with real Modal endpoint
+def test_with_modal():
+    adapter = ModalProviderAdapter()
+    result = adapter.generate(request_with_grammar)
+    # Actually validates llguidance works
+```
+
+**Why**: Mocks don't reveal:
+- Grammar syntax issues (`?start:` incompatibility)
+- Token limit edge cases
+- Temperature effects on constraint following
+- Actual llguidance behavior
+
+**❌ Don't Ignore Cold Start Times**
+
+```python
+# ❌ WRONG - Timeout too short for cold start
+response = requests.post(endpoint, json=payload, timeout=30)
+
+# ✅ CORRECT - Allow time for model loading
+response = requests.post(endpoint, json=payload, timeout=120)
+```
+
+**Why**: Modal has cold starts (60-120s) when loading 32B models. First request will timeout with <120s timeout.
+
+## 7. Anti-Patterns for Agents (Original Section)
+
 ### 7.1 Work Plan Violations
 
 ```

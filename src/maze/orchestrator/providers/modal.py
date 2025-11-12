@@ -46,8 +46,8 @@ class ModalProviderAdapter(ProviderAdapter):
         self.api_base = (
             api_base
             or os.getenv("MODAL_ENDPOINT_URL")
-            # Default to deployed endpoint
-            or "https://rand--maze-inference-fastapi-app.modal.run"
+            # Default to deployed endpoint (FastAPI app with /generate route)
+            or "https://rand--maze-inference-mazeinferenceserver-fastapi-app.modal.run"
         )
         
         if "not-configured" in self.api_base:
