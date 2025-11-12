@@ -61,8 +61,8 @@ class TestGenerationConfig:
     def test_default_values(self):
         """Test default generation configuration."""
         config = GenerationConfig()
-        assert config.provider == "openai"
-        assert config.model == "gpt-4"
+        assert config.provider == "modal"  # Default changed to modal
+        assert config.model == "qwen2.5-coder-32b"  # Default model for modal
         assert config.temperature == 0.7
         assert config.max_tokens == 2048
 
@@ -163,7 +163,7 @@ class TestConfig:
         """Test default configuration."""
         config = Config()
         assert config.project.name == "maze-project"
-        assert config.generation.provider == "openai"
+        assert config.generation.provider == "modal"  # Default changed to modal
         assert config.constraints.syntactic_enabled is True
 
     def test_from_dict(self):

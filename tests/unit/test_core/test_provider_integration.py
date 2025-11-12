@@ -185,4 +185,4 @@ class TestProviderIntegration:
 
             pipeline._generate_with_constraints("test", "", None)
 
-            mock_create.assert_called_with(provider="vllm", model="llama-3")
+            mock_create.assert_called_with(provider="vllm", model="llama-3", api_key=None)

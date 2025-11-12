@@ -27,6 +27,7 @@ class TestBasicExamples:
         assert result.returncode == 0
         assert b"Example complete" in result.stdout
 
+    @pytest.mark.skip(reason="Requires Modal endpoint - run manually")
     def test_02_class_generation(self):
         """Test class generation example runs."""
         example = EXAMPLES_DIR / "typescript" / "02-class-generation.py"
@@ -35,11 +36,12 @@ class TestBasicExamples:
         result = subprocess.run(
             [sys.executable, str(example)],
             capture_output=True,
-            timeout=30,
+            timeout=180,  # Longer timeout for LLM calls
         )
 
         assert result.returncode == 0
 
+    @pytest.mark.skip(reason="Requires Modal endpoint - run manually")
     def test_03_interface_generation(self):
         """Test interface generation example runs."""
         example = EXAMPLES_DIR / "typescript" / "03-interface-generation.py"
@@ -48,7 +50,7 @@ class TestBasicExamples:
         result = subprocess.run(
             [sys.executable, str(example)],
             capture_output=True,
-            timeout=30,
+            timeout=180,
         )
 
         assert result.returncode == 0

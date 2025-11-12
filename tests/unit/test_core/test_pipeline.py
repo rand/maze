@@ -84,7 +84,7 @@ class TestPipeline:
     def test_index_project_unsupported_language(self):
         """Test indexing with unsupported language raises error."""
         config = Config()
-        config.project.language = "rust"  # Not yet supported
+        config.project.language = "cobol"  # Actually unsupported
 
         pipeline = Pipeline(config)
 
