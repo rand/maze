@@ -5,13 +5,11 @@ Provides safe test execution across multiple languages with result parsing
 and failure diagnostics.
 """
 
-import json
 import re
 from dataclasses import dataclass
-from typing import Optional, Literal
 
+from maze.integrations.rune import ExecutionResult, RuneExecutor
 from maze.validation.syntax import Diagnostic
-from maze.integrations.rune import RuneExecutor, ExecutionResult
 
 
 @dataclass
@@ -173,15 +171,11 @@ class TestValidator:
                         source="test",
                     )
                 ],
-                test_results=TestResults(
-                    passed=0, failed=0, skipped=0, errors=1, failures=[]
-                ),
+                test_results=TestResults(passed=0, failed=0, skipped=0, errors=1, failures=[]),
                 execution_time_ms=execution_time_ms,
             )
 
-    def run_tests(
-        self, code: str, tests: str, language: str, timeout_ms: int
-    ) -> ExecutionResult:
+    def run_tests(self, code: str, tests: str, language: str, timeout_ms: int) -> ExecutionResult:
         """
         Execute tests in sandbox.
 
@@ -212,9 +206,7 @@ class TestValidator:
         parser = self.test_parsers.get(language)
         if not parser:
             # Default parsing
-            return TestResults(
-                passed=0, failed=0, skipped=0, errors=0, failures=[]
-            )
+            return TestResults(passed=0, failed=0, skipped=0, errors=0, failures=[])
 
         return parser(output)
 
@@ -264,13 +256,9 @@ class TestValidator:
         failures = []
 
         # Look for pytest summary line: "X passed, Y failed in Zs"
-        summary_match = re.search(
-            r"(\d+) passed|(\d+) failed|(\d+) skipped|(\d+) error", output
-        )
+        summary_match = re.search(r"(\d+) passed|(\d+) failed|(\d+) skipped|(\d+) error", output)
         if summary_match:
-            for match in re.finditer(
-                r"(\d+) (passed|failed|skipped|error)", output
-            ):
+            for match in re.finditer(r"(\d+) (passed|failed|skipped|error)", output):
                 count = int(match.group(1))
                 status = match.group(2)
                 if status == "passed":
@@ -284,9 +272,7 @@ class TestValidator:
 
         # Extract failure details
         # Format: FAILED test_file::test_name - AssertionError: message
-        for match in re.finditer(
-            r"FAILED (.+?) - (.+?)(?:\n|$)", output, re.MULTILINE
-        ):
+        for match in re.finditer(r"FAILED (.+?) - (.+?)(?:\n|$)", output, re.MULTILINE):
             test_name = match.group(1)
             message = match.group(2)
             failures.append({"name": test_name, "message": message, "traceback": ""})
@@ -333,9 +319,7 @@ class TestValidator:
         # Format: ✕ test_name (Xms)
         for match in re.finditer(r"✕ (.+?)(?:\(|\n)", output):
             test_name = match.group(1).strip()
-            failures.append(
-                {"name": test_name, "message": "Test failed", "traceback": ""}
-            )
+            failures.append({"name": test_name, "message": "Test failed", "traceback": ""})
 
         return TestResults(
             passed=passed,
@@ -365,9 +349,7 @@ class TestValidator:
         # Format: test test_name ... FAILED
         for match in re.finditer(r"test (.+?) \.\.\. FAILED", output):
             test_name = match.group(1)
-            failures.append(
-                {"name": test_name, "message": "Test failed", "traceback": ""}
-            )
+            failures.append({"name": test_name, "message": "Test failed", "traceback": ""})
 
         return TestResults(
             passed=passed,
@@ -392,20 +374,14 @@ class TestValidator:
                 passed += 1
             elif status == "FAIL":
                 failed += 1
-                failures.append(
-                    {"name": test_name, "message": "Test failed", "traceback": ""}
-                )
+                failures.append({"name": test_name, "message": "Test failed", "traceback": ""})
 
         # If no explicit PASS/FAIL but exit code indicates failure
         if failed == 0 and "FAIL" in output:
             failed = 1
-            failures.append(
-                {"name": "test", "message": "Test failed", "traceback": output[:200]}
-            )
+            failures.append({"name": "test", "message": "Test failed", "traceback": output[:200]})
 
-        return TestResults(
-            passed=passed, failed=failed, skipped=0, errors=0, failures=failures
-        )
+        return TestResults(passed=passed, failed=failed, skipped=0, errors=0, failures=failures)
 
     def _parse_zig_test_output(self, output: str) -> TestResults:
         """Parse zig test output."""
@@ -432,9 +408,7 @@ class TestValidator:
                 # Assume passed if no errors
                 passed = 1
 
-        return TestResults(
-            passed=passed, failed=failed, skipped=0, errors=0, failures=failures
-        )
+        return TestResults(passed=passed, failed=failed, skipped=0, errors=0, failures=failures)
 
 
 __all__ = ["TestValidator", "TestResults", "TestValidationResult"]

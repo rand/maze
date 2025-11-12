@@ -5,13 +5,12 @@ Provides type checking across multiple languages using native type checkers
 and integration with Phase 3 type system for TypeScript.
 """
 
+import json
+import os
 import subprocess
 import tempfile
-import os
-import json
 from dataclasses import dataclass
-from typing import Optional, Literal, Any
-from pathlib import Path
+from typing import Any
 
 from maze.validation.syntax import Diagnostic
 
@@ -45,7 +44,7 @@ class TypeValidator:
         >>> assert not result.success
     """
 
-    def __init__(self, type_system: Optional[Any] = None):
+    def __init__(self, type_system: Any | None = None):
         """
         Initialize type validator.
 
@@ -61,9 +60,7 @@ class TypeValidator:
             "zig": self.check_zig,
         }
 
-    def validate(
-        self, code: str, language: str, context: Any
-    ) -> TypeValidationResult:
+    def validate(self, code: str, language: str, context: Any) -> TypeValidationResult:
         """
         Validate types in code.
 
@@ -188,9 +185,7 @@ class TypeValidator:
             # Create minimal Cargo project
             cargo_toml = os.path.join(temp_dir, "Cargo.toml")
             with open(cargo_toml, "w") as f:
-                f.write(
-                    '[package]\nname = "temp"\nversion = "0.1.0"\nedition = "2021"\n'
-                )
+                f.write('[package]\nname = "temp"\nversion = "0.1.0"\nedition = "2021"\n')
 
             src_dir = os.path.join(temp_dir, "src")
             os.makedirs(src_dir)
@@ -225,9 +220,7 @@ class TypeValidator:
                                         message=compiler_msg.get("message", ""),
                                         line=span.get("line_start", 0),
                                         column=span.get("column_start", 0),
-                                        code=compiler_msg.get("code", {}).get(
-                                            "code"
-                                        ),
+                                        code=compiler_msg.get("code", {}).get("code"),
                                         source="type",
                                     )
                                 )
@@ -286,11 +279,7 @@ class TypeValidator:
                         if len(parts) >= 4:
                             try:
                                 line_num = int(parts[1])
-                                col_num = (
-                                    int(parts[2])
-                                    if parts[2].strip().isdigit()
-                                    else 0
-                                )
+                                col_num = int(parts[2]) if parts[2].strip().isdigit() else 0
                                 message = ":".join(parts[3:]).strip()
                                 diagnostics.append(
                                     Diagnostic(
@@ -333,9 +322,7 @@ class TypeValidator:
 
     def check_zig(self, code: str, context: Any) -> list[Diagnostic]:
         """Zig type checking using zig build-obj."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".zig", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".zig", delete=False) as f:
             f.write(code)
             temp_file = f.name
 
@@ -466,9 +453,7 @@ class TypeValidator:
 
         return diagnostics
 
-    def suggest_type_fix(
-        self, error: Diagnostic, code: str, context: Any
-    ) -> Optional[str]:
+    def suggest_type_fix(self, error: Diagnostic, code: str, context: Any) -> str | None:
         """
         Suggest fix for type error.
 
@@ -499,9 +484,7 @@ class TypeValidator:
 
     def _check_with_tsc(self, code: str) -> list[Diagnostic]:
         """Check TypeScript code with tsc."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".ts", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".ts", delete=False) as f:
             f.write(code)
             temp_file = f.name
 

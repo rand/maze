@@ -6,12 +6,11 @@ error messages and suggested fixes.
 """
 
 import ast
+import os
 import subprocess
 import tempfile
-import os
 from dataclasses import dataclass
-from typing import Optional, Literal, Any
-from pathlib import Path
+from typing import Any, Literal
 
 
 @dataclass
@@ -22,10 +21,10 @@ class Diagnostic:
     message: str
     line: int
     column: int
-    code: Optional[str] = None
+    code: str | None = None
     source: str = ""
-    suggested_fix: Optional[str] = None
-    context: Optional[str] = None
+    suggested_fix: str | None = None
+    context: str | None = None
 
 
 @dataclass
@@ -34,7 +33,7 @@ class SyntaxValidationResult:
 
     success: bool
     diagnostics: list[Diagnostic]
-    parse_tree: Optional[Any] = None
+    parse_tree: Any | None = None
     validation_time_ms: float = 0.0
 
 
@@ -145,7 +144,7 @@ class SyntaxValidator:
                 validation_time_ms=validation_time_ms,
             )
 
-    def parse(self, code: str, language: str) -> Optional[Any]:
+    def parse(self, code: str, language: str) -> Any | None:
         """
         Parse code and return AST.
 
@@ -165,9 +164,7 @@ class SyntaxValidator:
             # For other languages, validation is done via external tools
             return None
 
-    def extract_errors(
-        self, tree: Any, code: str, language: str
-    ) -> list[Diagnostic]:
+    def extract_errors(self, tree: Any, code: str, language: str) -> list[Diagnostic]:
         """
         Extract syntax errors from parse tree.
 
@@ -182,9 +179,7 @@ class SyntaxValidator:
         # This would use tree-sitter error nodes in full implementation
         return []
 
-    def suggest_fix(
-        self, error: Diagnostic, code: str, language: str
-    ) -> Optional[str]:
+    def suggest_fix(self, error: Diagnostic, code: str, language: str) -> str | None:
         """
         Suggest fix for syntax error.
 
@@ -263,9 +258,7 @@ class SyntaxValidator:
 
     def _validate_typescript(self, code: str) -> list[Diagnostic]:
         """Validate TypeScript syntax using tsc."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".ts", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".ts", delete=False) as f:
             f.write(code)
             temp_file = f.name
 
@@ -299,7 +292,11 @@ class SyntaxValidator:
                                     message=message,
                                     line=int(line_num),
                                     column=int(col_num),
-                                    code=parts[1].strip().split()[1] if len(parts[1].strip().split()) > 1 else None,
+                                    code=(
+                                        parts[1].strip().split()[1]
+                                        if len(parts[1].strip().split()) > 1
+                                        else None
+                                    ),
                                     source="syntax",
                                 )
                                 diagnostic.suggested_fix = self.suggest_fix(
@@ -342,9 +339,7 @@ class SyntaxValidator:
             # Create minimal Cargo.toml
             cargo_toml = os.path.join(temp_dir, "Cargo.toml")
             with open(cargo_toml, "w") as f:
-                f.write(
-                    '[package]\nname = "temp"\nversion = "0.1.0"\nedition = "2021"\n'
-                )
+                f.write('[package]\nname = "temp"\nversion = "0.1.0"\nedition = "2021"\n')
 
             # Create src directory and main.rs
             src_dir = os.path.join(temp_dir, "src")
@@ -484,9 +479,7 @@ class SyntaxValidator:
 
     def _validate_zig(self, code: str) -> list[Diagnostic]:
         """Validate Zig syntax using zig ast-check."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".zig", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".zig", delete=False) as f:
             f.write(code)
             temp_file = f.name
 

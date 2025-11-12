@@ -6,16 +6,15 @@ adaptive learning and project-specific customization.
 """
 
 import ast
-import re
 import hashlib
 import time
-from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Any, Optional
 from collections import defaultdict
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
 
-from maze.core.types import TypeContext, Type
+from maze.core.types import TypeContext
 
 
 @dataclass
@@ -82,7 +81,7 @@ class PatternMiningEngine:
         language: str = "typescript",
         min_frequency: int = 3,
         max_patterns: int = 1000,
-        enable_semantic: bool = True
+        enable_semantic: bool = True,
     ):
         """
         Initialize pattern mining engine.
@@ -102,18 +101,9 @@ class PatternMiningEngine:
         self._ast_cache: dict[str, ast.AST] = {}
 
         # Statistics
-        self.stats = {
-            "files_processed": 0,
-            "total_patterns": 0,
-            "cache_hits": 0,
-            "cache_misses": 0
-        }
+        self.stats = {"files_processed": 0, "total_patterns": 0, "cache_hits": 0, "cache_misses": 0}
 
-    def mine_patterns(
-        self,
-        codebase: Path,
-        language: Optional[str] = None
-    ) -> PatternSet:
+    def mine_patterns(self, codebase: Path, language: str | None = None) -> PatternSet:
         """
         Mine patterns from entire codebase.
 
@@ -143,7 +133,7 @@ class PatternMiningEngine:
         else:
             for file_path in files:
                 try:
-                    code = file_path.read_text(encoding='utf-8')
+                    code = file_path.read_text(encoding="utf-8")
 
                     # Extract patterns
                     syntactic = self._extract_syntactic_from_file(code, lang)
@@ -158,7 +148,7 @@ class PatternMiningEngine:
 
                     self.stats["files_processed"] += 1
 
-                except Exception as e:
+                except Exception:
                     # Skip files with errors
                     continue
 
@@ -168,23 +158,14 @@ class PatternMiningEngine:
         semantic_patterns = self._aggregate_semantic_patterns(all_semantic)
 
         # Filter by frequency
-        syntactic_patterns = [
-            p for p in syntactic_patterns
-            if p.frequency >= self.min_frequency
-        ]
-        type_patterns = [
-            p for p in type_patterns
-            if p.frequency >= self.min_frequency
-        ]
-        semantic_patterns = [
-            p for p in semantic_patterns
-            if p.frequency >= self.min_frequency
-        ]
+        syntactic_patterns = [p for p in syntactic_patterns if p.frequency >= self.min_frequency]
+        type_patterns = [p for p in type_patterns if p.frequency >= self.min_frequency]
+        semantic_patterns = [p for p in semantic_patterns if p.frequency >= self.min_frequency]
 
         # Limit total patterns
-        syntactic_patterns = syntactic_patterns[:self.max_patterns // 3]
-        type_patterns = type_patterns[:self.max_patterns // 3]
-        semantic_patterns = semantic_patterns[:self.max_patterns // 3]
+        syntactic_patterns = syntactic_patterns[: self.max_patterns // 3]
+        type_patterns = type_patterns[: self.max_patterns // 3]
+        semantic_patterns = semantic_patterns[: self.max_patterns // 3]
 
         extraction_time_ms = (time.perf_counter() - start_time) * 1000
         total = len(syntactic_patterns) + len(type_patterns) + len(semantic_patterns)
@@ -198,14 +179,10 @@ class PatternMiningEngine:
             language=lang,
             source=codebase,
             extraction_time_ms=extraction_time_ms,
-            total_patterns=total
+            total_patterns=total,
         )
 
-    def extract_syntactic_patterns(
-        self,
-        ast_node: ast.AST,
-        code: str
-    ) -> list[SyntacticPattern]:
+    def extract_syntactic_patterns(self, ast_node: ast.AST, code: str) -> list[SyntacticPattern]:
         """
         Extract syntactic patterns from AST.
 
@@ -232,11 +209,7 @@ class PatternMiningEngine:
 
         return patterns
 
-    def extract_type_patterns(
-        self,
-        types: TypeContext,
-        code: str
-    ) -> list[TypePattern]:
+    def extract_type_patterns(self, types: TypeContext, code: str) -> list[TypePattern]:
         """
         Extract type usage patterns.
 
@@ -258,19 +231,19 @@ class PatternMiningEngine:
 
         # Create patterns
         for type_str, usages in type_usages.items():
-            patterns.append(TypePattern(
-                signature=type_str,
-                common_usages=usages,
-                frequency=len(usages),
-                generic_variants=self._find_generic_variants(type_str)
-            ))
+            patterns.append(
+                TypePattern(
+                    signature=type_str,
+                    common_usages=usages,
+                    frequency=len(usages),
+                    generic_variants=self._find_generic_variants(type_str),
+                )
+            )
 
         return patterns
 
     def extract_semantic_patterns(
-        self,
-        code: str,
-        ast_node: Optional[ast.AST] = None
+        self, code: str, ast_node: ast.AST | None = None
     ) -> list[SemanticPattern]:
         """
         Extract high-level semantic patterns.
@@ -302,11 +275,7 @@ class PatternMiningEngine:
 
         return patterns
 
-    def rank_patterns(
-        self,
-        patterns: list,
-        ranking_criteria: Optional[dict] = None
-    ) -> list:
+    def rank_patterns(self, patterns: list, ranking_criteria: dict | None = None) -> list:
         """
         Rank patterns by relevance and frequency.
 
@@ -317,11 +286,7 @@ class PatternMiningEngine:
         Returns:
             Patterns with scores (sorted descending)
         """
-        criteria = ranking_criteria or {
-            "frequency": 0.6,
-            "examples": 0.2,
-            "complexity": 0.2
-        }
+        criteria = ranking_criteria or {"frequency": 0.6, "examples": 0.2, "complexity": 0.2}
 
         scored_patterns = []
 
@@ -333,13 +298,13 @@ class PatternMiningEngine:
             score += freq_score * criteria["frequency"]
 
             # Examples score (more examples = better)
-            if hasattr(pattern, 'examples'):
+            if hasattr(pattern, "examples"):
                 examples_score = min(1.0, len(pattern.examples) / 5.0)
                 score += examples_score * criteria["examples"]
 
             # Complexity score (more complex = higher value)
-            if hasattr(pattern, 'template'):
-                complexity = len(pattern.template.split('\n'))
+            if hasattr(pattern, "template"):
+                complexity = len(pattern.template.split("\n"))
                 complexity_score = min(1.0, complexity / 10.0)
                 score += complexity_score * criteria["complexity"]
 
@@ -350,11 +315,7 @@ class PatternMiningEngine:
 
         return [p for p, _ in scored_patterns]
 
-    def incremental_mine(
-        self,
-        file_path: Path,
-        existing_patterns: PatternSet
-    ) -> PatternSet:
+    def incremental_mine(self, file_path: Path, existing_patterns: PatternSet) -> PatternSet:
         """
         Incrementally update patterns with new file.
 
@@ -368,7 +329,7 @@ class PatternMiningEngine:
         start_time = time.perf_counter()
 
         # Extract patterns from new file
-        code = file_path.read_text(encoding='utf-8')
+        code = file_path.read_text(encoding="utf-8")
 
         new_syntactic = self._extract_syntactic_from_file(code, self.language)
         new_type = self._extract_type_from_file(code, self.language)
@@ -397,7 +358,7 @@ class PatternMiningEngine:
             language=self.language,
             source=existing_patterns.source,
             extraction_time_ms=extraction_time_ms,
-            total_patterns=total
+            total_patterns=total,
         )
 
     def get_mining_stats(self) -> dict[str, Any]:
@@ -418,7 +379,7 @@ class PatternMiningEngine:
             "typescript": [".ts", ".tsx"],
             "rust": [".rs"],
             "go": [".go"],
-            "zig": [".zig"]
+            "zig": [".zig"],
         }
 
         exts = extensions.get(language, [".py"])
@@ -430,9 +391,7 @@ class PatternMiningEngine:
         return files
 
     def _mine_parallel(
-        self,
-        files: list[Path],
-        language: str
+        self, files: list[Path], language: str
     ) -> tuple[list[SyntacticPattern], list[TypePattern], list[SemanticPattern]]:
         """Mine patterns in parallel."""
         all_syntactic = []
@@ -441,8 +400,7 @@ class PatternMiningEngine:
 
         with ProcessPoolExecutor(max_workers=4) as executor:
             futures = {
-                executor.submit(self._extract_patterns_from_file, f, language): f
-                for f in files
+                executor.submit(self._extract_patterns_from_file, f, language): f for f in files
             }
 
             for future in as_completed(futures):
@@ -457,12 +415,10 @@ class PatternMiningEngine:
         return all_syntactic, all_type, all_semantic
 
     def _extract_patterns_from_file(
-        self,
-        file_path: Path,
-        language: str
+        self, file_path: Path, language: str
     ) -> tuple[list[SyntacticPattern], list[TypePattern], list[SemanticPattern]]:
         """Extract all patterns from a file."""
-        code = file_path.read_text(encoding='utf-8')
+        code = file_path.read_text(encoding="utf-8")
 
         syntactic = self._extract_syntactic_from_file(code, language)
         type_patterns = self._extract_type_from_file(code, language)
@@ -473,11 +429,7 @@ class PatternMiningEngine:
 
         return syntactic, type_patterns, semantic
 
-    def _extract_syntactic_from_file(
-        self,
-        code: str,
-        language: str
-    ) -> list[SyntacticPattern]:
+    def _extract_syntactic_from_file(self, code: str, language: str) -> list[SyntacticPattern]:
         """Extract syntactic patterns from file."""
         # Support Python and TypeScript/JavaScript
         if language not in ["python", "typescript", "javascript"]:
@@ -489,20 +441,12 @@ class PatternMiningEngine:
         except:
             return []
 
-    def _extract_type_from_file(
-        self,
-        code: str,
-        language: str
-    ) -> list[TypePattern]:
+    def _extract_type_from_file(self, code: str, language: str) -> list[TypePattern]:
         """Extract type patterns from file."""
         # Placeholder - would integrate with type system
         return []
 
-    def _extract_semantic_from_file(
-        self,
-        code: str,
-        language: str
-    ) -> list[SemanticPattern]:
+    def _extract_semantic_from_file(self, code: str, language: str) -> list[SemanticPattern]:
         """Extract semantic patterns from file."""
         if language != "python":
             return []
@@ -527,11 +471,7 @@ class PatternMiningEngine:
 
         return tree
 
-    def _extract_function_patterns(
-        self,
-        tree: ast.AST,
-        code: str
-    ) -> list[SyntacticPattern]:
+    def _extract_function_patterns(self, tree: ast.AST, code: str) -> list[SyntacticPattern]:
         """Extract function definition patterns."""
         patterns = []
 
@@ -539,29 +479,27 @@ class PatternMiningEngine:
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 template = self._generalize_function(node)
 
-                patterns.append(SyntacticPattern(
-                    pattern_type="function",
-                    template=template,
-                    frequency=1,
-                    examples=[ast.unparse(node)[:200]],  # Truncate long examples
-                    context={
-                        "args_count": len(node.args.args),
-                        "has_return": any(isinstance(n, ast.Return) for n in ast.walk(node)),
-                        "decorators": [
-                            d.id if isinstance(d, ast.Name) else "decorator"
-                            for d in node.decorator_list
-                        ],
-                        "is_async": isinstance(node, ast.AsyncFunctionDef)
-                    }
-                ))
+                patterns.append(
+                    SyntacticPattern(
+                        pattern_type="function",
+                        template=template,
+                        frequency=1,
+                        examples=[ast.unparse(node)[:200]],  # Truncate long examples
+                        context={
+                            "args_count": len(node.args.args),
+                            "has_return": any(isinstance(n, ast.Return) for n in ast.walk(node)),
+                            "decorators": [
+                                d.id if isinstance(d, ast.Name) else "decorator"
+                                for d in node.decorator_list
+                            ],
+                            "is_async": isinstance(node, ast.AsyncFunctionDef),
+                        },
+                    )
+                )
 
         return patterns
 
-    def _extract_class_patterns(
-        self,
-        tree: ast.AST,
-        code: str
-    ) -> list[SyntacticPattern]:
+    def _extract_class_patterns(self, tree: ast.AST, code: str) -> list[SyntacticPattern]:
         """Extract class definition patterns."""
         patterns = []
 
@@ -569,59 +507,63 @@ class PatternMiningEngine:
             if isinstance(node, ast.ClassDef):
                 template = f"class {node.name}({', '.join(self._get_base_names(node))})"
 
-                patterns.append(SyntacticPattern(
-                    pattern_type="class",
-                    template=template,
-                    frequency=1,
-                    examples=[ast.unparse(node)[:200]],
-                    context={
-                        "methods": len([m for m in node.body if isinstance(m, ast.FunctionDef)]),
-                        "has_init": any(m.name == "__init__" for m in node.body if isinstance(m, ast.FunctionDef)),
-                        "decorators": [
-                            d.id if isinstance(d, ast.Name) else "decorator"
-                            for d in node.decorator_list
-                        ]
-                    }
-                ))
+                patterns.append(
+                    SyntacticPattern(
+                        pattern_type="class",
+                        template=template,
+                        frequency=1,
+                        examples=[ast.unparse(node)[:200]],
+                        context={
+                            "methods": len(
+                                [m for m in node.body if isinstance(m, ast.FunctionDef)]
+                            ),
+                            "has_init": any(
+                                m.name == "__init__"
+                                for m in node.body
+                                if isinstance(m, ast.FunctionDef)
+                            ),
+                            "decorators": [
+                                d.id if isinstance(d, ast.Name) else "decorator"
+                                for d in node.decorator_list
+                            ],
+                        },
+                    )
+                )
 
         return patterns
 
-    def _extract_import_patterns(
-        self,
-        tree: ast.AST,
-        code: str
-    ) -> list[SyntacticPattern]:
+    def _extract_import_patterns(self, tree: ast.AST, code: str) -> list[SyntacticPattern]:
         """Extract import patterns."""
         patterns = []
 
         for node in ast.walk(tree):
             if isinstance(node, ast.Import):
                 for alias in node.names:
-                    patterns.append(SyntacticPattern(
-                        pattern_type="import",
-                        template=f"import {alias.name}",
-                        frequency=1,
-                        examples=[f"import {alias.name}"],
-                        context={"module": alias.name}
-                    ))
+                    patterns.append(
+                        SyntacticPattern(
+                            pattern_type="import",
+                            template=f"import {alias.name}",
+                            frequency=1,
+                            examples=[f"import {alias.name}"],
+                            context={"module": alias.name},
+                        )
+                    )
             elif isinstance(node, ast.ImportFrom):
                 module = node.module or ""
                 names = [alias.name for alias in node.names]
-                patterns.append(SyntacticPattern(
-                    pattern_type="import",
-                    template=f"from {module} import ...",
-                    frequency=1,
-                    examples=[f"from {module} import {', '.join(names[:3])}"],
-                    context={"module": module, "imports": names}
-                ))
+                patterns.append(
+                    SyntacticPattern(
+                        pattern_type="import",
+                        template=f"from {module} import ...",
+                        frequency=1,
+                        examples=[f"from {module} import {', '.join(names[:3])}"],
+                        context={"module": module, "imports": names},
+                    )
+                )
 
         return patterns
 
-    def _extract_error_handling_patterns(
-        self,
-        tree: ast.AST,
-        code: str
-    ) -> list[SyntacticPattern]:
+    def _extract_error_handling_patterns(self, tree: ast.AST, code: str) -> list[SyntacticPattern]:
         """Extract error handling patterns."""
         patterns = []
 
@@ -633,50 +575,45 @@ class PatternMiningEngine:
                         if isinstance(handler.type, ast.Name):
                             exception_types.append(handler.type.id)
                         elif isinstance(handler.type, ast.Tuple):
-                            exception_types.extend([
-                                e.id for e in handler.type.elts
-                                if isinstance(e, ast.Name)
-                            ])
+                            exception_types.extend(
+                                [e.id for e in handler.type.elts if isinstance(e, ast.Name)]
+                            )
 
-                patterns.append(SyntacticPattern(
-                    pattern_type="error_handling",
-                    template="try: ... except ...",
-                    frequency=1,
-                    examples=[ast.unparse(node)[:200]],
-                    context={
-                        "exception_types": exception_types,
-                        "has_finally": len(node.finalbody) > 0,
-                        "has_else": len(node.orelse) > 0
-                    }
-                ))
+                patterns.append(
+                    SyntacticPattern(
+                        pattern_type="error_handling",
+                        template="try: ... except ...",
+                        frequency=1,
+                        examples=[ast.unparse(node)[:200]],
+                        context={
+                            "exception_types": exception_types,
+                            "has_finally": len(node.finalbody) > 0,
+                            "has_else": len(node.orelse) > 0,
+                        },
+                    )
+                )
 
         return patterns
 
-    def _extract_error_handling_semantic(
-        self,
-        tree: ast.AST,
-        code: str
-    ) -> list[SemanticPattern]:
+    def _extract_error_handling_semantic(self, tree: ast.AST, code: str) -> list[SemanticPattern]:
         """Extract semantic error handling patterns."""
         patterns = []
 
         try_blocks = [node for node in ast.walk(tree) if isinstance(node, ast.Try)]
 
         if try_blocks:
-            patterns.append(SemanticPattern(
-                intent="error_handling",
-                structure="try-except pattern",
-                implementations=[ast.unparse(node)[:200] for node in try_blocks[:3]],
-                frequency=len(try_blocks)
-            ))
+            patterns.append(
+                SemanticPattern(
+                    intent="error_handling",
+                    structure="try-except pattern",
+                    implementations=[ast.unparse(node)[:200] for node in try_blocks[:3]],
+                    frequency=len(try_blocks),
+                )
+            )
 
         return patterns
 
-    def _extract_validation_patterns(
-        self,
-        tree: ast.AST,
-        code: str
-    ) -> list[SemanticPattern]:
+    def _extract_validation_patterns(self, tree: ast.AST, code: str) -> list[SemanticPattern]:
         """Extract validation patterns."""
         patterns = []
 
@@ -684,20 +621,18 @@ class PatternMiningEngine:
         assertions = [node for node in ast.walk(tree) if isinstance(node, ast.Assert)]
 
         if assertions:
-            patterns.append(SemanticPattern(
-                intent="validation",
-                structure="assertion pattern",
-                implementations=[ast.unparse(node)[:200] for node in assertions[:3]],
-                frequency=len(assertions)
-            ))
+            patterns.append(
+                SemanticPattern(
+                    intent="validation",
+                    structure="assertion pattern",
+                    implementations=[ast.unparse(node)[:200] for node in assertions[:3]],
+                    frequency=len(assertions),
+                )
+            )
 
         return patterns
 
-    def _extract_transformation_patterns(
-        self,
-        tree: ast.AST,
-        code: str
-    ) -> list[SemanticPattern]:
+    def _extract_transformation_patterns(self, tree: ast.AST, code: str) -> list[SemanticPattern]:
         """Extract transformation patterns."""
         # Placeholder for transformation pattern extraction
         return []
@@ -723,8 +658,7 @@ class PatternMiningEngine:
         return []
 
     def _aggregate_syntactic_patterns(
-        self,
-        patterns: list[SyntacticPattern]
+        self, patterns: list[SyntacticPattern]
     ) -> list[SyntacticPattern]:
         """Aggregate syntactic patterns by template."""
         aggregated: dict[tuple, SyntacticPattern] = {}
@@ -747,10 +681,7 @@ class PatternMiningEngine:
         result = sorted(aggregated.values(), key=lambda p: p.frequency, reverse=True)
         return result
 
-    def _aggregate_type_patterns(
-        self,
-        patterns: list[TypePattern]
-    ) -> list[TypePattern]:
+    def _aggregate_type_patterns(self, patterns: list[TypePattern]) -> list[TypePattern]:
         """Aggregate type patterns by signature."""
         aggregated: dict[str, TypePattern] = {}
 
@@ -767,8 +698,7 @@ class PatternMiningEngine:
         return result
 
     def _aggregate_semantic_patterns(
-        self,
-        patterns: list[SemanticPattern]
+        self, patterns: list[SemanticPattern]
     ) -> list[SemanticPattern]:
         """Aggregate semantic patterns by intent."""
         aggregated: dict[tuple, SemanticPattern] = {}

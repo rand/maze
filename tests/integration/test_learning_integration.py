@@ -4,28 +4,27 @@ Integration tests for Phase 5 adaptive learning system.
 Tests end-to-end workflows across all learning components.
 """
 
-from pathlib import Path
 import time
+
 import pytest
 
-from maze.learning.pattern_mining import PatternMiningEngine, PatternSet
+from maze.integrations.mnemosyne import (
+    GenerationContext,
+    MnemosyneIntegration,
+)
 from maze.learning.constraint_learning import (
     ConstraintLearningSystem,
     GenerationResult,
     ValidationResult,
-    RepairResult,
 )
-from maze.learning.project_adaptation import ProjectAdaptationManager
 from maze.learning.feedback_orchestrator import FeedbackLoopOrchestrator
 from maze.learning.hybrid_weighting import (
-    HybridConstraintWeighter,
     ConstraintSet,
     GenerationState,
+    HybridConstraintWeighter,
 )
-from maze.integrations.mnemosyne import (
-    MnemosyneIntegration,
-    GenerationContext,
-)
+from maze.learning.pattern_mining import PatternMiningEngine
+from maze.learning.project_adaptation import ProjectAdaptationManager
 
 
 class TestLearningIntegration:
@@ -38,7 +37,8 @@ class TestLearningIntegration:
         project.mkdir()
 
         # Create sample Python files
-        (project / "main.py").write_text("""
+        (project / "main.py").write_text(
+            """
 def process_data(data):
     '''Process input data.'''
     result = transform(data)
@@ -51,9 +51,11 @@ def transform(data):
 def validate(data):
     '''Validate data.'''
     return len(data) > 0
-""")
+"""
+        )
 
-        (project / "utils.py").write_text("""
+        (project / "utils.py").write_text(
+            """
 class DataProcessor:
     '''Utility for data processing.'''
 
@@ -70,7 +72,8 @@ class DataProcessor:
 
     def _format(self, data):
         return f"Processed: {data}"
-""")
+"""
+        )
 
         return project
 
@@ -87,27 +90,20 @@ class DataProcessor:
     @pytest.fixture
     def adapter(self, pattern_miner, learner):
         """Create project adaptation manager."""
-        return ProjectAdaptationManager(
-            pattern_miner=pattern_miner,
-            learner=learner
-        )
+        return ProjectAdaptationManager(pattern_miner=pattern_miner, learner=learner)
 
     @pytest.fixture
     def memory(self, tmp_path):
         """Create mnemosyne integration."""
         return MnemosyneIntegration(
-            enable_orchestration=False,
-            local_cache_path=tmp_path / "cache.jsonl"
+            enable_orchestration=False, local_cache_path=tmp_path / "cache.jsonl"
         )
 
     @pytest.fixture
     def orchestrator(self, learner, adapter, memory):
         """Create feedback loop orchestrator."""
         return FeedbackLoopOrchestrator(
-            learner=learner,
-            adapter=adapter,
-            memory=memory,
-            enable_auto_persist=True
+            learner=learner, adapter=adapter, memory=memory, enable_auto_persist=True
         )
 
     @pytest.fixture
@@ -116,13 +112,7 @@ class DataProcessor:
         return HybridConstraintWeighter(default_temperature=0.5)
 
     def test_end_to_end_learning_workflow(
-        self,
-        sample_codebase,
-        pattern_miner,
-        learner,
-        adapter,
-        memory,
-        orchestrator
+        self, sample_codebase, pattern_miner, learner, adapter, memory, orchestrator
     ):
         """Test complete learning workflow from mining to feedback."""
         # Step 1: Mine patterns from codebase
@@ -142,7 +132,7 @@ class DataProcessor:
         generation = GenerationResult(
             code="def new_function(x):\n    return x * 2",
             language="python",
-            generation_time_ms=50.0
+            generation_time_ms=50.0,
         )
 
         # Step 4: Validate (simulated success)
@@ -150,9 +140,7 @@ class DataProcessor:
 
         # Step 5: Process feedback
         feedback_result = orchestrator.process_feedback(
-            generation,
-            validation,
-            project_name="sample_project"
+            generation, validation, project_name="sample_project"
         )
 
         assert feedback_result.score > 0
@@ -169,24 +157,18 @@ class DataProcessor:
         cache_path = tmp_path / "cache.jsonl"
 
         # Session 1: Store patterns
-        memory1 = MnemosyneIntegration(
-            enable_orchestration=False,
-            local_cache_path=cache_path
-        )
+        memory1 = MnemosyneIntegration(enable_orchestration=False, local_cache_path=cache_path)
 
         pattern = SyntacticPattern(
             pattern_type="function",
             template="def foo(): ...",
             frequency=5,
             examples=["def foo(): pass"],
-            context={"args": 0}
+            context={"args": 0},
         )
 
         memory1.store_pattern(
-            pattern=pattern,
-            namespace="project:test",
-            importance=7,
-            tags=["function", "test"]
+            pattern=pattern, namespace="project:test", importance=7, tags=["function", "test"]
         )
 
         # Verify stored in memory and file
@@ -195,7 +177,8 @@ class DataProcessor:
 
         # Verify file contents
         import json
-        with open(cache_path, 'r') as f:
+
+        with open(cache_path) as f:
             lines = f.readlines()
             assert len(lines) > 0, "Cache file is empty"
             # Verify JSON is valid
@@ -203,19 +186,16 @@ class DataProcessor:
             assert "pattern_id" in data
 
         # Session 2: Create new instance (simulating new session)
-        memory2 = MnemosyneIntegration(
-            enable_orchestration=False,
-            local_cache_path=cache_path
-        )
+        memory2 = MnemosyneIntegration(enable_orchestration=False, local_cache_path=cache_path)
 
         # Verify loaded from file
-        assert len(memory2.pattern_cache) > 0, f"Failed to load from {cache_path}, use_local_cache={memory2.use_local_cache}"
+        assert (
+            len(memory2.pattern_cache) > 0
+        ), f"Failed to load from {cache_path}, use_local_cache={memory2.use_local_cache}"
 
         # Recall patterns
         context = GenerationContext(
-            language="python",
-            task_description="create function",
-            existing_code=None
+            language="python", task_description="create function", existing_code=None
         )
 
         recalled = memory2.recall_patterns(context, namespace="project:test", limit=10)
@@ -224,13 +204,7 @@ class DataProcessor:
         assert len(recalled) > 0
 
     def test_multi_project_learning(
-        self,
-        tmp_path,
-        pattern_miner,
-        learner,
-        adapter,
-        memory,
-        orchestrator
+        self, tmp_path, pattern_miner, learner, adapter, memory, orchestrator
     ):
         """Test learning from multiple projects."""
         # Create two projects
@@ -276,39 +250,28 @@ class DataProcessor:
                 template=f"def func{i}(): ...",
                 frequency=i + 1,
                 examples=[f"def func{i}(): pass"],
-                context={"index": i}
+                context={"index": i},
             )
             patterns_stored.append(pattern)
             memory.store_pattern(
                 pattern=pattern,
                 namespace="project:accuracy_test",
                 importance=5 + i // 2,
-                tags=["function", f"test{i}"]
+                tags=["function", f"test{i}"],
             )
 
         # Recall with relevant context
         context = GenerationContext(
-            language="python",
-            task_description="create function",
-            existing_code=None
+            language="python", task_description="create function", existing_code=None
         )
 
-        recalled = memory.recall_patterns(
-            context,
-            namespace="project:accuracy_test",
-            limit=10
-        )
+        recalled = memory.recall_patterns(context, namespace="project:accuracy_test", limit=10)
 
         # Verify recall accuracy (should recall most patterns)
         recall_rate = len(recalled) / len(patterns_stored)
         assert recall_rate >= 0.9, f"Recall rate {recall_rate:.2%} below 90% target"
 
-    def test_adaptation_convergence(
-        self,
-        sample_codebase,
-        adapter,
-        orchestrator
-    ):
+    def test_adaptation_convergence(self, sample_codebase, adapter, orchestrator):
         """Test convergence within 100 examples."""
         # Initialize project
         adapter.initialize_project(sample_codebase, language="python")
@@ -318,17 +281,11 @@ class DataProcessor:
         # Simulate 50 successful generations
         for i in range(50):
             generation = GenerationResult(
-                code=f"def func{i}(): pass",
-                language="python",
-                generation_time_ms=50.0
+                code=f"def func{i}(): pass", language="python", generation_time_ms=50.0
             )
             validation = ValidationResult(success=True)
 
-            orchestrator.process_feedback(
-                generation,
-                validation,
-                project_name="sample_project"
-            )
+            orchestrator.process_feedback(generation, validation, project_name="sample_project")
 
         # Check convergence (constraints should stabilize)
         final_constraints = len(adapter.learner.constraints)
@@ -340,17 +297,11 @@ class DataProcessor:
         profile = adapter.profiles["sample_project"]
         assert profile.generation_count == 50
 
-    def test_performance_end_to_end(
-        self,
-        sample_codebase,
-        orchestrator
-    ):
+    def test_performance_end_to_end(self, sample_codebase, orchestrator):
         """Test end-to-end performance."""
         # Measure feedback processing time
         generation = GenerationResult(
-            code="def test(): pass",
-            language="python",
-            generation_time_ms=50.0
+            code="def test(): pass", language="python", generation_time_ms=50.0
         )
         validation = ValidationResult(success=True)
 
@@ -374,13 +325,11 @@ class DataProcessor:
                 template=f"def func{i}(): ...",
                 frequency=1,
                 examples=[],
-                context={}
+                context={},
             )
 
             generation = GenerationResult(
-                code=f"def func{i}(): pass",
-                language="python",
-                generation_time_ms=50.0
+                code=f"def func{i}(): pass", language="python", generation_time_ms=50.0
             )
             validation = ValidationResult(success=True)
 
@@ -389,12 +338,7 @@ class DataProcessor:
         # Should not exceed max_constraints (1000)
         assert len(learner.constraints) <= learner.max_constraints
 
-    def test_pattern_mining_to_constraints(
-        self,
-        sample_codebase,
-        pattern_miner,
-        learner
-    ):
+    def test_pattern_mining_to_constraints(self, sample_codebase, pattern_miner, learner):
         """Test pattern → constraint pipeline."""
         # Mine patterns
         patterns = pattern_miner.mine_patterns(sample_codebase)
@@ -403,9 +347,7 @@ class DataProcessor:
 
         # Learn constraints from patterns
         generation = GenerationResult(
-            code="def example(): pass",
-            language="python",
-            generation_time_ms=50.0
+            code="def example(): pass", language="python", generation_time_ms=50.0
         )
         validation = ValidationResult(success=True)
 
@@ -419,16 +361,10 @@ class DataProcessor:
         """Test cold start without patterns."""
         # Try to recall from non-existent project
         context = GenerationContext(
-            language="python",
-            task_description="create function",
-            existing_code=None
+            language="python", task_description="create function", existing_code=None
         )
 
-        recalled = memory.recall_patterns(
-            context,
-            namespace="project:nonexistent",
-            limit=10
-        )
+        recalled = memory.recall_patterns(context, namespace="project:nonexistent", limit=10)
 
         # Should return empty list (graceful degradation)
         assert isinstance(recalled, list)
@@ -437,13 +373,10 @@ class DataProcessor:
         """Test error recovery in learning loop."""
         # Process invalid generation
         generation = GenerationResult(
-            code="def broken(",
-            language="python",
-            generation_time_ms=50.0
+            code="def broken(", language="python", generation_time_ms=50.0
         )
         validation = ValidationResult(
-            success=False,
-            diagnostics=[{"severity": "error", "message": "SyntaxError"}]
+            success=False, diagnostics=[{"severity": "error", "message": "SyntaxError"}]
         )
 
         # Should not raise exception
@@ -452,11 +385,7 @@ class DataProcessor:
         assert result is not None
         assert result.score < 0  # Negative feedback
 
-    def test_hybrid_weighting_integration(
-        self,
-        weighter,
-        learner
-    ):
+    def test_hybrid_weighting_integration(self, weighter, learner):
         """Test integration of hybrid weighting with constraints."""
         # Create hard and soft constraint sets
         hard = ConstraintSet(constraints=[])
@@ -480,12 +409,7 @@ class DataProcessor:
         total = sum(w for w, m in zip(weights.weights, weights.hard_masked) if not m)
         assert abs(total - 1.0) < 1e-6
 
-    def test_concurrent_learning_simulation(
-        self,
-        orchestrator,
-        adapter,
-        tmp_path
-    ):
+    def test_concurrent_learning_simulation(self, orchestrator, adapter, tmp_path):
         """Test concurrent learning from multiple sessions (simulated)."""
         # Create project
         project = tmp_path / "concurrent_project"
@@ -498,16 +422,12 @@ class DataProcessor:
         results = []
         for i in range(10):
             generation = GenerationResult(
-                code=f"def func{i}(): pass",
-                language="python",
-                generation_time_ms=50.0
+                code=f"def func{i}(): pass", language="python", generation_time_ms=50.0
             )
             validation = ValidationResult(success=True)
 
             result = orchestrator.process_feedback(
-                generation,
-                validation,
-                project_name="concurrent_project"
+                generation, validation, project_name="concurrent_project"
             )
             results.append(result)
 
@@ -516,13 +436,7 @@ class DataProcessor:
         assert all(r.score > 0 for r in results)
 
     def test_benchmarks_all_metrics(
-        self,
-        sample_codebase,
-        pattern_miner,
-        learner,
-        adapter,
-        orchestrator,
-        weighter
+        self, sample_codebase, pattern_miner, learner, adapter, orchestrator, weighter
     ):
         """Test all performance benchmarks."""
         benchmarks = {}
@@ -534,9 +448,7 @@ class DataProcessor:
 
         # Constraint learning performance
         generation = GenerationResult(
-            code="def test(): pass",
-            language="python",
-            generation_time_ms=50.0
+            code="def test(): pass", language="python", generation_time_ms=50.0
         )
         validation = ValidationResult(success=True)
 

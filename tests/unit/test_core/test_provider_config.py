@@ -6,8 +6,6 @@ Test coverage target: 85%
 import os
 from unittest.mock import Mock, patch
 
-import pytest
-
 from maze.config import Config
 from maze.core.pipeline import Pipeline
 from maze.orchestrator.providers import GenerationResponse
@@ -58,7 +56,7 @@ class TestProviderConfiguration:
         with patch.dict(os.environ, {"OPENAI_API_KEY": "sk-test"}):
             with patch("maze.core.pipeline.create_provider_adapter") as mock_create:
                 mock_provider = Mock()
-                
+
                 # Fail twice, succeed third time
                 mock_provider.generate.side_effect = [
                     Exception("Timeout"),

@@ -6,25 +6,25 @@ Coordinates learning from all generation results.
 
 import time
 from dataclasses import dataclass, field
-from typing import Optional, Any
 
+from maze.integrations.mnemosyne import MnemosyneIntegration
 from maze.learning.constraint_learning import (
     ConstraintLearningSystem,
     ConstraintRefinement,
     Feedback,
     GenerationResult,
-    ValidationResult,
     RepairResult,
+    ValidationResult,
 )
+from maze.learning.pattern_mining import SemanticPattern, SyntacticPattern, TypePattern
 from maze.learning.project_adaptation import ProjectAdaptationManager
-from maze.learning.pattern_mining import SyntacticPattern, TypePattern, SemanticPattern
-from maze.integrations.mnemosyne import MnemosyneIntegration
 
 
 @dataclass
 class FeedbackResult:
     """Result of feedback processing."""
-    pattern: Optional[SyntacticPattern | TypePattern | SemanticPattern]
+
+    pattern: SyntacticPattern | TypePattern | SemanticPattern | None
     score: float
     refinements: list[ConstraintRefinement]
     updated_weights: dict[str, float]
@@ -33,6 +33,7 @@ class FeedbackResult:
 @dataclass
 class FeedbackStats:
     """Feedback loop statistics."""
+
     total_feedback_events: int = 0
     positive_events: int = 0
     negative_events: int = 0
@@ -58,7 +59,7 @@ class FeedbackLoopOrchestrator:
         learner: ConstraintLearningSystem,
         adapter: ProjectAdaptationManager,
         memory: MnemosyneIntegration,
-        enable_auto_persist: bool = True
+        enable_auto_persist: bool = True,
     ):
         """
         Initialize feedback loop orchestrator.
@@ -79,8 +80,8 @@ class FeedbackLoopOrchestrator:
         self,
         generation: GenerationResult,
         validation: ValidationResult,
-        repair: Optional[RepairResult] = None,
-        project_name: Optional[str] = None
+        repair: RepairResult | None = None,
+        project_name: str | None = None,
     ) -> FeedbackResult:
         """
         Process feedback from generation outcome.
@@ -105,7 +106,7 @@ class FeedbackLoopOrchestrator:
             validation_result=validation,
             repair_result=repair,
             score=self._compute_overall_score(validation, repair),
-            feedback_type=self._classify_feedback(validation, repair)
+            feedback_type=self._classify_feedback(validation, repair),
         )
 
         # Update statistics
@@ -117,9 +118,8 @@ class FeedbackLoopOrchestrator:
 
         # Update rolling average score
         self.stats.average_score = (
-            (self.stats.average_score * (self.stats.total_feedback_events - 1) + feedback.score)
-            / self.stats.total_feedback_events
-        )
+            self.stats.average_score * (self.stats.total_feedback_events - 1) + feedback.score
+        ) / self.stats.total_feedback_events
 
         # Learn from feedback
         refinements = []
@@ -153,7 +153,7 @@ class FeedbackLoopOrchestrator:
             pattern=patterns[0] if patterns else None,
             score=feedback.score,
             refinements=refinements,
-            updated_weights=updated_weights
+            updated_weights=updated_weights,
         )
 
         # Auto-persist to mnemosyne
@@ -169,9 +169,7 @@ class FeedbackLoopOrchestrator:
         return result
 
     def _compute_overall_score(
-        self,
-        validation: ValidationResult,
-        repair: Optional[RepairResult]
+        self, validation: ValidationResult, repair: RepairResult | None
     ) -> float:
         """
         Compute overall quality score.
@@ -202,17 +200,14 @@ class FeedbackLoopOrchestrator:
 
         # Security violations
         critical_violations = [
-            v for v in validation.security_violations
-            if v.get("severity") == "critical"
+            v for v in validation.security_violations if v.get("severity") == "critical"
         ]
         score -= len(critical_violations) * 2.0
 
         return max(-2.0, min(2.0, score))
 
     def _classify_feedback(
-        self,
-        validation: ValidationResult,
-        repair: Optional[RepairResult]
+        self, validation: ValidationResult, repair: RepairResult | None
     ) -> str:
         """
         Classify feedback type.
@@ -228,8 +223,7 @@ class FeedbackLoopOrchestrator:
             return "neutral"
 
     def _extract_patterns_from_result(
-        self,
-        generation: GenerationResult
+        self, generation: GenerationResult
     ) -> list[SyntacticPattern | TypePattern | SemanticPattern]:
         """
         Extract patterns from generation result.
@@ -249,12 +243,13 @@ class FeedbackLoopOrchestrator:
                     template=f"pattern_{pattern_id}",
                     frequency=1,
                     examples=[generation.code[:100]],
-                    context={"pattern_id": pattern_id}
+                    context={"pattern_id": pattern_id},
                 )
                 patterns.append(pattern)
         else:
             # Extract basic patterns from code
             import ast
+
             try:
                 tree = ast.parse(generation.code)
 
@@ -266,7 +261,7 @@ class FeedbackLoopOrchestrator:
                             template=f"def {node.name}(...)",
                             frequency=1,
                             examples=[generation.code],
-                            context={"args_count": len(node.args.args)}
+                            context={"args_count": len(node.args.args)},
                         )
                         patterns.append(pattern)
                         break  # Just use first function
@@ -277,7 +272,7 @@ class FeedbackLoopOrchestrator:
                             template=f"class {node.name}",
                             frequency=1,
                             examples=[generation.code],
-                            context={}
+                            context={},
                         )
                         patterns.append(pattern)
                         break  # Just use first class
@@ -289,16 +284,14 @@ class FeedbackLoopOrchestrator:
                     template="...",
                     frequency=1,
                     examples=[generation.code[:100]],
-                    context={}
+                    context={},
                 )
                 patterns.append(pattern)
 
         return patterns
 
     def update_learning_state(
-        self,
-        feedback: FeedbackResult,
-        project_name: Optional[str] = None
+        self, feedback: FeedbackResult, project_name: str | None = None
     ) -> None:
         """
         Update learning state from feedback.
@@ -316,11 +309,7 @@ class FeedbackLoopOrchestrator:
         # Update statistics
         self.stats.last_update = time.time()
 
-    def persist_to_memory(
-        self,
-        feedback: FeedbackResult,
-        namespace: str
-    ) -> None:
+    def persist_to_memory(self, feedback: FeedbackResult, namespace: str) -> None:
         """
         Persist feedback to mnemosyne.
 
@@ -341,10 +330,7 @@ class FeedbackLoopOrchestrator:
 
             # Store pattern
             self.memory.store_pattern(
-                pattern=feedback.pattern,
-                namespace=namespace,
-                importance=importance,
-                tags=tags
+                pattern=feedback.pattern, namespace=namespace, importance=importance, tags=tags
             )
 
     def get_feedback_stats(self) -> FeedbackStats:

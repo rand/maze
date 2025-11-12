@@ -6,13 +6,13 @@ and security violation detection.
 """
 
 import os
+import shutil
 import subprocess
 import tempfile
-import shutil
 import time
 from dataclasses import dataclass
-from typing import Optional, Literal
 from pathlib import Path
+from typing import Literal, Optional
 
 
 @dataclass
@@ -45,8 +45,8 @@ class SecurityIssue:
     category: str
     severity: Literal["critical", "high", "medium", "low"]
     message: str
-    line: Optional[int] = None
-    file: Optional[str] = None
+    line: int | None = None
+    file: str | None = None
 
 
 @dataclass
@@ -57,7 +57,7 @@ class RuneConfig:
     memory_limit_mb: int = 512
     cpu_limit_percent: int = 100
     network_enabled: bool = False
-    allowed_syscalls: Optional[list[str]] = None
+    allowed_syscalls: list[str] | None = None
 
 
 class RuneExecutor:
@@ -69,15 +69,57 @@ class RuneExecutor:
     """
 
     DEFAULT_SYSCALLS = [
-        "read", "write", "open", "close", "stat", "fstat", "lstat",
-        "poll", "lseek", "mmap", "mprotect", "munmap", "brk",
-        "rt_sigaction", "rt_sigprocmask", "ioctl", "pread64",
-        "pwrite64", "readv", "writev", "access", "pipe", "select",
-        "sched_yield", "mremap", "msync", "mincore", "madvise",
-        "dup", "dup2", "pause", "nanosleep", "getpid", "clone",
-        "exit", "exit_group", "wait4", "fcntl", "fsync", "getcwd",
-        "chdir", "mkdir", "rmdir", "unlink", "readlink", "futex",
-        "getrusage", "sysinfo", "times", "uname", "clock_gettime",
+        "read",
+        "write",
+        "open",
+        "close",
+        "stat",
+        "fstat",
+        "lstat",
+        "poll",
+        "lseek",
+        "mmap",
+        "mprotect",
+        "munmap",
+        "brk",
+        "rt_sigaction",
+        "rt_sigprocmask",
+        "ioctl",
+        "pread64",
+        "pwrite64",
+        "readv",
+        "writev",
+        "access",
+        "pipe",
+        "select",
+        "sched_yield",
+        "mremap",
+        "msync",
+        "mincore",
+        "madvise",
+        "dup",
+        "dup2",
+        "pause",
+        "nanosleep",
+        "getpid",
+        "clone",
+        "exit",
+        "exit_group",
+        "wait4",
+        "fcntl",
+        "fsync",
+        "getcwd",
+        "chdir",
+        "mkdir",
+        "rmdir",
+        "unlink",
+        "readlink",
+        "futex",
+        "getrusage",
+        "sysinfo",
+        "times",
+        "uname",
+        "clock_gettime",
     ]
 
     def __init__(
@@ -86,7 +128,7 @@ class RuneExecutor:
         memory_limit_mb: int = 512,
         cpu_limit_percent: int = 100,
         network_enabled: bool = False,
-        allowed_syscalls: Optional[list[str]] = None,
+        allowed_syscalls: list[str] | None = None,
     ):
         """Initialize RUNE executor."""
         self.config = RuneConfig(
@@ -103,7 +145,7 @@ class RuneExecutor:
         code: str,
         tests: str,
         language: str,
-        timeout_ms: Optional[int] = None,
+        timeout_ms: int | None = None,
     ) -> ExecutionResult:
         """Execute code and tests in sandbox."""
         timeout = timeout_ms or self.config.timeout_ms
@@ -113,9 +155,7 @@ class RuneExecutor:
             temp_dir = tempfile.mkdtemp(prefix="maze_rune_")
             self.temp_dirs.append(temp_dir)
 
-            code_file, test_file = self._write_files(
-                temp_dir, code, tests, language
-            )
+            code_file, test_file = self._write_files(temp_dir, code, tests, language)
 
             start_time = time.perf_counter()
 
@@ -142,9 +182,7 @@ class RuneExecutor:
 
             execution_time_ms = (time.perf_counter() - start_time) * 1000
             limit_violations = self.check_resource_limits(result)
-            security_violations = self._detect_security_violations(
-                code, tests, language
-            )
+            security_violations = self._detect_security_violations(code, tests, language)
 
             return ExecutionResult(
                 success=result.returncode == 0 and not security_violations,
@@ -165,9 +203,7 @@ class RuneExecutor:
             if temp_dir:
                 self._cleanup_temp_dir(temp_dir)
 
-    def validate_security(
-        self, code: str, language: str
-    ) -> list[SecurityIssue]:
+    def validate_security(self, code: str, language: str) -> list[SecurityIssue]:
         """Check for security vulnerabilities in code."""
         issues: list[SecurityIssue] = []
 
@@ -178,7 +214,11 @@ class RuneExecutor:
                 (r"\beval\(", "eval", "Unsafe eval usage"),
                 (r"\bexec\(", "exec", "Unsafe exec usage"),
                 (r"\bos\.system\(", "command_injection", "Command injection risk"),
-                (r"\bsubprocess\.call\([^)]*shell=True", "command_injection", "Shell command injection risk"),
+                (
+                    r"\bsubprocess\.call\([^)]*shell=True",
+                    "command_injection",
+                    "Shell command injection risk",
+                ),
                 (r"['\"]SELECT.*%s", "sql_injection", "Potential SQL injection"),
                 (r"password\s*=\s*['\"][^'\"]+['\"]", "hardcoded_credential", "Hardcoded password"),
             ]
@@ -219,25 +259,19 @@ class RuneExecutor:
 
         return issues
 
-    def check_resource_limits(
-        self, result: subprocess.CompletedProcess
-    ) -> list[str]:
+    def check_resource_limits(self, result: subprocess.CompletedProcess) -> list[str]:
         """Check if execution exceeded resource limits."""
         violations = []
 
         if "MemoryError" in result.stderr or "out of memory" in result.stderr.lower():
-            violations.append(
-                f"Memory limit exceeded ({self.config.memory_limit_mb}MB)"
-            )
+            violations.append(f"Memory limit exceeded ({self.config.memory_limit_mb}MB)")
 
         if "RecursionError" in result.stderr:
             violations.append("Recursion limit exceeded")
 
         return violations
 
-    def _write_files(
-        self, temp_dir: str, code: str, tests: str, language: str
-    ) -> tuple[str, str]:
+    def _write_files(self, temp_dir: str, code: str, tests: str, language: str) -> tuple[str, str]:
         """Write code and test files to temporary directory."""
         extensions = {
             "python": ".py",
@@ -270,7 +304,7 @@ class RuneExecutor:
         """Execute code with resource limits."""
         if language == "python":
             combined_file = os.path.join(temp_dir, "combined.py")
-            with open(code_file, "r") as cf, open(test_file, "r") as tf:
+            with open(code_file) as cf, open(test_file) as tf:
                 combined = cf.read() + "\n\n" + tf.read()
             with open(combined_file, "w") as f:
                 f.write(combined)
@@ -278,7 +312,7 @@ class RuneExecutor:
 
         elif language == "typescript":
             combined_file = os.path.join(temp_dir, "combined.ts")
-            with open(code_file, "r") as cf, open(test_file, "r") as tf:
+            with open(code_file) as cf, open(test_file) as tf:
                 combined = cf.read() + "\n\n" + tf.read()
             with open(combined_file, "w") as f:
                 f.write(combined)
@@ -286,7 +320,7 @@ class RuneExecutor:
 
         elif language == "rust":
             main_file = os.path.join(temp_dir, "main.rs")
-            with open(code_file, "r") as cf, open(test_file, "r") as tf:
+            with open(code_file) as cf, open(test_file) as tf:
                 code_content = cf.read()
                 test_content = tf.read()
                 combined = f"{code_content}\n\nfn main() {{\n{test_content}\n}}"
@@ -306,7 +340,7 @@ class RuneExecutor:
 
         elif language == "go":
             go_file = os.path.join(temp_dir, "main.go")
-            with open(code_file, "r") as cf, open(test_file, "r") as tf:
+            with open(code_file) as cf, open(test_file) as tf:
                 code_content = cf.read()
                 test_content = tf.read()
                 combined = f"package main\n\n{code_content}\n\nfunc main() {{\n{test_content}\n}}"
@@ -316,7 +350,7 @@ class RuneExecutor:
 
         elif language == "zig":
             zig_file = os.path.join(temp_dir, "test.zig")
-            with open(code_file, "r") as cf, open(test_file, "r") as tf:
+            with open(code_file) as cf, open(test_file) as tf:
                 code_content = cf.read()
                 test_content = tf.read()
                 combined = f"{code_content}\n\npub fn main() void {{\n{test_content}\n}}"
@@ -345,18 +379,14 @@ class RuneExecutor:
 
         return result
 
-    def _detect_security_violations(
-        self, code: str, tests: str, language: str
-    ) -> list[str]:
+    def _detect_security_violations(self, code: str, tests: str, language: str) -> list[str]:
         """Detect security violations in code."""
         violations = []
         issues = self.validate_security(code, language)
 
         for issue in issues:
             if issue.severity in ["critical", "high"]:
-                violations.append(
-                    f"{issue.category}: {issue.message} (line {issue.line})"
-                )
+                violations.append(f"{issue.category}: {issue.message} (line {issue.line})")
 
         return violations
 

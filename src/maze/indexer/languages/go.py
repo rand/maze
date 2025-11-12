@@ -8,11 +8,11 @@ Performance target: >1000 symbols/sec
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
 
 try:
-    from tree_sitter import Language, Parser, Node
     import tree_sitter_go as ts_go
+    from tree_sitter import Language, Node, Parser
+
     TREE_SITTER_AVAILABLE = True
 except ImportError:
     TREE_SITTER_AVAILABLE = False
@@ -31,7 +31,7 @@ from maze.indexer.base import (
 class GoIndexer(BaseIndexer):
     """Go code indexer using tree-sitter."""
 
-    def __init__(self, project_path: Optional[Path] = None):
+    def __init__(self, project_path: Path | None = None):
         """Initialize Go indexer.
 
         Args:
@@ -40,7 +40,7 @@ class GoIndexer(BaseIndexer):
         super().__init__(project_path)
         self.language = "go"
         self.file_extensions = {".go"}
-        
+
         if TREE_SITTER_AVAILABLE:
             self.ts_language = Language(ts_go.language())
             self.parser = Parser(self.ts_language)
@@ -53,15 +53,15 @@ class GoIndexer(BaseIndexer):
         import time
 
         start = time.perf_counter()
-        
-        symbols: List[Symbol] = []
-        imports: List[ImportInfo] = []
-        tests: List[TestCase] = []
-        errors: List[str] = []
+
+        symbols: list[Symbol] = []
+        imports: list[ImportInfo] = []
+        tests: list[TestCase] = []
+        errors: list[str] = []
 
         try:
             content = file_path.read_text(encoding="utf-8")
-            
+
             if not TREE_SITTER_AVAILABLE:
                 errors.append("tree-sitter-go not available")
                 style = StyleInfo()
@@ -71,7 +71,7 @@ class GoIndexer(BaseIndexer):
                 imports = self._extract_imports(tree.root_node, content, str(file_path))
                 tests = self._detect_tests(tree.root_node, content, str(file_path))
                 style = self._detect_style(content)
-            
+
         except Exception as e:
             errors.append(f"Error indexing {file_path}: {e}")
             style = StyleInfo()
@@ -96,12 +96,12 @@ class GoIndexer(BaseIndexer):
 
         start = time.perf_counter()
 
-        all_symbols: List[Symbol] = []
-        all_imports: List[ImportInfo] = []
-        all_tests: List[TestCase] = []
-        all_errors: List[str] = []
-        all_files: List[str] = []
-        
+        all_symbols: list[Symbol] = []
+        all_imports: list[ImportInfo] = []
+        all_tests: list[TestCase] = []
+        all_errors: list[str] = []
+        all_files: list[str] = []
+
         combined_style = StyleInfo(indent_size=1, indent_type="tab")
 
         go_files = list(directory.rglob("*.go"))
@@ -131,7 +131,7 @@ class GoIndexer(BaseIndexer):
             duration_ms=duration_ms,
         )
 
-    def _extract_symbols(self, node: Node, content: str, file_path: str) -> List[Symbol]:
+    def _extract_symbols(self, node: Node, content: str, file_path: str) -> list[Symbol]:
         """Extract symbols from Go AST."""
         symbols = []
 
@@ -145,27 +145,27 @@ class GoIndexer(BaseIndexer):
             elif n.type == "interface_type":
                 # Handle inline interfaces
                 pass
-            
+
             for child in n.children:
                 visit(child)
 
         visit(node)
         return [s for s in symbols if s is not None]
 
-    def _extract_function(self, node: Node, content: str, file_path: str) -> Optional[Symbol]:
+    def _extract_function(self, node: Node, content: str, file_path: str) -> Symbol | None:
         """Extract function symbol."""
         name_node = node.child_by_field_name("name")
         if not name_node:
             return None
-        
-        name = content[name_node.start_byte:name_node.end_byte]
-        
+
+        name = content[name_node.start_byte : name_node.end_byte]
+
         # Get signature
         sig_end = content.find("{", node.start_byte)
         if sig_end == -1:
             sig_end = node.end_byte
-        signature = content[node.start_byte:sig_end].strip()
-        
+        signature = content[node.start_byte : sig_end].strip()
+
         return Symbol(
             name=name,
             kind="function",
@@ -175,25 +175,25 @@ class GoIndexer(BaseIndexer):
             column=node.start_point[1],
         )
 
-    def _extract_method(self, node: Node, content: str, file_path: str) -> Optional[Symbol]:
+    def _extract_method(self, node: Node, content: str, file_path: str) -> Symbol | None:
         """Extract method symbol."""
         name_node = node.child_by_field_name("name")
         receiver_node = node.child_by_field_name("receiver")
-        
+
         if not name_node:
             return None
-        
-        name = content[name_node.start_byte:name_node.end_byte]
-        
+
+        name = content[name_node.start_byte : name_node.end_byte]
+
         receiver_type = ""
         if receiver_node:
-            receiver_type = content[receiver_node.start_byte:receiver_node.end_byte]
-        
+            receiver_type = content[receiver_node.start_byte : receiver_node.end_byte]
+
         sig_end = content.find("{", node.start_byte)
         if sig_end == -1:
             sig_end = node.end_byte
-        signature = content[node.start_byte:sig_end].strip()
-        
+        signature = content[node.start_byte : sig_end].strip()
+
         return Symbol(
             name=name,
             kind="method",
@@ -204,28 +204,28 @@ class GoIndexer(BaseIndexer):
             metadata={"receiver": receiver_type},
         )
 
-    def _extract_type_decl(self, node: Node, content: str, file_path: str) -> List[Symbol]:
+    def _extract_type_decl(self, node: Node, content: str, file_path: str) -> list[Symbol]:
         """Extract type declarations (struct, interface, alias)."""
         symbols = []
-        
+
         for spec in node.children:
             if spec.type == "type_spec":
                 name_node = spec.child_by_field_name("name")
                 type_node = spec.child_by_field_name("type")
-                
+
                 if name_node:
-                    name = content[name_node.start_byte:name_node.end_byte]
-                    
+                    name = content[name_node.start_byte : name_node.end_byte]
+
                     if type_node:
                         type_kind = type_node.type
-                        
+
                         if type_kind == "struct_type":
                             kind = "struct"
                         elif type_kind == "interface_type":
                             kind = "interface"
                         else:
                             kind = "type_alias"
-                        
+
                         symbols.append(
                             Symbol(
                                 name=name,
@@ -236,10 +236,10 @@ class GoIndexer(BaseIndexer):
                                 column=spec.start_point[1],
                             )
                         )
-        
+
         return symbols
 
-    def _extract_imports(self, node: Node, content: str, file_path: str) -> List[ImportInfo]:
+    def _extract_imports(self, node: Node, content: str, file_path: str) -> list[ImportInfo]:
         """Extract import declarations."""
         imports = []
 
@@ -253,14 +253,14 @@ class GoIndexer(BaseIndexer):
                         line=n.start_point[0] + 1,
                     )
                 )
-            
+
             for child in n.children:
                 visit(child)
 
         visit(node)
         return imports
 
-    def _detect_tests(self, node: Node, content: str, file_path: str) -> List[TestCase]:
+    def _detect_tests(self, node: Node, content: str, file_path: str) -> list[TestCase]:
         """Detect test functions (Test* functions)."""
         tests = []
 
@@ -268,7 +268,7 @@ class GoIndexer(BaseIndexer):
             if n.type == "function_declaration":
                 name_node = n.child_by_field_name("name")
                 if name_node:
-                    name = content[name_node.start_byte:name_node.end_byte]
+                    name = content[name_node.start_byte : name_node.end_byte]
                     if name.startswith("Test"):
                         tests.append(
                             TestCase(
@@ -279,7 +279,7 @@ class GoIndexer(BaseIndexer):
                                 command=f"go test -run {name}",
                             )
                         )
-            
+
             for child in n.children:
                 visit(child)
 
@@ -304,31 +304,31 @@ class GoIndexer(BaseIndexer):
             },
         )
 
-    def extract_symbols(self, content: str, file_path: Path) -> List[Symbol]:
+    def extract_symbols(self, content: str, file_path: Path) -> list[Symbol]:
         """Extract symbols from file content."""
         if not TREE_SITTER_AVAILABLE:
             return []
-        
+
         tree = self.parser.parse(bytes(content, "utf-8"))
         return self._extract_symbols(tree.root_node, content, str(file_path))
 
     def extract_type_context(self, content: str, file_path: Path) -> TypeContext:
         """Extract type context from Go file."""
         context = TypeContext()
-        
+
         if TREE_SITTER_AVAILABLE:
             symbols = self.extract_symbols(content, file_path)
-            
+
             for symbol in symbols:
                 if symbol.kind in ["function", "method"]:
                     context.functions[symbol.name] = ([], symbol.type_str)
-        
+
         return context
 
-    def extract_tests(self, content: str, file_path: Path) -> List[TestCase]:
+    def extract_tests(self, content: str, file_path: Path) -> list[TestCase]:
         """Extract test cases from file."""
         if not TREE_SITTER_AVAILABLE:
             return []
-        
+
         tree = self.parser.parse(bytes(content, "utf-8"))
         return self._detect_tests(tree.root_node, content, str(file_path))

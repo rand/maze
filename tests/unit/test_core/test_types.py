@@ -3,18 +3,15 @@ Unit tests for core type system.
 """
 
 import pytest
+
 from maze.core.types import (
-    Type,
-    TypeVariable,
-    TypeParameter,
-    FunctionSignature,
-    TypeContext,
-    ClassType,
-    InterfaceType,
     ConstraintLevel,
-    IndexedContext,
     Diagnostic,
-    GenerationResult,
+    FunctionSignature,
+    IndexedContext,
+    Type,
+    TypeContext,
+    TypeParameter,
     ValidationResult,
 )
 
@@ -104,9 +101,7 @@ class TestTypeContext:
         ctx = TypeContext()
         ctx.variables["x"] = Type("number")
         ctx.functions["greet"] = FunctionSignature(
-            name="greet",
-            parameters=[],
-            return_type=Type("string")
+            name="greet", parameters=[], return_type=Type("string")
         )
 
         assert ctx.lookup("x") == Type("number")
@@ -151,7 +146,7 @@ class TestFunctionSignature:
                 TypeParameter("a", Type("number")),
                 TypeParameter("b", Type("number")),
             ],
-            return_type=Type("number")
+            return_type=Type("number"),
         )
 
         assert sig.name == "add"
@@ -166,7 +161,7 @@ class TestFunctionSignature:
             name="fetchUser",
             parameters=[TypeParameter("id", Type("string"))],
             return_type=Type("Promise", (Type("User"),)),
-            is_async=True
+            is_async=True,
         )
 
         assert sig.is_async
@@ -180,7 +175,7 @@ class TestFunctionSignature:
                 TypeParameter("name", Type("string")),
                 TypeParameter("greeting", Type("string"), optional=True),
             ],
-            return_type=Type("string")
+            return_type=Type("string"),
         )
 
         assert sig.parameters[1].optional
@@ -194,7 +189,7 @@ class TestFunctionSignature:
                 TypeParameter("a", Type("number")),
                 TypeParameter("b", Type("number")),
             ],
-            return_type=Type("number")
+            return_type=Type("number"),
         )
 
         func_type = sig.to_type()
@@ -214,7 +209,7 @@ class TestDiagnostic:
             file="test.ts",
             line=10,
             column=5,
-            code="TS2322"
+            code="TS2322",
         )
 
         assert diag.severity == "error"
@@ -223,12 +218,7 @@ class TestDiagnostic:
 
     def test_diagnostic_to_dict(self):
         """Test diagnostic serialization."""
-        diag = Diagnostic(
-            severity="warning",
-            category="style",
-            message="Line too long",
-            line=20
-        )
+        diag = Diagnostic(severity="warning", category="style", message="Line too long", line=20)
 
         d = diag.to_dict()
         assert d["severity"] == "warning"
@@ -253,7 +243,7 @@ class TestValidationResult:
             diagnostics=[
                 Diagnostic("error", "type", "Type error"),
                 Diagnostic("warning", "style", "Style warning"),
-            ]
+            ],
         )
 
         assert not result.passed
@@ -263,18 +253,9 @@ class TestValidationResult:
 
     def test_combine_results(self):
         """Test combining validation results."""
-        result1 = ValidationResult(
-            passed=True,
-            tests_run=5,
-            tests_passed=5
-        )
+        result1 = ValidationResult(passed=True, tests_run=5, tests_passed=5)
 
-        result2 = ValidationResult(
-            passed=False,
-            tests_run=3,
-            tests_passed=2,
-            tests_failed=1
-        )
+        result2 = ValidationResult(passed=False, tests_run=3, tests_passed=2, tests_failed=1)
 
         combined = ValidationResult.combine([result1, result2])
         assert not combined.passed  # One failed, so combined fails
@@ -295,7 +276,7 @@ class TestIndexedContext:
             style={"indent": 2},
             tests=[],
             constraints_candidates=[],
-            language="typescript"
+            language="typescript",
         )
 
         assert ctx.language == "typescript"
@@ -310,7 +291,7 @@ class TestIndexedContext:
             schemas=[{"type": "object"}],
             style={},
             tests=[],
-            constraints_candidates=[]
+            constraints_candidates=[],
         )
 
         summary = ctx.to_summary()
@@ -332,12 +313,14 @@ class TestConstraintLevel:
 
 # Performance tests (marked as slow)
 
+
 @pytest.mark.performance
 class TestTypePerformance:
     """Performance tests for type system."""
 
     def test_type_creation_performance(self, benchmark):
         """Test performance of type creation."""
+
         def create_types():
             types = []
             for i in range(1000):

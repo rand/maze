@@ -3,6 +3,7 @@ Tests for constraint learning system.
 """
 
 from pathlib import Path
+
 import pytest
 
 from maze.learning.constraint_learning import (
@@ -10,15 +11,14 @@ from maze.learning.constraint_learning import (
     ConstraintRefinement,
     Feedback,
     GenerationResult,
-    ValidationResult,
-    RepairResult,
     LearningEvent,
+    ValidationResult,
 )
 from maze.learning.pattern_mining import (
     PatternSet,
+    SemanticPattern,
     SyntacticPattern,
     TypePattern,
-    SemanticPattern,
 )
 
 
@@ -29,10 +29,7 @@ class TestConstraintLearningSystem:
     def system(self):
         """Create constraint learning system."""
         return ConstraintLearningSystem(
-            learning_rate=0.1,
-            min_score=0.1,
-            max_constraints=100,
-            decay_rate=0.01
+            learning_rate=0.1, min_score=0.1, max_constraints=100, decay_rate=0.01
         )
 
     def test_init(self, system):
@@ -47,9 +44,7 @@ class TestConstraintLearningSystem:
     def test_learn_from_success_simple(self, system):
         """Test learning from successful generation."""
         generation_result = GenerationResult(
-            code="def add(x, y):\n    return x + y",
-            language="python",
-            generation_time_ms=100.0
+            code="def add(x, y):\n    return x + y", language="python", generation_time_ms=100.0
         )
         validation_result = ValidationResult(success=True)
 
@@ -80,13 +75,9 @@ class TestConstraintLearningSystem:
     def test_learn_from_failure_simple(self, system):
         """Test learning from failed generation."""
         generation_result = GenerationResult(
-            code="def broken(\n    # syntax error",
-            language="python",
-            generation_time_ms=100.0
+            code="def broken(\n    # syntax error", language="python", generation_time_ms=100.0
         )
-        diagnostics = [
-            {"severity": "error", "message": "SyntaxError: unexpected EOF"}
-        ]
+        diagnostics = [{"severity": "error", "message": "SyntaxError: unexpected EOF"}]
 
         refinement = system.learn_from_failure(generation_result, diagnostics)
 
@@ -125,7 +116,7 @@ class TestConstraintLearningSystem:
             semantic=[],
             source=Path("."),
             extraction_time_ms=100.0,
-            total_patterns=2
+            total_patterns=2,
         )
 
         refinements = system.learn_from_patterns(patterns)
@@ -147,7 +138,7 @@ class TestConstraintLearningSystem:
             semantic=[],
             source=Path("."),
             extraction_time_ms=100.0,
-            total_patterns=2
+            total_patterns=2,
         )
 
         refinements = system.learn_from_patterns(patterns)
@@ -166,7 +157,7 @@ class TestConstraintLearningSystem:
             ],
             source=Path("."),
             extraction_time_ms=100.0,
-            total_patterns=1
+            total_patterns=1,
         )
 
         refinements = system.learn_from_patterns(patterns)
@@ -180,13 +171,13 @@ class TestConstraintLearningSystem:
             language="python",
             syntactic=[
                 SyntacticPattern("function", "def foo(): ...", 15, [], {}),  # High frequency
-                SyntacticPattern("function", "def bar(): ...", 2, [], {}),   # Low frequency
+                SyntacticPattern("function", "def bar(): ...", 2, [], {}),  # Low frequency
             ],
             type_patterns=[],
             semantic=[],
             source=Path("."),
             extraction_time_ms=100.0,
-            total_patterns=2
+            total_patterns=2,
         )
 
         system.learn_from_patterns(patterns)
@@ -201,11 +192,13 @@ class TestConstraintLearningSystem:
 
         feedback = Feedback(
             success=True,
-            generation_result=GenerationResult(code="def foo(): pass", language="python", generation_time_ms=50.0),
+            generation_result=GenerationResult(
+                code="def foo(): pass", language="python", generation_time_ms=50.0
+            ),
             validation_result=ValidationResult(success=True),
             repair_result=None,
             score=1.0,
-            feedback_type="positive"
+            feedback_type="positive",
         )
 
         initial_weight = system.constraints.get(system._pattern_to_id(pattern), 0.5)
@@ -220,11 +213,13 @@ class TestConstraintLearningSystem:
         # First establish a weight
         positive_feedback = Feedback(
             success=True,
-            generation_result=GenerationResult(code="def foo(): pass", language="python", generation_time_ms=50.0),
+            generation_result=GenerationResult(
+                code="def foo(): pass", language="python", generation_time_ms=50.0
+            ),
             validation_result=ValidationResult(success=True),
             repair_result=None,
             score=1.0,
-            feedback_type="positive"
+            feedback_type="positive",
         )
         system.update_weights(pattern, positive_feedback)
         initial_weight = system.constraints[system._pattern_to_id(pattern)]
@@ -232,11 +227,15 @@ class TestConstraintLearningSystem:
         # Then provide negative feedback
         negative_feedback = Feedback(
             success=False,
-            generation_result=GenerationResult(code="def foo(): fail", language="python", generation_time_ms=50.0),
-            validation_result=ValidationResult(success=False, diagnostics=[{"severity": "error", "message": "failed"}]),
+            generation_result=GenerationResult(
+                code="def foo(): fail", language="python", generation_time_ms=50.0
+            ),
+            validation_result=ValidationResult(
+                success=False, diagnostics=[{"severity": "error", "message": "failed"}]
+            ),
             repair_result=None,
             score=-1.0,
-            feedback_type="negative"
+            feedback_type="negative",
         )
         new_weight = system.update_weights(pattern, negative_feedback)
 
@@ -247,9 +246,9 @@ class TestConstraintLearningSystem:
         # Add some constraints with different weights
         system.constraints = {
             "pat-1": 0.05,  # Below min_score
-            "pat-2": 0.5,   # Above min_score
+            "pat-2": 0.5,  # Above min_score
             "pat-3": 0.08,  # Below min_score
-            "pat-4": 0.8,   # Above min_score
+            "pat-4": 0.8,  # Above min_score
         }
 
         removed = system.prune_constraints()
@@ -335,11 +334,13 @@ class TestConstraintLearningSystem:
         """Test score delta computation for success."""
         feedback = Feedback(
             success=True,
-            generation_result=GenerationResult(code="def foo(): pass", language="python", generation_time_ms=50.0),
+            generation_result=GenerationResult(
+                code="def foo(): pass", language="python", generation_time_ms=50.0
+            ),
             validation_result=ValidationResult(success=True),
             repair_result=None,
             score=1.0,
-            feedback_type="positive"
+            feedback_type="positive",
         )
 
         delta = system._compute_score_delta(feedback)
@@ -349,14 +350,15 @@ class TestConstraintLearningSystem:
         """Test score delta with test results."""
         feedback = Feedback(
             success=True,
-            generation_result=GenerationResult(code="def foo(): pass", language="python", generation_time_ms=50.0),
+            generation_result=GenerationResult(
+                code="def foo(): pass", language="python", generation_time_ms=50.0
+            ),
             validation_result=ValidationResult(
-                success=True,
-                test_results={"total": 10, "passed": 8}
+                success=True, test_results={"total": 10, "passed": 8}
             ),
             repair_result=None,
             score=1.0,
-            feedback_type="positive"
+            feedback_type="positive",
         )
 
         delta = system._compute_score_delta(feedback)
@@ -367,17 +369,19 @@ class TestConstraintLearningSystem:
         """Test score delta with security violations."""
         feedback = Feedback(
             success=False,
-            generation_result=GenerationResult(code="def foo(): pass", language="python", generation_time_ms=50.0),
+            generation_result=GenerationResult(
+                code="def foo(): pass", language="python", generation_time_ms=50.0
+            ),
             validation_result=ValidationResult(
                 success=False,
                 security_violations=[
                     {"severity": "critical", "message": "SQL injection"},
-                    {"severity": "critical", "message": "XSS vulnerability"}
-                ]
+                    {"severity": "critical", "message": "XSS vulnerability"},
+                ],
             ),
             repair_result=None,
             score=-2.0,
-            feedback_type="negative"
+            feedback_type="negative",
         )
 
         delta = system._compute_score_delta(feedback)
@@ -392,11 +396,13 @@ class TestConstraintLearningSystem:
             generation_result=GenerationResult(code="", language="python", generation_time_ms=50.0),
             validation_result=ValidationResult(
                 success=False,
-                security_violations=[{"severity": "critical", "message": "vuln"} for _ in range(10)]
+                security_violations=[
+                    {"severity": "critical", "message": "vuln"} for _ in range(10)
+                ],
             ),
             repair_result=None,
             score=-10.0,
-            feedback_type="negative"
+            feedback_type="negative",
         )
 
         delta = system._compute_score_delta(feedback)
@@ -486,11 +492,13 @@ except Exception:
         pattern = SyntacticPattern("function", "def foo(): ...", 1, [], {})
         feedback = Feedback(
             success=True,
-            generation_result=GenerationResult(code="def foo(): pass", language="python", generation_time_ms=50.0),
+            generation_result=GenerationResult(
+                code="def foo(): pass", language="python", generation_time_ms=50.0
+            ),
             validation_result=ValidationResult(success=True),
             repair_result=None,
             score=1.0,
-            feedback_type="positive"
+            feedback_type="positive",
         )
 
         system.update_weights(pattern, feedback)
@@ -510,7 +518,7 @@ except Exception:
             semantic=[],
             source=Path("."),
             extraction_time_ms=100.0,
-            total_patterns=1
+            total_patterns=1,
         )
         system.learn_from_patterns(patterns)
 
@@ -530,11 +538,13 @@ except Exception:
         for _ in range(20):
             feedback = Feedback(
                 success=True,
-                generation_result=GenerationResult(code="def foo(): pass", language="python", generation_time_ms=50.0),
+                generation_result=GenerationResult(
+                    code="def foo(): pass", language="python", generation_time_ms=50.0
+                ),
                 validation_result=ValidationResult(success=True),
                 repair_result=None,
                 score=1.0,
-                feedback_type="positive"
+                feedback_type="positive",
             )
             weight = system.update_weights(pattern, feedback)
 
@@ -548,20 +558,26 @@ except Exception:
 
         feedback1 = Feedback(
             success=True,
-            generation_result=GenerationResult(code="def foo(): pass", language="python", generation_time_ms=50.0),
+            generation_result=GenerationResult(
+                code="def foo(): pass", language="python", generation_time_ms=50.0
+            ),
             validation_result=ValidationResult(success=True),
             repair_result=None,
             score=1.0,
-            feedback_type="positive"
+            feedback_type="positive",
         )
 
         feedback2 = Feedback(
             success=False,
-            generation_result=GenerationResult(code="class Bar: fail", language="python", generation_time_ms=50.0),
-            validation_result=ValidationResult(success=False, diagnostics=[{"severity": "error", "message": "error"}]),
+            generation_result=GenerationResult(
+                code="class Bar: fail", language="python", generation_time_ms=50.0
+            ),
+            validation_result=ValidationResult(
+                success=False, diagnostics=[{"severity": "error", "message": "error"}]
+            ),
             repair_result=None,
             score=-1.0,
-            feedback_type="negative"
+            feedback_type="negative",
         )
 
         system.update_weights(pattern1, feedback1)
@@ -579,7 +595,7 @@ except Exception:
             semantic=[],
             source=Path("."),
             extraction_time_ms=100.0,
-            total_patterns=1
+            total_patterns=1,
         )
 
         system.learn_from_patterns(patterns)
@@ -592,7 +608,9 @@ except Exception:
 
     def test_stats_tracking(self, system):
         """Test that statistics are tracked correctly."""
-        generation_result = GenerationResult(code="def foo(): pass", language="python", generation_time_ms=50.0)
+        generation_result = GenerationResult(
+            code="def foo(): pass", language="python", generation_time_ms=50.0
+        )
         validation_result = ValidationResult(success=True)
 
         system.learn_from_success(generation_result, validation_result)

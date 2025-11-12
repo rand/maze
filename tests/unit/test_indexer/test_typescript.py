@@ -2,10 +2,9 @@
 Unit tests for TypeScript indexer.
 """
 
-import pytest
 from pathlib import Path
+
 from maze.indexer.languages.typescript import TypeScriptIndexer
-from maze.indexer.base import Symbol, ImportInfo, TestCase
 
 
 class TestTypeScriptIndexer:
@@ -152,7 +151,9 @@ type ReadonlyUser = Readonly<User>;
         symbols = typescript_indexer.extract_symbols(code, Path("test.ts"))
         types = [s for s in symbols if s.kind == "type"]
 
-        assert len(types) >= 2  # At least ID and ReadonlyUser (generic Callback may not be extracted)
+        assert (
+            len(types) >= 2
+        )  # At least ID and ReadonlyUser (generic Callback may not be extracted)
 
         # Check ID type
         id_type = next((t for t in types if t.name == "ID"), None)
@@ -237,11 +238,15 @@ class Box<T extends number> {
         symbols = typescript_indexer.extract_symbols(code, Path("test.ts"))
 
         # Check function with generic
-        identity_func = next((s for s in symbols if s.name == "identity" and s.kind == "function"), None)
+        identity_func = next(
+            (s for s in symbols if s.name == "identity" and s.kind == "function"), None
+        )
         assert identity_func is not None
 
         # Check interface with generic
-        container_interface = next((s for s in symbols if s.name == "Container" and s.kind == "interface"), None)
+        container_interface = next(
+            (s for s in symbols if s.name == "Container" and s.kind == "interface"), None
+        )
         assert container_interface is not None
 
     def test_index_file_complete(self, typescript_indexer, temp_project):
@@ -267,10 +272,9 @@ class Box<T extends number> {
         import time
 
         # Generate code with 100 functions
-        code = "\n".join([
-            f"function func{i}(x: number): number {{ return x * {i}; }}"
-            for i in range(100)
-        ])
+        code = "\n".join(
+            [f"function func{i}(x: number): number {{ return x * {i}; }}" for i in range(100)]
+        )
 
         start = time.perf_counter()
         symbols = typescript_indexer.extract_symbols(code, Path("test.ts"))
@@ -390,10 +394,7 @@ type ID = string | number;
     def test_parse_function_signature(self, typescript_indexer):
         """Test parsing function signatures."""
         # Simple function
-        sig1 = typescript_indexer._parse_function_signature(
-            "test",
-            "(x: number) => string"
-        )
+        sig1 = typescript_indexer._parse_function_signature("test", "(x: number) => string")
         assert sig1 is not None
         assert sig1.name == "test"
         assert len(sig1.parameters) == 1
@@ -402,16 +403,14 @@ type ID = string | number;
 
         # Function with multiple parameters
         sig2 = typescript_indexer._parse_function_signature(
-            "add",
-            "(a: number, b: number) => number"
+            "add", "(a: number, b: number) => number"
         )
         assert sig2 is not None
         assert len(sig2.parameters) == 2
 
         # Function with optional parameter
         sig3 = typescript_indexer._parse_function_signature(
-            "greet",
-            "(name: string, age?: number) => string"
+            "greet", "(name: string, age?: number) => string"
         )
         assert sig3 is not None
         assert len(sig3.parameters) == 2
@@ -557,15 +556,11 @@ let util = require('util');
     def test_extract_type_alias(self, typescript_indexer):
         """Test extracting type alias definitions."""
         # Simple type alias
-        alias1 = typescript_indexer._extract_type_alias(
-            "type ID = string | number;",
-            []
-        )
+        alias1 = typescript_indexer._extract_type_alias("type ID = string | number;", [])
         assert "string | number" in alias1
 
         # Complex type alias
         alias2 = typescript_indexer._extract_type_alias(
-            "type Callback<T> = (value: T) => void;",
-            []
+            "type Callback<T> = (value: T) => void;", []
         )
         assert "Callback" in alias2 or "value" in alias2

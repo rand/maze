@@ -8,10 +8,9 @@ and generic instantiation.
 from __future__ import annotations
 
 import re
-from typing import Any, Dict, List, Optional, Set, Union as PyUnion
-from dataclasses import dataclass
+from typing import Any
 
-from maze.core.types import Type, ClassType, InterfaceType, TypeVariable
+from maze.core.types import Type
 
 
 class TypeScriptTypeSystem:
@@ -30,8 +29,15 @@ class TypeScriptTypeSystem:
     def __init__(self):
         """Initialize TypeScript type system."""
         self.primitive_types = {
-            "string", "number", "boolean", "null", "undefined",
-            "void", "any", "unknown", "never"
+            "string",
+            "number",
+            "boolean",
+            "null",
+            "undefined",
+            "void",
+            "any",
+            "unknown",
+            "never",
         }
 
     def parse_type(self, type_annotation: str) -> Type:
@@ -141,33 +147,23 @@ class TypeScriptTypeSystem:
         # Union types
         if source.name == "union":
             # All union members must be assignable to target
-            return all(
-                self.is_assignable(member, target)
-                for member in source.parameters
-            )
+            return all(self.is_assignable(member, target) for member in source.parameters)
 
         if target.name == "union":
             # Source must be assignable to at least one union member
-            return any(
-                self.is_assignable(source, member)
-                for member in target.parameters
-            )
+            return any(self.is_assignable(source, member) for member in target.parameters)
 
         # Intersection types
         if target.name == "intersection":
             # Source must be assignable to all intersection members
-            return all(
-                self.is_assignable(source, member)
-                for member in target.parameters
-            )
+            return all(self.is_assignable(source, member) for member in target.parameters)
 
         # Generic types - must match structure
         if source.parameters and target.parameters:
             if source.name == target.name and len(source.parameters) == len(target.parameters):
                 # Covariant parameter matching (simplified)
                 return all(
-                    self.is_assignable(s, t)
-                    for s, t in zip(source.parameters, target.parameters)
+                    self.is_assignable(s, t) for s, t in zip(source.parameters, target.parameters)
                 )
 
         # Nullable handling
@@ -254,8 +250,12 @@ class TypeScriptTypeSystem:
                 return Type(class_name)
 
         # Nullability narrowing (x != null, x !== undefined)
-        if ("!= null" in guard or "!== null" in guard or
-            "!= undefined" in guard or "!== undefined" in guard):
+        if (
+            "!= null" in guard
+            or "!== null" in guard
+            or "!= undefined" in guard
+            or "!== undefined" in guard
+        ):
             # Remove nullability
             return Type(type.name, type.parameters, nullable=False, metadata=type.metadata)
 
@@ -305,7 +305,7 @@ class TypeScriptTypeSystem:
         else:
             return Type("unknown")
 
-    def resolve_union(self, types: List[Type]) -> Type:
+    def resolve_union(self, types: list[Type]) -> Type:
         """
         Create union type, simplifying if possible.
 
@@ -355,7 +355,7 @@ class TypeScriptTypeSystem:
 
         return Type("union", tuple(unique_types))
 
-    def resolve_intersection(self, types: List[Type]) -> Type:
+    def resolve_intersection(self, types: list[Type]) -> Type:
         """
         Create intersection type, merging if possible.
 
@@ -405,11 +405,7 @@ class TypeScriptTypeSystem:
 
         return Type("intersection", tuple(unique_types))
 
-    def instantiate_generic(
-        self,
-        generic: Type,
-        type_args: List[Type]
-    ) -> Type:
+    def instantiate_generic(self, generic: Type, type_args: list[Type]) -> Type:
         """
         Instantiate generic type with type arguments.
 
@@ -449,10 +445,7 @@ class TypeScriptTypeSystem:
         )
 
         return Type(
-            generic.name,
-            instantiated_params,
-            nullable=generic.nullable,
-            metadata=generic.metadata
+            generic.name, instantiated_params, nullable=generic.nullable, metadata=generic.metadata
         )
 
     # Private helper methods
@@ -469,7 +462,7 @@ class TypeScriptTypeSystem:
         """
         return "<" in type_str and ">" in type_str
 
-    def _parse_type_params(self, params_str: str) -> List[Type]:
+    def _parse_type_params(self, params_str: str) -> list[Type]:
         """
         Parse comma-separated type parameters.
 

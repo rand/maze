@@ -5,9 +5,8 @@ Tests sandboxed test execution, result parsing, and failure extraction
 across multiple languages and test frameworks.
 """
 
-import pytest
-from maze.validation.tests import TestValidator, TestResults
 from maze.integrations.rune import RuneExecutor
+from maze.validation.tests import TestResults, TestValidator
 
 
 class TestPythonTestExecution:

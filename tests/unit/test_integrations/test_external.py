@@ -5,11 +5,9 @@ Test coverage target: 70%
 
 from unittest.mock import Mock, patch
 
-import pytest
-
 from maze.integrations.external import (
-    ExternalIntegrations,
     ExecutionResult,
+    ExternalIntegrations,
     Pattern,
     PedanticRavenClient,
     RuneExecutor,
@@ -92,9 +90,7 @@ class TestRuneExecutor:
 
     def test_initialization(self):
         """Test executor initialization."""
-        executor = RuneExecutor(
-            timeout_seconds=60, memory_limit_mb=1024, network_enabled=True
-        )
+        executor = RuneExecutor(timeout_seconds=60, memory_limit_mb=1024, network_enabled=True)
         assert executor.timeout_seconds == 60
         assert executor.memory_limit_mb == 1024
         assert executor.network_enabled is True
@@ -166,7 +162,7 @@ class TestExternalIntegrations:
     def test_initialization_default(self):
         """Test initialization with defaults."""
         integrations = ExternalIntegrations()
-        
+
         # Check components were created
         assert integrations.raven is not None
         assert integrations.rune is not None

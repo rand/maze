@@ -19,7 +19,7 @@ import statistics
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import psutil
 
@@ -35,9 +35,9 @@ class BenchmarkResult:
     category: str  # indexing, generation, validation, stress
     duration_ms: float
     memory_mb: float
-    metrics: Dict[str, Any] = field(default_factory=dict)
+    metrics: dict[str, Any] = field(default_factory=dict)
     success: bool = True
-    error: Optional[str] = None
+    error: str | None = None
 
 
 @dataclass
@@ -45,14 +45,14 @@ class BenchmarkSuite:
     """Collection of benchmark results."""
 
     name: str
-    results: List[BenchmarkResult] = field(default_factory=list)
+    results: list[BenchmarkResult] = field(default_factory=list)
     timestamp: str = field(default_factory=lambda: time.strftime("%Y-%m-%d %H:%M:%S"))
 
     def add_result(self, result: BenchmarkResult) -> None:
         """Add a benchmark result."""
         self.results.append(result)
 
-    def get_statistics(self, category: Optional[str] = None) -> Dict[str, Any]:
+    def get_statistics(self, category: str | None = None) -> dict[str, Any]:
         """Get statistics for results.
 
         Args:
@@ -89,7 +89,7 @@ class BenchmarkSuite:
             "success_rate": sum(1 for r in filtered if r.success) / len(filtered),
         }
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "name": self.name,
@@ -114,7 +114,7 @@ class BenchmarkSuite:
 class BenchmarkRunner:
     """Runner for performance benchmarks."""
 
-    def __init__(self, config: Optional[Config] = None):
+    def __init__(self, config: Config | None = None):
         """Initialize benchmark runner.
 
         Args:
@@ -124,9 +124,7 @@ class BenchmarkRunner:
         self.pipeline = Pipeline(self.config)
         self.process = psutil.Process()
 
-    def benchmark_indexing(
-        self, project_path: Path, name: str
-    ) -> BenchmarkResult:
+    def benchmark_indexing(self, project_path: Path, name: str) -> BenchmarkResult:
         """Benchmark project indexing.
 
         Args:
@@ -162,7 +160,7 @@ class BenchmarkRunner:
         except Exception as e:
             duration_ms = (time.perf_counter() - start) * 1000
             mem_after = self.process.memory_info().rss / 1024 / 1024
-            
+
             return BenchmarkResult(
                 name=name,
                 category="indexing",
@@ -172,9 +170,7 @@ class BenchmarkRunner:
                 error=str(e),
             )
 
-    def benchmark_generation(
-        self, prompt: str, name: str, iterations: int = 1
-    ) -> BenchmarkResult:
+    def benchmark_generation(self, prompt: str, name: str, iterations: int = 1) -> BenchmarkResult:
         """Benchmark code generation.
 
         Args:
@@ -218,9 +214,7 @@ class BenchmarkRunner:
             success=True,
         )
 
-    def benchmark_validation(
-        self, code: str, name: str, iterations: int = 10
-    ) -> BenchmarkResult:
+    def benchmark_validation(self, code: str, name: str, iterations: int = 10) -> BenchmarkResult:
         """Benchmark code validation.
 
         Args:
@@ -253,9 +247,7 @@ class BenchmarkRunner:
             success=True,
         )
 
-    def stress_test_concurrent(
-        self, prompts: List[str], name: str
-    ) -> BenchmarkResult:
+    def stress_test_concurrent(self, prompts: list[str], name: str) -> BenchmarkResult:
         """Stress test with concurrent generations.
 
         Args:
@@ -265,7 +257,6 @@ class BenchmarkRunner:
         Returns:
             BenchmarkResult with stress test metrics
         """
-        import concurrent.futures
 
         mem_before = self.process.memory_info().rss / 1024 / 1024
 
@@ -296,7 +287,7 @@ class BenchmarkRunner:
             success=True,
         )
 
-    def profile_memory(self, operations: List[str], name: str) -> BenchmarkResult:
+    def profile_memory(self, operations: list[str], name: str) -> BenchmarkResult:
         """Profile memory usage across operations.
 
         Args:
@@ -312,6 +303,7 @@ class BenchmarkRunner:
             if op == "index":
                 # Create temp project
                 import tempfile
+
                 with tempfile.TemporaryDirectory() as tmpdir:
                     project = Path(tmpdir)
                     (project / "test.ts").write_text("const x = 1;")
@@ -357,36 +349,42 @@ def generate_report(suite: BenchmarkSuite, output_path: Path) -> None:
 
     if "overall" in stats and stats["overall"]:
         overall = stats["overall"]
-        lines.extend([
-            f"- **Success Rate**: {overall['success_rate']:.1%}",
-            f"- **Average Duration**: {overall['duration']['mean']:.2f}ms",
-            f"- **Median Duration**: {overall['duration']['median']:.2f}ms",
-            f"- **P95 Duration**: {overall['duration'].get('p95', 0):.2f}ms",
-            f"- **Average Memory**: {overall['memory']['mean']:.2f}MB",
-            "",
-        ])
+        lines.extend(
+            [
+                f"- **Success Rate**: {overall['success_rate']:.1%}",
+                f"- **Average Duration**: {overall['duration']['mean']:.2f}ms",
+                f"- **Median Duration**: {overall['duration']['median']:.2f}ms",
+                f"- **P95 Duration**: {overall['duration'].get('p95', 0):.2f}ms",
+                f"- **Average Memory**: {overall['memory']['mean']:.2f}MB",
+                "",
+            ]
+        )
 
     # Category-specific stats
     for category in ["indexing", "generation", "validation", "stress"]:
         if category in stats and stats[category]:
             cat_stats = stats[category]
-            lines.extend([
-                f"\n## {category.title()} Performance",
-                "",
-                f"- **Count**: {cat_stats['count']}",
-                f"- **Mean Duration**: {cat_stats['duration']['mean']:.2f}ms",
-                f"- **Min/Max Duration**: {cat_stats['duration']['min']:.2f}ms / {cat_stats['duration']['max']:.2f}ms",
-                f"- **Mean Memory**: {cat_stats['memory']['mean']:.2f}MB",
-                "",
-            ])
+            lines.extend(
+                [
+                    f"\n## {category.title()} Performance",
+                    "",
+                    f"- **Count**: {cat_stats['count']}",
+                    f"- **Mean Duration**: {cat_stats['duration']['mean']:.2f}ms",
+                    f"- **Min/Max Duration**: {cat_stats['duration']['min']:.2f}ms / {cat_stats['duration']['max']:.2f}ms",
+                    f"- **Mean Memory**: {cat_stats['memory']['mean']:.2f}MB",
+                    "",
+                ]
+            )
 
     # Detailed results
-    lines.extend([
-        "\n## Detailed Results",
-        "",
-        "| Name | Category | Duration (ms) | Memory (MB) | Success |",
-        "|------|----------|---------------|-------------|---------|",
-    ])
+    lines.extend(
+        [
+            "\n## Detailed Results",
+            "",
+            "| Name | Category | Duration (ms) | Memory (MB) | Success |",
+            "|------|----------|---------------|-------------|---------|",
+        ]
+    )
 
     for result in suite.results:
         status = "✅" if result.success else "❌"

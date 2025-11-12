@@ -8,13 +8,9 @@ from pathlib import Path
 
 import pytest
 
-from maze.indexer.languages.rust import RustIndexer, TREE_SITTER_AVAILABLE
+from maze.indexer.languages.rust import TREE_SITTER_AVAILABLE, RustIndexer
 
-
-pytestmark = pytest.mark.skipif(
-    not TREE_SITTER_AVAILABLE,
-    reason="tree-sitter-rust not available"
-)
+pytestmark = pytest.mark.skipif(not TREE_SITTER_AVAILABLE, reason="tree-sitter-rust not available")
 
 
 class TestRustIndexer:
@@ -30,11 +26,13 @@ class TestRustIndexer:
         """Test indexing simple Rust function."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.rs"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 fn add(x: i32, y: i32) -> i32 {
     x + y
 }
-""")
+"""
+            )
 
             indexer = RustIndexer()
             result = indexer.index_file(file_path)
@@ -49,11 +47,13 @@ fn add(x: i32, y: i32) -> i32 {
         """Test indexing public function."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "lib.rs"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 pub fn public_func() -> String {
     String::new()
 }
-""")
+"""
+            )
 
             indexer = RustIndexer()
             result = indexer.index_file(file_path)
@@ -65,11 +65,13 @@ pub fn public_func() -> String {
         """Test indexing async function."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.rs"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 async fn fetch_data(url: &str) -> Result<String, Error> {
     Ok(String::new())
 }
-""")
+"""
+            )
 
             indexer = RustIndexer()
             result = indexer.index_file(file_path)
@@ -82,12 +84,14 @@ async fn fetch_data(url: &str) -> Result<String, Error> {
         """Test indexing struct definition."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.rs"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 struct User {
     name: String,
     email: String,
 }
-""")
+"""
+            )
 
             indexer = RustIndexer()
             result = indexer.index_file(file_path)
@@ -100,11 +104,13 @@ struct User {
         """Test indexing struct with lifetime."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.rs"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 struct Ref<'a> {
     data: &'a str,
 }
-""")
+"""
+            )
 
             indexer = RustIndexer()
             result = indexer.index_file(file_path)
@@ -118,11 +124,13 @@ struct Ref<'a> {
         """Test indexing struct with generic types."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.rs"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 struct Container<T: Clone> {
     items: Vec<T>,
 }
-""")
+"""
+            )
 
             indexer = RustIndexer()
             result = indexer.index_file(file_path)
@@ -136,12 +144,14 @@ struct Container<T: Clone> {
         """Test indexing enum."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.rs"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 enum Status {
     Active,
     Inactive,
 }
-""")
+"""
+            )
 
             indexer = RustIndexer()
             result = indexer.index_file(file_path)
@@ -154,11 +164,13 @@ enum Status {
         """Test indexing trait definition."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.rs"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 trait Processor {
     fn process(&self, data: &str) -> String;
 }
-""")
+"""
+            )
 
             indexer = RustIndexer()
             result = indexer.index_file(file_path)
@@ -171,7 +183,8 @@ trait Processor {
         """Test indexing impl block."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.rs"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 struct User;
 
 impl User {
@@ -179,7 +192,8 @@ impl User {
         User
     }
 }
-""")
+"""
+            )
 
             indexer = RustIndexer()
             result = indexer.index_file(file_path)
@@ -194,9 +208,11 @@ impl User {
         """Test indexing type alias."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.rs"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 type UserId = u64;
-""")
+"""
+            )
 
             indexer = RustIndexer()
             result = indexer.index_file(file_path)
@@ -209,12 +225,14 @@ type UserId = u64;
         """Test detecting #[test] functions."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.rs"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 #[test]
 fn test_addition() {
     assert_eq!(1 + 1, 2);
 }
-""")
+"""
+            )
 
             indexer = RustIndexer()
             result = indexer.index_file(file_path)
@@ -242,7 +260,7 @@ fn test_addition() {
             project = Path(tmpdir)
             src = project / "src"
             src.mkdir()
-            
+
             (src / "main.rs").write_text("fn main() {}")
             (src / "lib.rs").write_text("pub fn helper() {}")
 
@@ -256,10 +274,10 @@ fn test_addition() {
         """Test excluding target directory."""
         with tempfile.TemporaryDirectory() as tmpdir:
             project = Path(tmpdir)
-            
+
             (project / "src").mkdir()
             (project / "src" / "main.rs").write_text("fn main() {}")
-            
+
             (project / "target").mkdir()
             (project / "target" / "generated.rs").write_text("fn generated() {}")
 
@@ -274,7 +292,7 @@ fn test_addition() {
         """Test indexing performance."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "large.rs"
-            
+
             # Generate 50 functions
             lines = []
             for i in range(50):
@@ -282,7 +300,7 @@ fn test_addition() {
                 lines.append(f"    x + {i}")
                 lines.append("}")
                 lines.append("")
-            
+
             file_path.write_text("\n".join(lines))
 
             indexer = RustIndexer()
@@ -290,6 +308,6 @@ fn test_addition() {
 
             # Should extract all functions
             assert len(result.symbols) >= 50
-            
+
             # Should be fast
             assert result.duration_ms < 200

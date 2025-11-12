@@ -5,15 +5,15 @@ Provides type inference, inhabitation search, and hole-driven code generation
 with TypeScript support.
 """
 
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
-from maze.core.types import Type, TypeContext, GenerationResult
-from maze.type_system.inference import TypeInferenceEngine, InferenceResult
-from maze.type_system.inhabitation import InhabitationSolver, InhabitationPath
-from maze.type_system.languages.typescript import TypeScriptTypeSystem
+from maze.core.types import GenerationResult, Type, TypeContext
+from maze.orchestrator.providers import GenerationRequest, GenerationResponse, ProviderAdapter
 from maze.type_system.grammar_converter import TypeToGrammarConverter
-from maze.type_system.holes import HoleFillingEngine, Hole, HoleFillResult
-from maze.orchestrator.providers import ProviderAdapter, GenerationRequest, GenerationResponse
+from maze.type_system.holes import Hole, HoleFillingEngine, HoleFillResult
+from maze.type_system.inference import InferenceResult, TypeInferenceEngine
+from maze.type_system.inhabitation import InhabitationPath, InhabitationSolver
+from maze.type_system.languages.typescript import TypeScriptTypeSystem
 
 
 class TypeSystemOrchestrator:
@@ -59,10 +59,10 @@ class TypeSystemOrchestrator:
         self,
         prompt: str,
         context: TypeContext,
-        expected_type: Optional[Type] = None,
-        provider: Optional[ProviderAdapter] = None,
+        expected_type: Type | None = None,
+        provider: ProviderAdapter | None = None,
         max_tokens: int = 500,
-        temperature: float = 0.7
+        temperature: float = 0.7,
     ) -> GenerationResult:
         """
         Generate code with type constraints.
@@ -104,18 +104,16 @@ class TypeSystemOrchestrator:
                 completion_tokens=0,
                 total_tokens=0,
                 generation_time_ms=0.0,
-                grammar_used=grammar
+                grammar_used=grammar,
             )
 
         # Generate with provider
         import time
+
         start_time = time.perf_counter()
 
         request = GenerationRequest(
-            prompt=prompt,
-            grammar=grammar,
-            max_tokens=max_tokens,
-            temperature=temperature
+            prompt=prompt, grammar=grammar, max_tokens=max_tokens, temperature=temperature
         )
 
         try:
@@ -127,14 +125,14 @@ class TypeSystemOrchestrator:
                 success=True,
                 language=self.language,
                 provider=provider.__class__.__name__,
-                model=getattr(provider, 'model', 'unknown'),
-                prompt_tokens=response.metadata.get('prompt_tokens', 0),
+                model=getattr(provider, "model", "unknown"),
+                prompt_tokens=response.metadata.get("prompt_tokens", 0),
                 completion_tokens=response.tokens_generated,
-                total_tokens=response.metadata.get('total_tokens', response.tokens_generated),
+                total_tokens=response.metadata.get("total_tokens", response.tokens_generated),
                 generation_time_ms=generation_time_ms,
-                grammar_used=grammar
+                grammar_used=grammar,
             )
-        except Exception as e:
+        except Exception:
             generation_time_ms = (time.perf_counter() - start_time) * 1000
 
             return GenerationResult(
@@ -142,19 +140,16 @@ class TypeSystemOrchestrator:
                 success=False,
                 language=self.language,
                 provider=provider.__class__.__name__,
-                model=getattr(provider, 'model', 'unknown'),
+                model=getattr(provider, "model", "unknown"),
                 prompt_tokens=0,
                 completion_tokens=0,
                 total_tokens=0,
                 generation_time_ms=generation_time_ms,
-                grammar_used=grammar
+                grammar_used=grammar,
             )
 
     def fill_typed_holes(
-        self,
-        code: str,
-        context: TypeContext,
-        provider: Optional[ProviderAdapter] = None
+        self, code: str, context: TypeContext, provider: ProviderAdapter | None = None
     ) -> tuple[str, list[HoleFillResult]]:
         """
         Fill typed holes in code.
@@ -173,19 +168,11 @@ class TypeSystemOrchestrator:
             >>> context = TypeContext()
             >>> filled, results = orchestrator.fill_typed_holes(code, context)
         """
-        hole_engine = HoleFillingEngine(
-            self.inference,
-            self.converter,
-            provider
-        )
+        hole_engine = HoleFillingEngine(self.inference, self.converter, provider)
 
         return hole_engine.fill_all_holes(code, context, self.language)
 
-    def infer_type(
-        self,
-        expr: Any,
-        context: TypeContext
-    ) -> InferenceResult:
+    def infer_type(self, expr: Any, context: TypeContext) -> InferenceResult:
         """
         Infer type of expression.
 
@@ -199,11 +186,8 @@ class TypeSystemOrchestrator:
         return self.inference.infer_expression(expr, context)
 
     def find_inhabitation_path(
-        self,
-        source: Type,
-        target: Type,
-        context: TypeContext
-    ) -> Optional[InhabitationPath]:
+        self, source: Type, target: Type, context: TypeContext
+    ) -> InhabitationPath | None:
         """
         Find transformation path from source to target type.
 
@@ -253,7 +237,7 @@ class TypeSystemOrchestrator:
         """
         return self.type_system.is_assignable(source, target)
 
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def get_cache_stats(self) -> dict[str, Any]:
         """
         Get performance statistics from caches.
 
@@ -262,7 +246,7 @@ class TypeSystemOrchestrator:
         """
         return {
             "inference_cache_size": len(self.inference.inference_cache),
-            "inhabitation_stats": self.inhabitation.get_cache_stats()
+            "inhabitation_stats": self.inhabitation.get_cache_stats(),
         }
 
     def clear_caches(self) -> None:
@@ -275,14 +259,12 @@ class TypeSystemOrchestrator:
 __all__ = [
     # Main orchestrator
     "TypeSystemOrchestrator",
-
     # Core components
     "TypeInferenceEngine",
     "InhabitationSolver",
     "TypeScriptTypeSystem",
     "TypeToGrammarConverter",
     "HoleFillingEngine",
-
     # Data structures
     "InferenceResult",
     "InhabitationPath",

@@ -8,12 +8,12 @@ type unification, and constraint solving.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set, Tuple, Literal
-from enum import Enum
+from typing import Any, Literal
 
 from maze.core.types import (
-    Type, TypeContext, FunctionSignature, TypeParameter,
-    ClassType, InterfaceType, PRIMITIVE_TYPES
+    PRIMITIVE_TYPES,
+    Type,
+    TypeContext,
 )
 
 
@@ -27,16 +27,13 @@ class TypeConstraint:
         - TypeConstraint("T", "supertype", Type("string"))  # T :> string
         - TypeConstraint("T", "equals", Type("boolean"))  # T = boolean
     """
+
     variable: str
     constraint_type: Literal["subtype", "supertype", "equals"]
     bound: Type
 
     def __str__(self) -> str:
-        symbols = {
-            "subtype": "<:",
-            "supertype": ":>",
-            "equals": "="
-        }
+        symbols = {"subtype": "<:", "supertype": ":>", "equals": "="}
         symbol = symbols[self.constraint_type]
         return f"{self.variable} {symbol} {self.bound}"
 
@@ -49,8 +46,9 @@ class InferenceResult:
     Contains the inferred type, any constraints on type variables,
     and a confidence score for the inference.
     """
+
     inferred_type: Type
-    constraints: List[TypeConstraint] = field(default_factory=list)
+    constraints: list[TypeConstraint] = field(default_factory=list)
     confidence: float = 1.0  # 0.0 = guess, 1.0 = certain
 
     def __str__(self) -> str:
@@ -74,13 +72,9 @@ class TypeInferenceEngine:
 
     def __init__(self):
         """Initialize the type inference engine."""
-        self.inference_cache: Dict[int, InferenceResult] = {}
+        self.inference_cache: dict[int, InferenceResult] = {}
 
-    def infer_expression(
-        self,
-        expr: Any,
-        context: TypeContext
-    ) -> InferenceResult:
+    def infer_expression(self, expr: Any, context: TypeContext) -> InferenceResult:
         """
         Infer the type of an expression from context.
 
@@ -125,20 +119,12 @@ class TypeInferenceEngine:
             result = self._infer_function_expr(expr_dict, context)
         else:
             # Unknown expression kind - return unknown type
-            result = InferenceResult(
-                inferred_type=Type("unknown"),
-                confidence=0.0
-            )
+            result = InferenceResult(inferred_type=Type("unknown"), confidence=0.0)
 
         self.inference_cache[cache_key] = result
         return result
 
-    def check_expression(
-        self,
-        expr: Any,
-        expected: Type,
-        context: TypeContext
-    ) -> bool:
+    def check_expression(self, expr: Any, expected: Type, context: TypeContext) -> bool:
         """
         Check if an expression can have the expected type.
 
@@ -160,11 +146,7 @@ class TypeInferenceEngine:
         result = self.infer_expression(expr, context)
         return self._is_assignable(result.inferred_type, expected)
 
-    def infer_forward(
-        self,
-        node: Any,
-        context: TypeContext
-    ) -> Type:
+    def infer_forward(self, node: Any, context: TypeContext) -> Type:
         """
         Forward pass: infer type from context (bottom-up).
 
@@ -180,12 +162,7 @@ class TypeInferenceEngine:
         result = self.infer_expression(node, context)
         return result.inferred_type
 
-    def infer_backward(
-        self,
-        node: Any,
-        usage_type: Type,
-        context: TypeContext
-    ) -> Type:
+    def infer_backward(self, node: Any, usage_type: Type, context: TypeContext) -> Type:
         """
         Backward pass: refine type from usage (top-down).
 
@@ -218,7 +195,7 @@ class TypeInferenceEngine:
                 forward_type.name,
                 forward_type.parameters,
                 nullable=False,
-                metadata=forward_type.metadata
+                metadata=forward_type.metadata,
             )
             # Check if non-null version matches usage
             if non_null_forward == usage_type:
@@ -231,11 +208,7 @@ class TypeInferenceEngine:
         # Otherwise, prefer usage type
         return usage_type
 
-    def unify(
-        self,
-        type1: Type,
-        type2: Type
-    ) -> Optional[Dict[str, Type]]:
+    def unify(self, type1: Type, type2: Type) -> dict[str, Type] | None:
         """
         Unify two types, returning substitution if possible.
 
@@ -258,18 +231,14 @@ class TypeInferenceEngine:
             >>> print(subst)
             {'T': Type(name='number')}
         """
-        subst: Dict[str, Type] = {}
+        subst: dict[str, Type] = {}
 
         if not self._unify_helper(type1, type2, subst):
             return None
 
         return subst
 
-    def apply_substitution(
-        self,
-        type: Type,
-        subst: Dict[str, Type]
-    ) -> Type:
+    def apply_substitution(self, type: Type, subst: dict[str, Type]) -> Type:
         """
         Apply type variable substitution to a type.
 
@@ -291,7 +260,7 @@ class TypeInferenceEngine:
         context_str = str(sorted(context.variables.items()))
         return hash(expr_str + context_str)
 
-    def _infer_literal(self, expr: Dict[str, Any]) -> InferenceResult:
+    def _infer_literal(self, expr: dict[str, Any]) -> InferenceResult:
         """Infer type of literal value."""
         value = expr.get("value")
 
@@ -304,16 +273,9 @@ class TypeInferenceEngine:
         elif value is None:
             return InferenceResult(inferred_type=Type("null"))
         else:
-            return InferenceResult(
-                inferred_type=Type("unknown"),
-                confidence=0.0
-            )
+            return InferenceResult(inferred_type=Type("unknown"), confidence=0.0)
 
-    def _infer_identifier(
-        self,
-        expr: Dict[str, Any],
-        context: TypeContext
-    ) -> InferenceResult:
+    def _infer_identifier(self, expr: dict[str, Any], context: TypeContext) -> InferenceResult:
         """Infer type of identifier from context."""
         name = expr.get("name", "")
 
@@ -324,16 +286,9 @@ class TypeInferenceEngine:
             return InferenceResult(inferred_type=type_found)
         else:
             # Unknown identifier
-            return InferenceResult(
-                inferred_type=Type("unknown"),
-                confidence=0.0
-            )
+            return InferenceResult(inferred_type=Type("unknown"), confidence=0.0)
 
-    def _infer_call(
-        self,
-        expr: Dict[str, Any],
-        context: TypeContext
-    ) -> InferenceResult:
+    def _infer_call(self, expr: dict[str, Any], context: TypeContext) -> InferenceResult:
         """Infer type of function call."""
         callee = expr.get("callee", {})
         args = expr.get("arguments", [])
@@ -349,16 +304,9 @@ class TypeInferenceEngine:
             return InferenceResult(inferred_type=return_type)
 
         # Unknown function
-        return InferenceResult(
-            inferred_type=Type("unknown"),
-            confidence=0.0
-        )
+        return InferenceResult(inferred_type=Type("unknown"), confidence=0.0)
 
-    def _infer_property(
-        self,
-        expr: Dict[str, Any],
-        context: TypeContext
-    ) -> InferenceResult:
+    def _infer_property(self, expr: dict[str, Any], context: TypeContext) -> InferenceResult:
         """Infer type of property access."""
         object_expr = expr.get("object", {})
         property_name = expr.get("property", "")
@@ -371,73 +319,43 @@ class TypeInferenceEngine:
         if object_type.name in context.classes:
             class_type = context.classes[object_type.name]
             if property_name in class_type.properties:
-                return InferenceResult(
-                    inferred_type=class_type.properties[property_name]
-                )
+                return InferenceResult(inferred_type=class_type.properties[property_name])
 
         if object_type.name in context.interfaces:
             interface_type = context.interfaces[object_type.name]
             if property_name in interface_type.properties:
-                return InferenceResult(
-                    inferred_type=interface_type.properties[property_name]
-                )
+                return InferenceResult(inferred_type=interface_type.properties[property_name])
 
         # Unknown property
-        return InferenceResult(
-            inferred_type=Type("unknown"),
-            confidence=0.0
-        )
+        return InferenceResult(inferred_type=Type("unknown"), confidence=0.0)
 
-    def _infer_array(
-        self,
-        expr: Dict[str, Any],
-        context: TypeContext
-    ) -> InferenceResult:
+    def _infer_array(self, expr: dict[str, Any], context: TypeContext) -> InferenceResult:
         """Infer type of array literal."""
         elements = expr.get("elements", [])
 
         if not elements:
             # Empty array - Array<unknown>
-            return InferenceResult(
-                inferred_type=Type("Array", (Type("unknown"),)),
-                confidence=0.5
-            )
+            return InferenceResult(inferred_type=Type("Array", (Type("unknown"),)), confidence=0.5)
 
         # Infer types of all elements
-        element_types = [
-            self.infer_expression(elem, context).inferred_type
-            for elem in elements
-        ]
+        element_types = [self.infer_expression(elem, context).inferred_type for elem in elements]
 
         # Find common type (simplified - just use first element type)
         # In full implementation, would compute least upper bound
         common_type = element_types[0]
 
-        return InferenceResult(
-            inferred_type=Type("Array", (common_type,))
-        )
+        return InferenceResult(inferred_type=Type("Array", (common_type,)))
 
-    def _infer_object(
-        self,
-        expr: Dict[str, Any],
-        context: TypeContext
-    ) -> InferenceResult:
+    def _infer_object(self, expr: dict[str, Any], context: TypeContext) -> InferenceResult:
         """Infer type of object literal."""
         properties = expr.get("properties", [])
 
         # Infer types of all properties
         # For now, return generic object type
         # Full implementation would create anonymous object type
-        return InferenceResult(
-            inferred_type=Type("object"),
-            confidence=0.8
-        )
+        return InferenceResult(inferred_type=Type("object"), confidence=0.8)
 
-    def _infer_function_expr(
-        self,
-        expr: Dict[str, Any],
-        context: TypeContext
-    ) -> InferenceResult:
+    def _infer_function_expr(self, expr: dict[str, Any], context: TypeContext) -> InferenceResult:
         """Infer type of function expression."""
         params = expr.get("parameters", [])
         return_type = expr.get("returnType")
@@ -482,10 +400,7 @@ class TypeInferenceEngine:
         # (unsafe, but common in gradual typing)
         if source.nullable and not target.nullable:
             non_null_source = Type(
-                source.name,
-                source.parameters,
-                nullable=False,
-                metadata=source.metadata
+                source.name, source.parameters, nullable=False, metadata=source.metadata
             )
             return non_null_source == target
 
@@ -493,18 +408,12 @@ class TypeInferenceEngine:
         if source.parameters and target.parameters:
             if source.name == target.name and len(source.parameters) == len(target.parameters):
                 return all(
-                    self._is_assignable(s, t)
-                    for s, t in zip(source.parameters, target.parameters)
+                    self._is_assignable(s, t) for s, t in zip(source.parameters, target.parameters)
                 )
 
         return False
 
-    def _unify_helper(
-        self,
-        type1: Type,
-        type2: Type,
-        subst: Dict[str, Type]
-    ) -> bool:
+    def _unify_helper(self, type1: Type, type2: Type, subst: dict[str, Type]) -> bool:
         """
         Helper for unification with accumulating substitution.
 

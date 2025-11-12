@@ -6,8 +6,6 @@ Test coverage target: 90%
 import tempfile
 from pathlib import Path
 
-import pytest
-
 from maze.config import (
     Config,
     ConstraintConfig,
@@ -32,9 +30,7 @@ class TestProjectConfig:
 
     def test_custom_values(self):
         """Test custom project configuration."""
-        config = ProjectConfig(
-            name="my-project", language="python", source_paths=["lib/", "app/"]
-        )
+        config = ProjectConfig(name="my-project", language="python", source_paths=["lib/", "app/"])
         assert config.name == "my-project"
         assert config.language == "python"
         assert config.source_paths == ["lib/", "app/"]
@@ -53,9 +49,7 @@ class TestIndexerConfig:
 
     def test_custom_values(self):
         """Test custom indexer configuration."""
-        config = IndexerConfig(
-            enabled=False, cache_enabled=False, max_file_size_kb=2048
-        )
+        config = IndexerConfig(enabled=False, cache_enabled=False, max_file_size_kb=2048)
         assert config.enabled is False
         assert config.cache_enabled is False
         assert config.max_file_size_kb == 2048
@@ -137,9 +131,7 @@ class TestPerformanceConfig:
 
     def test_custom_values(self):
         """Test custom performance configuration."""
-        config = PerformanceConfig(
-            cache_size=50_000, max_workers=8, enable_profiling=True
-        )
+        config = PerformanceConfig(cache_size=50_000, max_workers=8, enable_profiling=True)
         assert config.cache_size == 50_000
         assert config.max_workers == 8
         assert config.enable_profiling is True

@@ -5,18 +5,16 @@ Tests adaptive repair strategies, diagnostic analysis, constraint refinement,
 and pattern learning across various failure scenarios.
 """
 
-import pytest
 from maze.repair.orchestrator import (
+    ConstraintRefinement,
+    FailureAnalysis,
+    RepairContext,
     RepairOrchestrator,
     RepairStrategy,
-    FailureAnalysis,
-    ConstraintRefinement,
-    RepairContext,
 )
 from maze.validation.pipeline import (
-    ValidationPipeline,
     Diagnostic,
-    ValidationContext,
+    ValidationPipeline,
 )
 
 
@@ -119,9 +117,7 @@ class TestDiagnosticAnalysis:
         orchestrator = RepairOrchestrator(validator=ValidationPipeline())
 
         diagnostics = [
-            Diagnostic(
-                level="error", message="syntax error", line=1, column=0, source="syntax"
-            ),
+            Diagnostic(level="error", message="syntax error", line=1, column=0, source="syntax"),
             Diagnostic(
                 level="error",
                 message="type mismatch",
@@ -319,9 +315,7 @@ class TestConstraintRefinement:
         analysis = FailureAnalysis(
             syntax_errors=[],
             type_errors=[
-                Diagnostic(
-                    level="error", message="type error", line=1, column=0, source="type"
-                )
+                Diagnostic(level="error", message="type error", line=1, column=0, source="type")
             ],
             test_errors=[],
             lint_errors=[],
@@ -366,9 +360,7 @@ class TestPatternLearning:
 
     def test_learn_repair_pattern(self):
         """Test learning successful repair pattern."""
-        orchestrator = RepairOrchestrator(
-            validator=ValidationPipeline(), learning_enabled=True
-        )
+        orchestrator = RepairOrchestrator(validator=ValidationPipeline(), learning_enabled=True)
 
         failure = FailureAnalysis(
             syntax_errors=[
@@ -402,9 +394,7 @@ class TestPatternLearning:
 
     def test_reuse_learned_pattern(self):
         """Test reusing learned pattern."""
-        orchestrator = RepairOrchestrator(
-            validator=ValidationPipeline(), learning_enabled=True
-        )
+        orchestrator = RepairOrchestrator(validator=ValidationPipeline(), learning_enabled=True)
 
         # Learn a pattern
         failure = FailureAnalysis(
@@ -443,9 +433,7 @@ class TestMaxAttemptsLimit:
 
     def test_max_attempts_limit(self):
         """Test that repair stops after max attempts."""
-        orchestrator = RepairOrchestrator(
-            validator=ValidationPipeline(), max_attempts=2
-        )
+        orchestrator = RepairOrchestrator(validator=ValidationPipeline(), max_attempts=2)
 
         # Code that will fail validation
         result = orchestrator.repair(
@@ -515,9 +503,7 @@ class TestFailedRepairLoop:
 
     def test_failed_repair_loop(self):
         """Test repair loop that exhausts attempts."""
-        orchestrator = RepairOrchestrator(
-            validator=ValidationPipeline(), max_attempts=1
-        )
+        orchestrator = RepairOrchestrator(validator=ValidationPipeline(), max_attempts=1)
 
         # Code that will fail
         result = orchestrator.repair(
@@ -532,9 +518,7 @@ class TestFailedRepairLoop:
 
     def test_diagnostics_remaining_on_failure(self):
         """Test that diagnostics are provided on failure."""
-        orchestrator = RepairOrchestrator(
-            validator=ValidationPipeline(), max_attempts=1
-        )
+        orchestrator = RepairOrchestrator(validator=ValidationPipeline(), max_attempts=1)
 
         result = orchestrator.repair(
             code="def broken(",
@@ -600,9 +584,7 @@ class TestLearningEnabled:
 
     def test_learning_disabled(self):
         """Test that learning can be disabled."""
-        orchestrator = RepairOrchestrator(
-            validator=ValidationPipeline(), learning_enabled=False
-        )
+        orchestrator = RepairOrchestrator(validator=ValidationPipeline(), learning_enabled=False)
 
         failure = FailureAnalysis(
             syntax_errors=[],

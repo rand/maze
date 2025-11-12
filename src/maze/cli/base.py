@@ -1,8 +1,7 @@
 """Base command interface for Maze CLI."""
 
-from abc import ABC, abstractmethod
 import argparse
-from typing import Optional
+from abc import ABC, abstractmethod
 
 from maze.config import Config
 from maze.core.pipeline import Pipeline
@@ -11,14 +10,14 @@ from maze.core.pipeline import Pipeline
 class Command(ABC):
     """Abstract base class for CLI commands."""
 
-    def __init__(self, config: Optional[Config] = None):
+    def __init__(self, config: Config | None = None):
         """Initialize command.
 
         Args:
             config: Maze configuration (loads default if None)
         """
         self.config = config or Config.load()
-        self.pipeline: Optional[Pipeline] = None
+        self.pipeline: Pipeline | None = None
 
     @abstractmethod
     def setup_parser(self, parser: argparse.ArgumentParser) -> None:

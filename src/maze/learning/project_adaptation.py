@@ -9,18 +9,19 @@ import re
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
-from maze.learning.pattern_mining import PatternMiningEngine, PatternSet, SyntacticPattern
 from maze.learning.constraint_learning import (
     ConstraintLearningSystem,
     Feedback,
 )
+from maze.learning.pattern_mining import PatternMiningEngine, PatternSet
 
 
 @dataclass
 class ConventionSet:
     """Project-specific conventions."""
+
     naming: dict[str, str] = field(default_factory=dict)  # "function" -> "camelCase", etc.
     structure: dict[str, Any] = field(default_factory=dict)  # File organization patterns
     testing: dict[str, Any] = field(default_factory=dict)  # Test patterns
@@ -32,6 +33,7 @@ class ConventionSet:
 @dataclass
 class ProjectProfile:
     """Profile of project conventions."""
+
     project_name: str
     project_path: Path
     language: str
@@ -45,6 +47,7 @@ class ProjectProfile:
 @dataclass
 class AdaptationStats:
     """Statistics about adaptation progress."""
+
     total_examples: int
     patterns_learned: int
     conventions_extracted: int
@@ -69,7 +72,7 @@ class ProjectAdaptationManager:
         self,
         pattern_miner: PatternMiningEngine,
         learner: ConstraintLearningSystem,
-        convergence_threshold: float = 0.9
+        convergence_threshold: float = 0.9,
     ):
         """
         Initialize project adaptation manager.
@@ -85,9 +88,7 @@ class ProjectAdaptationManager:
         self.profiles: dict[str, ProjectProfile] = {}
 
     def initialize_project(
-        self,
-        project_path: Path,
-        language: Optional[str] = None
+        self, project_path: Path, language: str | None = None
     ) -> ProjectProfile:
         """
         Initialize project profile.
@@ -123,7 +124,7 @@ class ProjectAdaptationManager:
             patterns=patterns,
             created_at=time.time(),
             updated_at=time.time(),
-            generation_count=0
+            generation_count=0,
         )
 
         self.profiles[project_name] = profile
@@ -167,10 +168,7 @@ class ProjectAdaptationManager:
 
         return "python"  # Default
 
-    def extract_conventions(
-        self,
-        project: ProjectProfile
-    ) -> ConventionSet:
+    def extract_conventions(self, project: ProjectProfile) -> ConventionSet:
         """
         Extract project conventions from patterns.
 
@@ -182,10 +180,7 @@ class ProjectAdaptationManager:
         """
         return self.extract_conventions_from_patterns(project.patterns)
 
-    def extract_conventions_from_patterns(
-        self,
-        patterns: PatternSet
-    ) -> ConventionSet:
+    def extract_conventions_from_patterns(self, patterns: PatternSet) -> ConventionSet:
         """
         Extract conventions from pattern set.
 
@@ -248,7 +243,7 @@ class ProjectAdaptationManager:
 
         return conventions
 
-    def _extract_function_name(self, code: str) -> Optional[str]:
+    def _extract_function_name(self, code: str) -> str | None:
         """Extract function name from code."""
         try:
             tree = ast.parse(code)
@@ -260,23 +255,23 @@ class ProjectAdaptationManager:
 
         # Try regex fallback for various languages
         # Python: def foo(
-        match = re.search(r'def\s+(\w+)\s*\(', code)
+        match = re.search(r"def\s+(\w+)\s*\(", code)
         if match:
             return match.group(1)
 
         # JavaScript/TypeScript: function foo(
-        match = re.search(r'function\s+(\w+)\s*\(', code)
+        match = re.search(r"function\s+(\w+)\s*\(", code)
         if match:
             return match.group(1)
 
         # Arrow functions: const foo = (
-        match = re.search(r'const\s+(\w+)\s*=\s*\(', code)
+        match = re.search(r"const\s+(\w+)\s*=\s*\(", code)
         if match:
             return match.group(1)
 
         return None
 
-    def _extract_class_name(self, code: str) -> Optional[str]:
+    def _extract_class_name(self, code: str) -> str | None:
         """Extract class name from code."""
         try:
             tree = ast.parse(code)
@@ -285,7 +280,7 @@ class ProjectAdaptationManager:
                     return node.name
         except SyntaxError:
             # Try regex fallback
-            match = re.search(r'class\s+(\w+)', code)
+            match = re.search(r"class\s+(\w+)", code)
             if match:
                 return match.group(1)
         return None
@@ -313,17 +308,17 @@ class ProjectAdaptationManager:
         """Check if name is camelCase."""
         if not name or name[0].isupper():
             return False
-        return bool(re.match(r'^[a-z][a-zA-Z0-9]*$', name)) and any(c.isupper() for c in name)
+        return bool(re.match(r"^[a-z][a-zA-Z0-9]*$", name)) and any(c.isupper() for c in name)
 
     def _is_snake_case(self, name: str) -> bool:
         """Check if name is snake_case."""
-        return bool(re.match(r'^[a-z][a-z0-9_]*$', name)) and '_' in name
+        return bool(re.match(r"^[a-z][a-z0-9_]*$", name)) and "_" in name
 
     def _is_pascal_case(self, name: str) -> bool:
         """Check if name is PascalCase."""
         if not name or not name[0].isupper():
             return False
-        return bool(re.match(r'^[A-Z][a-zA-Z0-9]*$', name)) and any(c.isupper() for c in name[1:])
+        return bool(re.match(r"^[A-Z][a-zA-Z0-9]*$", name)) and any(c.isupper() for c in name[1:])
 
     def _extract_structure_patterns(self, patterns: PatternSet) -> dict[str, Any]:
         """Extract file structure patterns."""
@@ -331,7 +326,7 @@ class ProjectAdaptationManager:
             "has_tests": False,
             "test_directory": None,
             "has_src": False,
-            "module_structure": "flat"
+            "module_structure": "flat",
         }
 
         # Check for common directory patterns in source path
@@ -354,7 +349,7 @@ class ProjectAdaptationManager:
             "framework": "unknown",
             "test_prefix": "test_",
             "uses_fixtures": False,
-            "uses_mocks": False
+            "uses_mocks": False,
         }
 
         # Look for test patterns in syntactic patterns
@@ -395,11 +390,7 @@ class ProjectAdaptationManager:
 
     def _extract_style_preferences(self, patterns: PatternSet) -> dict[str, Any]:
         """Extract code style preferences."""
-        style = {
-            "indentation": "unknown",
-            "quotes": "unknown",
-            "line_length": None
-        }
+        style = {"indentation": "unknown", "quotes": "unknown", "line_length": None}
 
         # Analyze examples for style patterns
         for pattern in patterns.syntactic[:10]:  # Sample first 10
@@ -407,14 +398,14 @@ class ProjectAdaptationManager:
                 example = pattern.examples[0]
 
                 # Detect indentation
-                lines = example.split('\n')
+                lines = example.split("\n")
                 for line in lines:
-                    if line and line[0] == ' ':
-                        leading = len(line) - len(line.lstrip(' '))
+                    if line and line[0] == " ":
+                        leading = len(line) - len(line.lstrip(" "))
                         if leading > 0:
                             style["indentation"] = f"{leading}_spaces"
                             break
-                    elif line and line[0] == '\t':
+                    elif line and line[0] == "\t":
                         style["indentation"] = "tabs"
                         break
 
@@ -441,30 +432,23 @@ class ProjectAdaptationManager:
                         api_usage[api_name].append(impl)
 
         # Keep only frequently used APIs
-        return {
-            api: usages
-            for api, usages in api_usage.items()
-            if len(usages) >= 3
-        }
+        return {api: usages for api, usages in api_usage.items() if len(usages) >= 3}
 
-    def _extract_api_name(self, code: str) -> Optional[str]:
+    def _extract_api_name(self, code: str) -> str | None:
         """Extract API/library name from code."""
         # Look for import statements
-        import_match = re.search(r'import\s+(\w+)', code)
+        import_match = re.search(r"import\s+(\w+)", code)
         if import_match:
             return import_match.group(1)
 
         # Look for module.function patterns
-        module_match = re.search(r'(\w+)\.\w+\(', code)
+        module_match = re.search(r"(\w+)\.\w+\(", code)
         if module_match:
             return module_match.group(1)
 
         return None
 
-    def create_adapted_constraints(
-        self,
-        conventions: ConventionSet
-    ) -> dict[str, Any]:
+    def create_adapted_constraints(self, conventions: ConventionSet) -> dict[str, Any]:
         """
         Create constraints from conventions.
 
@@ -480,16 +464,12 @@ class ProjectAdaptationManager:
             "testing": conventions.testing,
             "error_handling": conventions.error_handling,
             "style": conventions.style,
-            "apis": conventions.apis
+            "apis": conventions.apis,
         }
 
         return constraints
 
-    def update_from_feedback(
-        self,
-        project_name: str,
-        feedback: Feedback
-    ) -> None:
+    def update_from_feedback(self, project_name: str, feedback: Feedback) -> None:
         """
         Update project profile from feedback.
 
@@ -506,24 +486,15 @@ class ProjectAdaptationManager:
 
         # Update learner constraints based on feedback
         if feedback.success:
-            self.learner.learn_from_success(
-                feedback.generation_result,
-                feedback.validation_result
-            )
+            self.learner.learn_from_success(feedback.generation_result, feedback.validation_result)
         else:
             diagnostics = [
                 {"severity": d.get("severity", "error"), "message": d.get("message", "")}
                 for d in feedback.validation_result.diagnostics
             ]
-            self.learner.learn_from_failure(
-                feedback.generation_result,
-                diagnostics
-            )
+            self.learner.learn_from_failure(feedback.generation_result, diagnostics)
 
-    def get_adaptation_stats(
-        self,
-        project_name: str
-    ) -> AdaptationStats:
+    def get_adaptation_stats(self, project_name: str) -> AdaptationStats:
         """
         Get adaptation statistics.
 
@@ -539,7 +510,7 @@ class ProjectAdaptationManager:
                 patterns_learned=0,
                 conventions_extracted=0,
                 convergence_score=0.0,
-                last_updated=time.time()
+                last_updated=time.time(),
             )
 
         profile = self.profiles[project_name]
@@ -549,7 +520,7 @@ class ProjectAdaptationManager:
             patterns_learned=len(self.learner.constraints),
             conventions_extracted=self._count_conventions(profile.conventions),
             convergence_score=self.compute_convergence(project_name),
-            last_updated=profile.updated_at
+            last_updated=profile.updated_at,
         )
 
     def _count_conventions(self, conventions: ConventionSet) -> int:
@@ -563,10 +534,7 @@ class ProjectAdaptationManager:
         count += len(conventions.apis)
         return count
 
-    def compute_convergence(
-        self,
-        project_name: str
-    ) -> float:
+    def compute_convergence(self, project_name: str) -> float:
         """
         Compute adaptation convergence score.
 
@@ -597,11 +565,7 @@ class ProjectAdaptationManager:
             stability_score = 0.0
 
         # Weighted combination
-        convergence = (
-            pattern_score * 0.4 +
-            generation_score * 0.3 +
-            stability_score * 0.3
-        )
+        convergence = pattern_score * 0.4 + generation_score * 0.3 + stability_score * 0.3
 
         return convergence
 

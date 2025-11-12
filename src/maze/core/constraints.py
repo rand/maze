@@ -7,14 +7,13 @@ code generation through syntactic, type, semantic, and contextual constraints.
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
-from enum import Enum
 import hashlib
 import json
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+from typing import Any
 
-from maze.core.types import Type, TypeContext, ConstraintLevel, Diagnostic
+from maze.core.types import ConstraintLevel, Type, TypeContext
 
 
 @dataclass
@@ -25,9 +24,10 @@ class TokenMask:
     This is the core output from constraint evaluation that guides the LLM
     to generate only valid tokens.
     """
-    allowed_tokens: Optional[Set[int]] = None  # None means all allowed
-    forbidden_tokens: Optional[Set[int]] = None  # None means none forbidden
-    logit_bias: Optional[Dict[int, float]] = None  # Token ID -> bias
+
+    allowed_tokens: set[int] | None = None  # None means all allowed
+    forbidden_tokens: set[int] | None = None  # None means none forbidden
+    logit_bias: dict[int, float] | None = None  # Token ID -> bias
 
     def is_allowed(self, token_id: int) -> bool:
         """Check if a token is allowed."""
@@ -51,7 +51,9 @@ class TokenMask:
 
         # Merge forbidden tokens (union if present)
         if self.forbidden_tokens or other.forbidden_tokens:
-            result.forbidden_tokens = (self.forbidden_tokens or set()) | (other.forbidden_tokens or set())
+            result.forbidden_tokens = (self.forbidden_tokens or set()) | (
+                other.forbidden_tokens or set()
+            )
 
         # Merge logit biases
         if self.logit_bias or other.logit_bias:
@@ -65,12 +67,13 @@ class GenerationState:
     """
     Current state during generation for constraint evaluation.
     """
+
     generated_text: str
     context: TypeContext
     current_position: int
     tokens_generated: int
     language: str
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def copy(self) -> GenerationState:
         """Create a copy of the current state."""
@@ -80,7 +83,7 @@ class GenerationState:
             current_position=self.current_position,
             tokens_generated=self.tokens_generated,
             language=self.language,
-            metadata=self.metadata.copy()
+            metadata=self.metadata.copy(),
         )
 
 
@@ -102,7 +105,7 @@ class Constraint(ABC):
         """
         self.level = level
         self.weight = weight
-        self._cache_key: Optional[str] = None
+        self._cache_key: str | None = None
 
     @abstractmethod
     def evaluate(self, state: GenerationState) -> TokenMask:
@@ -118,7 +121,7 @@ class Constraint(ABC):
         pass
 
     @abstractmethod
-    def to_grammar(self) -> Optional[str]:
+    def to_grammar(self) -> str | None:
         """
         Convert constraint to grammar representation if possible.
 
@@ -189,7 +192,7 @@ class SyntacticConstraint(Constraint):
                 import_stmt: "import" module_name
                 IDENT: /[a-zA-Z_][a-zA-Z0-9_]*/
                 %ignore /\\s+/
-            """
+            """,
         }
 
         grammar = grammar_templates.get(language, grammar_templates["typescript"])
@@ -224,14 +227,14 @@ class TypeConstraint(Constraint):
         # 4. Mask tokens that can't lead to valid type
         return TokenMask()
 
-    def to_grammar(self) -> Optional[str]:
+    def to_grammar(self) -> str | None:
         """Generate type-specific grammar rules."""
         # Could generate grammar rules that encode type constraints
         # For example, if expecting string, only allow string literals,
         # string variables, and string-returning functions
         return None
 
-    def find_valid_expressions(self) -> List[str]:
+    def find_valid_expressions(self) -> list[str]:
         """
         Find expressions in context that match the expected type.
 
@@ -270,8 +273,7 @@ class TypeConstraint(Constraint):
         # Check generic compatibility
         if actual.name == expected.name and len(actual.parameters) == len(expected.parameters):
             return all(
-                self.types_compatible(a, e)
-                for a, e in zip(actual.parameters, expected.parameters)
+                self.types_compatible(a, e) for a, e in zip(actual.parameters, expected.parameters)
             )
 
         return False
@@ -287,9 +289,9 @@ class SemanticConstraint(Constraint):
     """
 
     specification: str
-    test_cases: List[Dict[str, Any]] = field(default_factory=list)
-    properties: List[str] = field(default_factory=list)
-    invariants: List[str] = field(default_factory=list)
+    test_cases: list[dict[str, Any]] = field(default_factory=list)
+    properties: list[str] = field(default_factory=list)
+    invariants: list[str] = field(default_factory=list)
 
     def __init__(self, specification: str):
         super().__init__(ConstraintLevel.SEMANTIC)
@@ -305,16 +307,13 @@ class SemanticConstraint(Constraint):
         # based on symbolic execution or property checking
         return TokenMask()
 
-    def to_grammar(self) -> Optional[str]:
+    def to_grammar(self) -> str | None:
         """Semantic constraints typically can't be encoded as grammar."""
         return None
 
     def add_test_case(self, input: Any, expected_output: Any) -> None:
         """Add a test case."""
-        self.test_cases.append({
-            "input": input,
-            "expected": expected_output
-        })
+        self.test_cases.append({"input": input, "expected": expected_output})
 
     def add_property(self, property: str) -> None:
         """Add a property that must hold."""
@@ -334,10 +333,10 @@ class ContextualConstraint(Constraint):
     project-specific conventions and patterns.
     """
 
-    patterns: List[str] = field(default_factory=list)
-    anti_patterns: List[str] = field(default_factory=list)
-    style_rules: Dict[str, Any] = field(default_factory=dict)
-    weight_map: Dict[str, float] = field(default_factory=dict)
+    patterns: list[str] = field(default_factory=list)
+    anti_patterns: list[str] = field(default_factory=list)
+    style_rules: dict[str, Any] = field(default_factory=dict)
+    weight_map: dict[str, float] = field(default_factory=dict)
 
     def __init__(self, weight: float = 0.5):
         super().__init__(ConstraintLevel.CONTEXTUAL, weight)
@@ -357,7 +356,7 @@ class ContextualConstraint(Constraint):
 
         return mask
 
-    def to_grammar(self) -> Optional[str]:
+    def to_grammar(self) -> str | None:
         """Contextual constraints are typically not strict grammar."""
         return None
 
@@ -380,9 +379,9 @@ class JSONSchemaConstraint(Constraint):
     Useful for tool calls, configuration, and structured data generation.
     """
 
-    schema: Dict[str, Any]
+    schema: dict[str, Any]
 
-    def __init__(self, schema: Dict[str, Any]):
+    def __init__(self, schema: dict[str, Any]):
         super().__init__(ConstraintLevel.SYNTACTIC)
         self.schema = schema
 
@@ -395,10 +394,10 @@ class JSONSchemaConstraint(Constraint):
     def to_grammar(self) -> str:
         """Convert JSON Schema to Lark grammar."""
         # Simplified version - production would handle full JSON Schema spec
-        return f"""
+        return """
             ?start: json_value
             json_value: object | array | string | number | boolean | null
-            object: "{{" [pair ("," pair)*] "}}"
+            object: "{" [pair ("," pair)*] "}"
             pair: string ":" json_value
             array: "[" [json_value ("," json_value)*] "]"
             string: ESCAPED_STRING
@@ -441,7 +440,7 @@ class RegexConstraint(Constraint):
 
     def to_grammar(self) -> str:
         """Convert regex to grammar rule."""
-        return f'PATTERN: /{self.pattern}/'
+        return f"PATTERN: /{self.pattern}/"
 
 
 @dataclass
@@ -453,14 +452,14 @@ class ConstraintSet:
     guide a generation task.
     """
 
-    syntactic: List[SyntacticConstraint] = field(default_factory=list)
-    type_based: List[TypeConstraint] = field(default_factory=list)
-    semantic: List[SemanticConstraint] = field(default_factory=list)
-    contextual: List[ContextualConstraint] = field(default_factory=list)
+    syntactic: list[SyntacticConstraint] = field(default_factory=list)
+    type_based: list[TypeConstraint] = field(default_factory=list)
+    semantic: list[SemanticConstraint] = field(default_factory=list)
+    contextual: list[ContextualConstraint] = field(default_factory=list)
 
     # Additional constraint types
-    json_schemas: List[JSONSchemaConstraint] = field(default_factory=list)
-    regex_patterns: List[RegexConstraint] = field(default_factory=list)
+    json_schemas: list[JSONSchemaConstraint] = field(default_factory=list)
+    regex_patterns: list[RegexConstraint] = field(default_factory=list)
 
     def add(self, constraint: Constraint) -> None:
         """Add a constraint to the appropriate level."""
@@ -495,7 +494,7 @@ class ConstraintSet:
             self.regex_patterns,
             self.type_based,
             self.semantic,
-            self.contextual
+            self.contextual,
         ]:
             for constraint in constraint_list:
                 constraint_mask = constraint.evaluate(state)
@@ -503,7 +502,7 @@ class ConstraintSet:
 
         return mask
 
-    def to_grammar(self) -> Optional[str]:
+    def to_grammar(self) -> str | None:
         """
         Combine constraints into a unified grammar if possible.
 
@@ -544,7 +543,7 @@ class ConstraintSet:
 
         return ",".join(components) if components else "empty"
 
-    def get_all(self) -> List[Constraint]:
+    def get_all(self) -> list[Constraint]:
         """
         Get all constraints as a flat list.
 
@@ -561,7 +560,7 @@ class ConstraintSet:
         return all_constraints
 
     @classmethod
-    def from_list(cls, constraints: List[Constraint]) -> "ConstraintSet":
+    def from_list(cls, constraints: list[Constraint]) -> ConstraintSet:
         """
         Create a ConstraintSet from a list of constraints.
 
@@ -589,10 +588,10 @@ class ConstraintSet:
             semantic=self.semantic.copy(),
             contextual=self.contextual.copy(),
             json_schemas=self.json_schemas.copy(),
-            regex_patterns=self.regex_patterns.copy()
+            regex_patterns=self.regex_patterns.copy(),
         )
 
-    def diff(self, other: ConstraintSet) -> List[str]:
+    def diff(self, other: ConstraintSet) -> list[str]:
         """
         Get differences between this and another constraint set.
 

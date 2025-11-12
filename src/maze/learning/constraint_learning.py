@@ -6,24 +6,17 @@ Learns soft constraints from patterns and generation feedback.
 
 import ast
 import hashlib
-import json
-import re
 import time
 from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
-from maze.learning.pattern_mining import (
-    PatternSet,
-    SyntacticPattern,
-    TypePattern,
-    SemanticPattern
-)
+from maze.learning.pattern_mining import PatternSet, SemanticPattern, SyntacticPattern, TypePattern
 
 
 @dataclass
 class ConstraintRefinement:
     """Constraint update from learning."""
+
     constraint_type: str  # "syntactic", "type", "semantic", "style"
     operation: str  # "add", "update", "remove", "reweight"
     constraint_data: dict[str, Any]
@@ -35,6 +28,7 @@ class ConstraintRefinement:
 @dataclass
 class GenerationResult:
     """Result from code generation."""
+
     code: str
     language: str
     generation_time_ms: float
@@ -44,27 +38,30 @@ class GenerationResult:
 @dataclass
 class ValidationResult:
     """Result from validation."""
+
     success: bool
     diagnostics: list[dict[str, Any]] = field(default_factory=list)
-    test_results: Optional[dict[str, Any]] = None
+    test_results: dict[str, Any] | None = None
     security_violations: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass
 class RepairResult:
     """Result from repair attempts."""
+
     attempts: int
     success: bool
-    final_code: Optional[str] = None
+    final_code: str | None = None
 
 
 @dataclass
 class Feedback:
     """Feedback from generation outcome."""
+
     success: bool
     generation_result: GenerationResult
     validation_result: ValidationResult
-    repair_result: Optional[RepairResult]
+    repair_result: RepairResult | None
     score: float  # Overall quality score
     feedback_type: str  # "positive", "negative", "neutral"
 
@@ -72,8 +69,11 @@ class Feedback:
 @dataclass
 class LearningEvent:
     """Record of a learning event."""
+
     timestamp: float
-    event_type: str  # "weight_increase", "weight_decrease", "constraint_added", "constraint_removed"
+    event_type: (
+        str  # "weight_increase", "weight_decrease", "constraint_added", "constraint_removed"
+    )
     pattern_id: str
     old_weight: float
     new_weight: float
@@ -96,7 +96,7 @@ class ConstraintLearningSystem:
         learning_rate: float = 0.1,
         min_score: float = 0.1,
         max_constraints: int = 10000,
-        decay_rate: float = 0.01
+        decay_rate: float = 0.01,
     ):
         """
         Initialize constraint learning system.
@@ -160,7 +160,7 @@ class ConstraintLearningSystem:
                         template=f"def {node.name}(...)",
                         frequency=1,
                         examples=[],
-                        context={"args_count": len(node.args.args)}
+                        context={"args_count": len(node.args.args)},
                     )
                     pattern_ids.append(self._pattern_to_id(pattern))
 
@@ -170,7 +170,7 @@ class ConstraintLearningSystem:
                         template=f"class {node.name}",
                         frequency=1,
                         examples=[],
-                        context={}
+                        context={},
                     )
                     pattern_ids.append(self._pattern_to_id(pattern))
 
@@ -179,7 +179,7 @@ class ConstraintLearningSystem:
                         intent="error_handling",
                         structure="try-except",
                         implementations=[],
-                        frequency=1
+                        frequency=1,
                     )
                     pattern_ids.append(self._pattern_to_id(pattern))
 
@@ -191,7 +191,7 @@ class ConstraintLearningSystem:
                     template="def ...",
                     frequency=1,
                     examples=[],
-                    context={}
+                    context={},
                 )
                 pattern_ids.append(self._pattern_to_id(pattern))
 
@@ -265,22 +265,17 @@ class ConstraintLearningSystem:
             total = test_results.get("total", 0)
             passed = test_results.get("passed", 0)
             if total > 0:
-                score += (passed / total)
+                score += passed / total
 
         # Security (critical)
         security_violations = feedback.validation_result.security_violations
-        critical_violations = [
-            v for v in security_violations
-            if v.get("severity") == "critical"
-        ]
+        critical_violations = [v for v in security_violations if v.get("severity") == "critical"]
         score -= len(critical_violations) * 2.0
 
         return max(-2.0, min(2.0, score))  # Clamp to [-2, 2]
 
     def learn_from_success(
-        self,
-        generation_result: GenerationResult,
-        validation_result: ValidationResult
+        self, generation_result: GenerationResult, validation_result: ValidationResult
     ) -> ConstraintRefinement:
         """
         Learn from successful generation.
@@ -301,7 +296,7 @@ class ConstraintLearningSystem:
             validation_result=validation_result,
             repair_result=None,
             score=1.0,
-            feedback_type="positive"
+            feedback_type="positive",
         )
 
         score_delta = self._compute_score_delta(feedback)
@@ -320,14 +315,16 @@ class ConstraintLearningSystem:
                 self.stats["weight_updates"] += 1
                 updated_count += 1
 
-                self.learning_history.append(LearningEvent(
-                    timestamp=time.time(),
-                    event_type="weight_increase",
-                    pattern_id=pattern_id,
-                    old_weight=current_weight,
-                    new_weight=new_weight,
-                    reason=f"successful_generation_score_{score_delta:.2f}"
-                ))
+                self.learning_history.append(
+                    LearningEvent(
+                        timestamp=time.time(),
+                        event_type="weight_increase",
+                        pattern_id=pattern_id,
+                        old_weight=current_weight,
+                        new_weight=new_weight,
+                        reason=f"successful_generation_score_{score_delta:.2f}",
+                    )
+                )
 
         return ConstraintRefinement(
             constraint_type="mixed",
@@ -335,13 +332,11 @@ class ConstraintLearningSystem:
             constraint_data={"patterns_updated": updated_count},
             weight=score_delta,
             rationale=f"Boosted {updated_count} patterns from successful generation",
-            source="feedback"
+            source="feedback",
         )
 
     def learn_from_failure(
-        self,
-        generation_result: GenerationResult,
-        diagnostics: list[dict[str, Any]]
+        self, generation_result: GenerationResult, diagnostics: list[dict[str, Any]]
     ) -> ConstraintRefinement:
         """
         Learn from failed generation.
@@ -375,14 +370,16 @@ class ConstraintLearningSystem:
                     self.stats["weight_updates"] += 1
                     updated_count += 1
 
-                    self.learning_history.append(LearningEvent(
-                        timestamp=time.time(),
-                        event_type="weight_decrease",
-                        pattern_id=pattern_id,
-                        old_weight=current_weight,
-                        new_weight=new_weight,
-                        reason=f"failure_{failure_type}"
-                    ))
+                    self.learning_history.append(
+                        LearningEvent(
+                            timestamp=time.time(),
+                            event_type="weight_decrease",
+                            pattern_id=pattern_id,
+                            old_weight=current_weight,
+                            new_weight=new_weight,
+                            reason=f"failure_{failure_type}",
+                        )
+                    )
 
         return ConstraintRefinement(
             constraint_type="mixed",
@@ -390,13 +387,10 @@ class ConstraintLearningSystem:
             constraint_data={"patterns_updated": updated_count, "failure_type": failure_type},
             weight=-penalty,
             rationale=f"Penalized {updated_count} patterns from {failure_type} failure",
-            source="feedback"
+            source="feedback",
         )
 
-    def learn_from_patterns(
-        self,
-        patterns: PatternSet
-    ) -> list[ConstraintRefinement]:
+    def learn_from_patterns(self, patterns: PatternSet) -> list[ConstraintRefinement]:
         """
         Create constraints from mined patterns.
 
@@ -420,18 +414,20 @@ class ConstraintLearningSystem:
                     "pattern_type": pattern.pattern_type,
                     "template": pattern.template,
                     "frequency": pattern.frequency,
-                    "source": "pattern_mining"
+                    "source": "pattern_mining",
                 }
                 self.stats["constraints_added"] += 1
 
-                refinements.append(ConstraintRefinement(
-                    constraint_type="syntactic",
-                    operation="add",
-                    constraint_data={"pattern_id": pattern_id, "template": pattern.template},
-                    weight=weight,
-                    rationale=f"New syntactic pattern with frequency {pattern.frequency}",
-                    source="pattern_mining"
-                ))
+                refinements.append(
+                    ConstraintRefinement(
+                        constraint_type="syntactic",
+                        operation="add",
+                        constraint_data={"pattern_id": pattern_id, "template": pattern.template},
+                        weight=weight,
+                        rationale=f"New syntactic pattern with frequency {pattern.frequency}",
+                        source="pattern_mining",
+                    )
+                )
 
         # Process type patterns
         for pattern in patterns.type_patterns:
@@ -443,18 +439,20 @@ class ConstraintLearningSystem:
                 self.constraint_metadata[pattern_id] = {
                     "signature": pattern.signature,
                     "frequency": pattern.frequency,
-                    "source": "pattern_mining"
+                    "source": "pattern_mining",
                 }
                 self.stats["constraints_added"] += 1
 
-                refinements.append(ConstraintRefinement(
-                    constraint_type="type",
-                    operation="add",
-                    constraint_data={"pattern_id": pattern_id, "signature": pattern.signature},
-                    weight=weight,
-                    rationale=f"New type pattern with frequency {pattern.frequency}",
-                    source="pattern_mining"
-                ))
+                refinements.append(
+                    ConstraintRefinement(
+                        constraint_type="type",
+                        operation="add",
+                        constraint_data={"pattern_id": pattern_id, "signature": pattern.signature},
+                        weight=weight,
+                        rationale=f"New type pattern with frequency {pattern.frequency}",
+                        source="pattern_mining",
+                    )
+                )
 
         # Process semantic patterns
         for pattern in patterns.semantic:
@@ -467,25 +465,25 @@ class ConstraintLearningSystem:
                     "intent": pattern.intent,
                     "structure": pattern.structure,
                     "frequency": pattern.frequency,
-                    "source": "pattern_mining"
+                    "source": "pattern_mining",
                 }
                 self.stats["constraints_added"] += 1
 
-                refinements.append(ConstraintRefinement(
-                    constraint_type="semantic",
-                    operation="add",
-                    constraint_data={"pattern_id": pattern_id, "intent": pattern.intent},
-                    weight=weight,
-                    rationale=f"New semantic pattern with frequency {pattern.frequency}",
-                    source="pattern_mining"
-                ))
+                refinements.append(
+                    ConstraintRefinement(
+                        constraint_type="semantic",
+                        operation="add",
+                        constraint_data={"pattern_id": pattern_id, "intent": pattern.intent},
+                        weight=weight,
+                        rationale=f"New semantic pattern with frequency {pattern.frequency}",
+                        source="pattern_mining",
+                    )
+                )
 
         return refinements
 
     def update_weights(
-        self,
-        pattern: SyntacticPattern | TypePattern | SemanticPattern,
-        feedback: Feedback
+        self, pattern: SyntacticPattern | TypePattern | SemanticPattern, feedback: Feedback
     ) -> float:
         """
         Update pattern weight based on feedback.
@@ -507,21 +505,20 @@ class ConstraintLearningSystem:
         self.constraints[pattern_id] = new_weight
         self.stats["weight_updates"] += 1
 
-        self.learning_history.append(LearningEvent(
-            timestamp=time.time(),
-            event_type="weight_increase" if score_delta > 0 else "weight_decrease",
-            pattern_id=pattern_id,
-            old_weight=current_weight,
-            new_weight=new_weight,
-            reason=f"feedback_score_{score_delta:.2f}"
-        ))
+        self.learning_history.append(
+            LearningEvent(
+                timestamp=time.time(),
+                event_type="weight_increase" if score_delta > 0 else "weight_decrease",
+                pattern_id=pattern_id,
+                old_weight=current_weight,
+                new_weight=new_weight,
+                reason=f"feedback_score_{score_delta:.2f}",
+            )
+        )
 
         return new_weight
 
-    def prune_constraints(
-        self,
-        min_score: Optional[float] = None
-    ) -> int:
+    def prune_constraints(self, min_score: float | None = None) -> int:
         """
         Remove low-scoring constraints.
 
@@ -534,8 +531,7 @@ class ConstraintLearningSystem:
         threshold = min_score if min_score is not None else self.min_score
 
         to_remove = [
-            pattern_id for pattern_id, weight in self.constraints.items()
-            if weight < threshold
+            pattern_id for pattern_id, weight in self.constraints.items() if weight < threshold
         ]
 
         for pattern_id in to_remove:
@@ -543,14 +539,16 @@ class ConstraintLearningSystem:
             if pattern_id in self.constraint_metadata:
                 del self.constraint_metadata[pattern_id]
 
-            self.learning_history.append(LearningEvent(
-                timestamp=time.time(),
-                event_type="constraint_removed",
-                pattern_id=pattern_id,
-                old_weight=self.constraints.get(pattern_id, 0.0),
-                new_weight=0.0,
-                reason=f"weight_below_{threshold}"
-            ))
+            self.learning_history.append(
+                LearningEvent(
+                    timestamp=time.time(),
+                    event_type="constraint_removed",
+                    pattern_id=pattern_id,
+                    old_weight=self.constraints.get(pattern_id, 0.0),
+                    new_weight=0.0,
+                    reason=f"weight_below_{threshold}",
+                )
+            )
 
         removed_count = len(to_remove)
         self.stats["constraints_removed"] += removed_count
@@ -558,10 +556,7 @@ class ConstraintLearningSystem:
         # Also enforce max constraints limit
         if len(self.constraints) > self.max_constraints:
             # Remove lowest-weighted constraints
-            sorted_constraints = sorted(
-                self.constraints.items(),
-                key=lambda x: x[1]
-            )
+            sorted_constraints = sorted(self.constraints.items(), key=lambda x: x[1])
             excess = len(self.constraints) - self.max_constraints
             for pattern_id, _ in sorted_constraints[:excess]:
                 del self.constraints[pattern_id]
@@ -597,8 +592,7 @@ class ConstraintLearningSystem:
             "total_constraints": len(self.constraints),
             "learning_history_size": len(self.learning_history),
             "avg_constraint_weight": (
-                sum(self.constraints.values()) / len(self.constraints)
-                if self.constraints else 0.0
+                sum(self.constraints.values()) / len(self.constraints) if self.constraints else 0.0
             ),
         }
 

@@ -6,10 +6,7 @@ Converts Maze Type representations to Lark grammars for use with llguidance.
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Set
-from dataclasses import dataclass
-
-from maze.core.types import Type, TypeContext, ClassType, FunctionSignature
+from maze.core.types import ClassType, FunctionSignature, Type, TypeContext
 from maze.synthesis.grammar_builder import GrammarBuilder
 
 
@@ -80,11 +77,11 @@ class TypeToGrammarConverter:
             True
         """
         if type.name == "string":
-            return 'string_value'
+            return "string_value"
         elif type.name == "number":
-            return 'number_value'
+            return "number_value"
         elif type.name == "boolean":
-            return 'boolean_value'
+            return "boolean_value"
         elif type.name == "null":
             return '"null"'
         elif type.name == "undefined":
@@ -92,16 +89,12 @@ class TypeToGrammarConverter:
         elif type.name == "void":
             return '"void"'
         elif type.name == "any" or type.name == "unknown":
-            return 'any_value'
+            return "any_value"
         else:
             # Unknown primitive - accept any value
-            return 'any_value'
+            return "any_value"
 
-    def convert_object(
-        self,
-        class_type: ClassType,
-        context: TypeContext
-    ) -> str:
+    def convert_object(self, class_type: ClassType, context: TypeContext) -> str:
         """
         Convert object/class type to grammar.
 
@@ -134,11 +127,7 @@ class TypeToGrammarConverter:
 
         return f'"{{" {properties} "}}"'
 
-    def convert_array(
-        self,
-        element_type: Type,
-        context: TypeContext
-    ) -> str:
+    def convert_array(self, element_type: Type, context: TypeContext) -> str:
         """
         Convert array type to grammar.
 
@@ -160,11 +149,7 @@ class TypeToGrammarConverter:
         # Array can be empty or have elements
         return f'"[" ({element_rule} ("," {element_rule})*)? "]"'
 
-    def convert_union(
-        self,
-        types: List[Type],
-        context: TypeContext
-    ) -> str:
+    def convert_union(self, types: list[Type], context: TypeContext) -> str:
         """
         Convert union type to grammar (alternatives).
 
@@ -193,13 +178,9 @@ class TypeToGrammarConverter:
         type_rules = [self._convert_type(t, context) for t in types]
 
         # Join with OR
-        return ' | '.join(type_rules)
+        return " | ".join(type_rules)
 
-    def convert_function(
-        self,
-        signature: FunctionSignature,
-        context: TypeContext
-    ) -> str:
+    def convert_function(self, signature: FunctionSignature, context: TypeContext) -> str:
         """
         Convert function type to grammar.
 
@@ -214,11 +195,7 @@ class TypeToGrammarConverter:
         # For now, just accept function keyword + identifier
         return '"function" IDENT'
 
-    def convert_generic(
-        self,
-        type: Type,
-        context: TypeContext
-    ) -> str:
+    def convert_generic(self, type: Type, context: TypeContext) -> str:
         """
         Convert generic type to grammar.
 
@@ -268,7 +245,7 @@ class TypeToGrammarConverter:
             # Full implementation would merge object properties
             if type.parameters:
                 return self._convert_type(type.parameters[0], context)
-            return 'any_value'
+            return "any_value"
 
         # Handle array types
         if type.name == "Array":
@@ -283,12 +260,12 @@ class TypeToGrammarConverter:
 
         # Handle special types (any, unknown)
         if type.name in {"any", "unknown"}:
-            return 'any_value'
+            return "any_value"
 
         # Handle object type
         if type.name == "object":
             # Generic object - accept any JSON object
-            return 'object_value'
+            return "object_value"
 
         # Check if it's a class type
         if type.name in context.classes:
@@ -321,9 +298,7 @@ class TypeToGrammarConverter:
 
 
 def create_grammar_for_type(
-    type: Type,
-    context: Optional[TypeContext] = None,
-    language: str = "typescript"
+    type: Type, context: TypeContext | None = None, language: str = "typescript"
 ) -> str:
     """
     Convenience function to create grammar for a type.

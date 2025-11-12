@@ -3,7 +3,6 @@
 Test coverage target: 85%
 """
 
-import pytest
 
 from maze.integrations.llguidance.adapter import LLGuidanceAdapter
 
@@ -23,7 +22,7 @@ class TestSchemaConstraints:
     def test_object_schema_with_properties(self):
         """Test object schema generates property constraints."""
         adapter = LLGuidanceAdapter()
-        
+
         schema = {
             "type": "object",
             "properties": {
@@ -45,7 +44,7 @@ class TestSchemaConstraints:
     def test_array_schema(self):
         """Test array schema generation."""
         adapter = LLGuidanceAdapter()
-        
+
         schema = {
             "type": "array",
             "items": {"type": "string"},
@@ -58,14 +57,14 @@ class TestSchemaConstraints:
     def test_nested_object_schema(self):
         """Test nested object schema (basic support)."""
         adapter = LLGuidanceAdapter()
-        
+
         schema = {
             "type": "object",
             "properties": {
                 "user": {
                     "type": "object",
                 }
-            }
+            },
         }
 
         grammar = adapter.grammar_from_json_schema(schema)
@@ -78,7 +77,7 @@ class TestSchemaConstraints:
     def test_schema_with_required_fields(self):
         """Test schema with required fields."""
         adapter = LLGuidanceAdapter()
-        
+
         schema = {
             "type": "object",
             "properties": {

@@ -5,16 +5,16 @@ Orchestrates validation across syntax, types, tests, and lint with early exit,
 parallel execution, and comprehensive diagnostics collection.
 """
 
-from dataclasses import dataclass, field
-from typing import Optional, Any, Literal
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass, field
+from typing import Any, Literal
 
-from maze.validation.syntax import SyntaxValidator, SyntaxValidationResult
-from maze.validation.types import TypeValidator, TypeValidationResult
-from maze.validation.tests import TestValidator, TestValidationResult
-from maze.validation.lint import LintValidator, LintValidationResult, LintRules
 from maze.integrations.rune import RuneExecutor
+from maze.validation.lint import LintRules, LintValidationResult, LintValidator
+from maze.validation.syntax import SyntaxValidationResult, SyntaxValidator
+from maze.validation.tests import TestValidationResult, TestValidator
+from maze.validation.types import TypeValidationResult, TypeValidator
 
 
 @dataclass
@@ -25,10 +25,10 @@ class Diagnostic:
     message: str
     line: int
     column: int
-    code: Optional[str] = None
+    code: str | None = None
     source: str = ""  # "syntax", "type", "test", "lint", "security"
-    suggested_fix: Optional[str] = None
-    context: Optional[str] = None  # Surrounding code
+    suggested_fix: str | None = None
+    context: str | None = None  # Surrounding code
 
 
 @dataclass
@@ -40,18 +40,16 @@ class TypeContext:
 
     def copy(self) -> "TypeContext":
         """Create a copy of the type context."""
-        return TypeContext(
-            variables=self.variables.copy(), functions=self.functions.copy()
-        )
+        return TypeContext(variables=self.variables.copy(), functions=self.functions.copy())
 
 
 @dataclass
 class ValidationContext:
     """Context for validation."""
 
-    type_context: Optional[TypeContext] = None
-    tests: Optional[str] = None
-    lint_rules: Optional[LintRules] = None
+    type_context: TypeContext | None = None
+    tests: str | None = None
+    lint_rules: LintRules | None = None
     timeout_ms: int = 5000
 
 
@@ -72,11 +70,11 @@ class ValidationPipeline:
 
     def __init__(
         self,
-        syntax_validator: Optional[SyntaxValidator] = None,
-        type_validator: Optional[TypeValidator] = None,
-        test_validator: Optional[TestValidator] = None,
-        lint_validator: Optional[LintValidator] = None,
-        pedantic_raven: Optional[Any] = None,
+        syntax_validator: SyntaxValidator | None = None,
+        type_validator: TypeValidator | None = None,
+        test_validator: TestValidator | None = None,
+        lint_validator: LintValidator | None = None,
+        pedantic_raven: Any | None = None,
         parallel_validation: bool = True,
     ):
         """
@@ -117,8 +115,8 @@ class ValidationPipeline:
         self,
         code: str,
         language: str,
-        context: Optional[ValidationContext] = None,
-        stages: Optional[list[str]] = None,
+        context: ValidationContext | None = None,
+        stages: list[str] | None = None,
     ) -> ValidationResult:
         """
         Run validation pipeline.
@@ -170,12 +168,8 @@ class ValidationPipeline:
                 self.stats["syntax_failures"] += 1
 
         # Type validation (requires syntax to pass for best results)
-        if "types" in run_stages and (
-            "syntax" not in run_stages or "syntax" in stages_passed
-        ):
-            type_result = self._run_types(
-                code, language, context.type_context or TypeContext()
-            )
+        if "types" in run_stages and ("syntax" not in run_stages or "syntax" in stages_passed):
+            type_result = self._run_types(code, language, context.type_context or TypeContext())
             stage_results["types"] = type_result
 
             if type_result.success:
@@ -187,18 +181,14 @@ class ValidationPipeline:
 
         # Parallel validation for tests and lint (if enabled and syntax passed)
         parallel_stages = []
-        if self.parallel_validation and (
-            "syntax" not in run_stages or "syntax" in stages_passed
-        ):
+        if self.parallel_validation and ("syntax" not in run_stages or "syntax" in stages_passed):
             if "tests" in run_stages and context.tests:
                 parallel_stages.append("tests")
             if "lint" in run_stages:
                 parallel_stages.append("lint")
 
             if parallel_stages:
-                parallel_results = self._run_parallel(
-                    code, language, context, parallel_stages
-                )
+                parallel_results = self._run_parallel(code, language, context, parallel_stages)
 
                 for stage, result in parallel_results.items():
                     stage_results[stage] = result
@@ -206,9 +196,7 @@ class ValidationPipeline:
                         stages_passed.append(stage)
                     else:
                         stages_failed.append(stage)
-                        diagnostics.extend(
-                            self._convert_diagnostics(result.diagnostics)
-                        )
+                        diagnostics.extend(self._convert_diagnostics(result.diagnostics))
                         if stage == "tests":
                             self.stats["test_failures"] += 1
                         elif stage == "lint":
@@ -216,18 +204,14 @@ class ValidationPipeline:
         else:
             # Sequential validation
             if "tests" in run_stages and context.tests:
-                test_result = self._run_tests(
-                    code, context.tests, language, context.timeout_ms
-                )
+                test_result = self._run_tests(code, context.tests, language, context.timeout_ms)
                 stage_results["tests"] = test_result
 
                 if test_result.success:
                     stages_passed.append("tests")
                 else:
                     stages_failed.append("tests")
-                    diagnostics.extend(
-                        self._convert_diagnostics(test_result.diagnostics)
-                    )
+                    diagnostics.extend(self._convert_diagnostics(test_result.diagnostics))
                     self.stats["test_failures"] += 1
 
             if "lint" in run_stages:
@@ -240,9 +224,7 @@ class ValidationPipeline:
                     stages_passed.append("lint")
                 else:
                     stages_failed.append("lint")
-                    diagnostics.extend(
-                        self._convert_diagnostics(lint_result.diagnostics)
-                    )
+                    diagnostics.extend(self._convert_diagnostics(lint_result.diagnostics))
                     self.stats["lint_failures"] += 1
 
         # Optional pedantic_raven security check
@@ -258,7 +240,9 @@ class ValidationPipeline:
                 for finding in security_result.security_findings:
                     diagnostics.append(
                         Diagnostic(
-                            level="error" if finding.severity in ["critical", "high"] else "warning",
+                            level=(
+                                "error" if finding.severity in ["critical", "high"] else "warning"
+                            ),
                             message=finding.message,
                             line=finding.line,
                             column=finding.column,
@@ -302,7 +286,7 @@ class ValidationPipeline:
         return self._convert_diagnostics(result.diagnostics)
 
     def validate_types(
-        self, code: str, language: str, context: Optional[TypeContext] = None
+        self, code: str, language: str, context: TypeContext | None = None
     ) -> list[Diagnostic]:
         """
         Type validation only.
@@ -342,7 +326,7 @@ class ValidationPipeline:
         )
 
     def validate_lint(
-        self, code: str, language: str, rules: Optional[LintRules] = None
+        self, code: str, language: str, rules: LintRules | None = None
     ) -> list[Diagnostic]:
         """
         Lint validation only.
@@ -385,9 +369,7 @@ class ValidationPipeline:
         """Run syntax validation."""
         return self.syntax_validator.validate(code, language)
 
-    def _run_types(
-        self, code: str, language: str, context: TypeContext
-    ) -> TypeValidationResult:
+    def _run_types(self, code: str, language: str, context: TypeContext) -> TypeValidationResult:
         """Run type validation."""
         return self.type_validator.validate(code, language, context)
 
@@ -397,9 +379,7 @@ class ValidationPipeline:
         """Run test validation."""
         return self.test_validator.validate(code, tests, language, timeout_ms)
 
-    def _run_lint(
-        self, code: str, language: str, rules: LintRules
-    ) -> LintValidationResult:
+    def _run_lint(self, code: str, language: str, rules: LintRules) -> LintValidationResult:
         """Run lint validation."""
         return self.lint_validator.validate(code, language, rules)
 

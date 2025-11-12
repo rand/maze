@@ -6,18 +6,20 @@ Combines hard and soft constraints with temperature control.
 
 import math
 from dataclasses import dataclass, field
-from typing import Optional, Any
+from typing import Any
 
 
 @dataclass
 class ConstraintSet:
     """Set of constraints."""
+
     constraints: list[Any] = field(default_factory=list)
 
 
 @dataclass
 class WeightedConstraintSet:
     """Constraint set with weights."""
+
     hard_constraints: ConstraintSet  # Binary (always enforced)
     soft_constraints: dict[str, float]  # Constraint ID -> weight
     temperature: float  # 0-1
@@ -26,6 +28,7 @@ class WeightedConstraintSet:
 @dataclass
 class GenerationState:
     """Current generation state."""
+
     vocabulary: list[str]
     current_tokens: list[int] = field(default_factory=list)
     context: dict[str, Any] = field(default_factory=dict)
@@ -34,6 +37,7 @@ class GenerationState:
 @dataclass
 class TokenWeights:
     """Per-token weights for generation."""
+
     token_ids: list[int]
     weights: list[float]  # 0-1
     hard_masked: list[bool]  # Hard constraint mask
@@ -48,10 +52,7 @@ class HybridConstraintWeighter:
     Temperature: Control between strict (0) and creative (1+)
     """
 
-    def __init__(
-        self,
-        default_temperature: float = 0.5
-    ):
+    def __init__(self, default_temperature: float = 0.5):
         """
         Initialize hybrid constraint weighter.
 
@@ -62,10 +63,7 @@ class HybridConstraintWeighter:
         self.constraint_registry: dict[str, Any] = {}
 
     def combine_constraints(
-        self,
-        hard: ConstraintSet,
-        soft: ConstraintSet,
-        temperature: Optional[float] = None
+        self, hard: ConstraintSet, soft: ConstraintSet, temperature: float | None = None
     ) -> WeightedConstraintSet:
         """
         Combine hard and soft constraints.
@@ -85,19 +83,15 @@ class HybridConstraintWeighter:
         soft_weights = {}
         for constraint in soft.constraints:
             constraint_id = self._constraint_to_id(constraint)
-            weight = getattr(constraint, 'weight', 0.5)
+            weight = getattr(constraint, "weight", 0.5)
             soft_weights[constraint_id] = weight
 
         return WeightedConstraintSet(
-            hard_constraints=hard,
-            soft_constraints=soft_weights,
-            temperature=temp
+            hard_constraints=hard, soft_constraints=soft_weights, temperature=temp
         )
 
     def compute_token_weights(
-        self,
-        weighted_constraints: WeightedConstraintSet,
-        current_state: GenerationState
+        self, weighted_constraints: WeightedConstraintSet, current_state: GenerationState
     ) -> TokenWeights:
         """
         Compute per-token weights.
@@ -132,7 +126,7 @@ class HybridConstraintWeighter:
                 for token_id in preferred_tokens:
                     if token_id < vocab_size and not hard_masked[token_id]:
                         # Boost weight for preferred tokens
-                        token_weights[token_id] *= (1.0 + weight)
+                        token_weights[token_id] *= 1.0 + weight
 
         # Normalize weights
         total_weight = sum(w for w, masked in zip(token_weights, hard_masked) if not masked)
@@ -144,25 +138,18 @@ class HybridConstraintWeighter:
 
         # Create token weights object
         token_weights_obj = TokenWeights(
-            token_ids=list(range(vocab_size)),
-            weights=token_weights,
-            hard_masked=hard_masked
+            token_ids=list(range(vocab_size)), weights=token_weights, hard_masked=hard_masked
         )
 
         # Apply temperature
         if weighted_constraints.temperature != 1.0:
             token_weights_obj = self.apply_temperature(
-                token_weights_obj,
-                weighted_constraints.temperature
+                token_weights_obj, weighted_constraints.temperature
             )
 
         return token_weights_obj
 
-    def apply_temperature(
-        self,
-        weights: TokenWeights,
-        temperature: float
-    ) -> TokenWeights:
+    def apply_temperature(self, weights: TokenWeights, temperature: float) -> TokenWeights:
         """
         Apply temperature scaling to weights.
 
@@ -206,26 +193,21 @@ class HybridConstraintWeighter:
                 scaled_weights = [w / total for w in scaled_weights]
 
         return TokenWeights(
-            token_ids=weights.token_ids,
-            weights=scaled_weights,
-            hard_masked=weights.hard_masked
+            token_ids=weights.token_ids, weights=scaled_weights, hard_masked=weights.hard_masked
         )
 
     def _constraint_to_id(self, constraint: Any) -> str:
         """Convert constraint to unique ID."""
         import hashlib
+
         constraint_str = str(constraint)
         return f"con-{hashlib.md5(constraint_str.encode()).hexdigest()[:8]}"
 
-    def _id_to_constraint(self, constraint_id: str) -> Optional[Any]:
+    def _id_to_constraint(self, constraint_id: str) -> Any | None:
         """Get constraint from ID."""
         return self.constraint_registry.get(constraint_id)
 
-    def _get_allowed_tokens(
-        self,
-        constraint: Any,
-        state: GenerationState
-    ) -> set[int]:
+    def _get_allowed_tokens(self, constraint: Any, state: GenerationState) -> set[int]:
         """
         Get tokens allowed by hard constraint.
 
@@ -240,11 +222,7 @@ class HybridConstraintWeighter:
         # In practice, this would parse the constraint and determine allowed tokens
         return set(range(len(state.vocabulary)))
 
-    def _get_preferred_tokens(
-        self,
-        constraint: Any,
-        state: GenerationState
-    ) -> set[int]:
+    def _get_preferred_tokens(self, constraint: Any, state: GenerationState) -> set[int]:
         """
         Get tokens preferred by soft constraint.
 
@@ -269,11 +247,7 @@ class HybridConstraintWeighter:
         """
         self.constraint_registry[constraint_id] = constraint
 
-    def get_effective_weight(
-        self,
-        token_id: int,
-        weights: TokenWeights
-    ) -> float:
+    def get_effective_weight(self, token_id: int, weights: TokenWeights) -> float:
         """
         Get effective weight for a token.
 
@@ -289,10 +263,7 @@ class HybridConstraintWeighter:
         return weights.weights[token_id]
 
     def merge_token_weights(
-        self,
-        weights1: TokenWeights,
-        weights2: TokenWeights,
-        alpha: float = 0.5
+        self, weights1: TokenWeights, weights2: TokenWeights, alpha: float = 0.5
     ) -> TokenWeights:
         """
         Merge two token weight sets.
@@ -308,19 +279,13 @@ class HybridConstraintWeighter:
         assert len(weights1.weights) == len(weights2.weights), "Weight sets must have same size"
 
         merged_weights = [
-            alpha * w1 + (1 - alpha) * w2
-            for w1, w2 in zip(weights1.weights, weights2.weights)
+            alpha * w1 + (1 - alpha) * w2 for w1, w2 in zip(weights1.weights, weights2.weights)
         ]
 
-        merged_masked = [
-            m1 or m2
-            for m1, m2 in zip(weights1.hard_masked, weights2.hard_masked)
-        ]
+        merged_masked = [m1 or m2 for m1, m2 in zip(weights1.hard_masked, weights2.hard_masked)]
 
         return TokenWeights(
-            token_ids=weights1.token_ids,
-            weights=merged_weights,
-            hard_masked=merged_masked
+            token_ids=weights1.token_ids, weights=merged_weights, hard_masked=merged_masked
         )
 
 

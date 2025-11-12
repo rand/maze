@@ -10,18 +10,14 @@ Test coverage: 34 E2E tests
 - Learning feedback tests: 5 tests
 """
 
-import argparse
-import json
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch
 
 import pytest
 
 from maze.cli.main import CLI
 from maze.config import Config
 from maze.core.pipeline import Pipeline
-from maze.core.types import TypeContext
 
 
 class TestFullPipelineScenarios:
@@ -34,6 +30,7 @@ class TestFullPipelineScenarios:
 
             # Step 1: Initialize project
             import os
+
             original_cwd = os.getcwd()
             os.chdir(project_path)
 
@@ -46,13 +43,15 @@ class TestFullPipelineScenarios:
                 # Step 2: Create sample code
                 ts_file = project_path / "src" / "index.ts"
                 ts_file.parent.mkdir(parents=True)
-                ts_file.write_text("""
+                ts_file.write_text(
+                    """
 function greet(name: string): string {
     return `Hello, ${name}!`;
 }
 
 export { greet };
-""")
+"""
+                )
 
                 # Step 3: Index project
                 result = cli.run(["index", str(project_path)])
@@ -65,8 +64,9 @@ export { greet };
         """Test config get/set/list workflow."""
         with tempfile.TemporaryDirectory() as tmpdir:
             project_path = Path(tmpdir)
-            
+
             import os
+
             original_cwd = os.getcwd()
             os.chdir(project_path)
 
@@ -171,7 +171,7 @@ export { greet };
     def test_e2e_config_validation_workflow(self):
         """Test config validation catches errors."""
         config = Config()
-        
+
         # Valid config
         errors = config.validate()
         assert len(errors) == 0
@@ -234,8 +234,9 @@ class TestCLIWorkflowE2E:
         """Test complete CLI workflow: init -> index -> generate."""
         with tempfile.TemporaryDirectory() as tmpdir:
             project_path = Path(tmpdir)
-            
+
             import os
+
             original_cwd = os.getcwd()
             os.chdir(project_path)
 
@@ -277,6 +278,7 @@ class TestCLIWorkflowE2E:
             (project_path / "test.ts").write_text("const x = 1;")
 
             import os
+
             original_cwd = os.getcwd()
             os.chdir(project_path)
 
@@ -284,7 +286,7 @@ class TestCLIWorkflowE2E:
                 cli = CLI()
                 cli.run(["init"])
                 cli.run(["index", "."])
-                
+
                 # Stats should work
                 result = cli.run(["stats"])
                 assert result == 0
@@ -311,7 +313,7 @@ class TestCLIWorkflowE2E:
 
             cli = CLI()
             result = cli.run(["index", str(project_path), "--output", str(output_file)])
-            
+
             assert result == 0
             assert output_file.exists()
 
@@ -321,6 +323,7 @@ class TestCLIWorkflowE2E:
             project_path = Path(tmpdir)
 
             import os
+
             original_cwd = os.getcwd()
             os.chdir(project_path)
 
@@ -341,7 +344,7 @@ class TestCLIWorkflowE2E:
     def test_cli_help_commands(self):
         """Test help for all commands."""
         cli = CLI()
-        
+
         # Main help
         with pytest.raises(SystemExit):
             cli.run(["--help"])
@@ -349,14 +352,14 @@ class TestCLIWorkflowE2E:
     def test_cli_version(self):
         """Test version display."""
         cli = CLI()
-        
+
         with pytest.raises(SystemExit):
             cli.run(["--version"])
 
     def test_cli_error_handling(self):
         """Test CLI handles errors gracefully."""
         cli = CLI()
-        
+
         # Invalid command
         with pytest.raises(SystemExit):
             cli.run(["invalid-command"])
@@ -428,7 +431,7 @@ class TestValidationRepairE2E:
         config.project.language = "typescript"
 
         pipeline = Pipeline(config)
-        
+
         # Intentionally invalid code
         code = ""  # Empty code should fail some validators
 
@@ -441,14 +444,14 @@ class TestValidationRepairE2E:
         config.project.language = "typescript"
 
         pipeline = Pipeline(config)
-        
+
         # Validate some code first to get diagnostics
         code = "const x = 1"
-        
+
         # Just verify validation runs
         val_result = pipeline.validate(code)
         assert val_result is not None
-        
+
         # If there are diagnostics, test repair
         if len(val_result.diagnostics) > 0:
             repair_result = pipeline.repair(code, val_result.diagnostics, "fix code", None)
@@ -459,7 +462,7 @@ class TestValidationRepairE2E:
         from maze.integrations.external import ExternalIntegrations
 
         integrations = ExternalIntegrations()
-        
+
         code = "const x: number = 42;"
         result = integrations.validate_with_raven(code, "typescript")
 
@@ -470,7 +473,7 @@ class TestValidationRepairE2E:
         from maze.integrations.external import ExternalIntegrations
 
         integrations = ExternalIntegrations()
-        
+
         code = "console.log('test');"
         result = integrations.execute_in_rune(code, "javascript")
 
@@ -485,7 +488,7 @@ class TestLearningFeedbackE2E:
         from maze.integrations.external import ExternalIntegrations, Pattern
 
         integrations = ExternalIntegrations()
-        
+
         pattern = Pattern(
             content="async function example",
             namespace="project:test",
@@ -502,7 +505,7 @@ class TestLearningFeedbackE2E:
         config.project.language = "typescript"
 
         pipeline = Pipeline(config)
-        
+
         # Perform operations
         pipeline.generate("test1")
         pipeline.generate("test2")
@@ -518,7 +521,7 @@ class TestLearningFeedbackE2E:
         pipeline = Pipeline(config)
 
         result = pipeline.generate("test")
-        
+
         # Metrics should be recorded
         stats = pipeline.metrics.get_latency_stats("pipeline_total")
         if stats:

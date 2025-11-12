@@ -3,7 +3,6 @@
 Test coverage target: 90%
 """
 
-import pytest
 
 from maze.config import Config
 from maze.core.pipeline import Pipeline
@@ -57,7 +56,7 @@ class TestGrammarLoading:
 
         # First load - cache miss
         pipeline._synthesize_constraints("Create a function", None)
-        
+
         # Second load - cache hit
         pipeline._synthesize_constraints("Create a function", None)
 
@@ -70,7 +69,7 @@ class TestGrammarLoading:
         config = Config()
         config.project.language = "typescript"
         config.constraints.syntactic_enabled = False
-        
+
         pipeline = Pipeline(config)
         grammar = pipeline._synthesize_constraints("Create a function", None)
 
@@ -80,7 +79,7 @@ class TestGrammarLoading:
         """Test empty grammar for unsupported languages."""
         config = Config()
         config.project.language = "unsupported"
-        
+
         pipeline = Pipeline(config)
         grammar = pipeline._synthesize_constraints("Create a function", None)
 

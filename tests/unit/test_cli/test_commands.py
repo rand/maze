@@ -6,9 +6,6 @@ Test coverage target: 80%
 import argparse
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch
-
-import pytest
 
 from maze.cli.commands import (
     ConfigCommand,
@@ -29,9 +26,10 @@ class TestInitCommand:
         """Test initializing a new project."""
         with tempfile.TemporaryDirectory() as tmpdir:
             project_path = Path(tmpdir)
-            
+
             # Change to temp directory
             import os
+
             original_cwd = os.getcwd()
             os.chdir(project_path)
 
@@ -39,10 +37,11 @@ class TestInitCommand:
                 cmd = InitCommand()
                 # Use argparse Namespace instead of Mock
                 import argparse
+
                 args = argparse.Namespace(language="typescript", name="test-project")
-                
+
                 result = cmd.execute(args)
-                
+
                 assert result == 0
                 assert (project_path / ".maze").exists()
                 assert (project_path / ".maze" / "config.toml").exists()
@@ -58,15 +57,16 @@ class TestInitCommand:
             maze_dir.mkdir()
 
             import os
+
             original_cwd = os.getcwd()
             os.chdir(project_path)
 
             try:
                 cmd = InitCommand()
                 args = argparse.Namespace(language="python", name="test")
-                
+
                 result = cmd.execute(args)
-                
+
                 assert result == 1
             finally:
                 os.chdir(original_cwd)
@@ -79,9 +79,9 @@ class TestConfigCommand:
         """Test listing configuration."""
         cmd = ConfigCommand()
         args = argparse.Namespace(config_action="list")
-        
+
         result = cmd.execute(args)
-        
+
         assert result == 0
         captured = capsys.readouterr()
         assert "project" in captured.out
@@ -91,9 +91,9 @@ class TestConfigCommand:
         """Test getting existing config key."""
         cmd = ConfigCommand()
         args = argparse.Namespace(config_action="get", key="project.language")
-        
+
         result = cmd.execute(args)
-        
+
         assert result == 0
         captured = capsys.readouterr()
         assert "typescript" in captured.out
@@ -102,9 +102,9 @@ class TestConfigCommand:
         """Test getting non-existent config key."""
         cmd = ConfigCommand()
         args = argparse.Namespace(config_action="get", key="nonexistent.key")
-        
+
         result = cmd.execute(args)
-        
+
         assert result == 1
 
     def test_config_set_value(self):
@@ -113,12 +113,13 @@ class TestConfigCommand:
             project_path = Path(tmpdir)
             maze_dir = project_path / ".maze"
             maze_dir.mkdir()
-            
+
             config = Config()
             config_path = maze_dir / "config.toml"
             config.save(config_path)
 
             import os
+
             original_cwd = os.getcwd()
             os.chdir(project_path)
 
@@ -129,9 +130,9 @@ class TestConfigCommand:
                     key="generation.temperature",
                     value="0.9",
                 )
-                
+
                 result = cmd.execute(args)
-                
+
                 assert result == 0
             finally:
                 os.chdir(original_cwd)
@@ -150,9 +151,9 @@ class TestIndexCommand:
             cmd = IndexCommand()
             cmd.config.project.language = "typescript"
             args = argparse.Namespace(path=project_path, output=None, watch=False)
-            
+
             result = cmd.execute(args)
-            
+
             assert result == 0
 
     def test_index_with_output_file(self):
@@ -167,9 +168,9 @@ class TestIndexCommand:
             cmd = IndexCommand()
             cmd.config.project.language = "typescript"
             args = argparse.Namespace(path=project_path, output=output_file, watch=False)
-            
+
             result = cmd.execute(args)
-            
+
             assert result == 0
             assert output_file.exists()
 
@@ -178,9 +179,9 @@ class TestIndexCommand:
         cmd = IndexCommand()
         cmd.config.project.language = "unsupported"
         args = argparse.Namespace(path=Path("/nonexistent"), output=None, watch=False)
-        
+
         result = cmd.execute(args)
-        
+
         assert result == 1
 
 
@@ -198,9 +199,9 @@ class TestGenerateCommand:
             output=None,
             constraints=None,
         )
-        
+
         result = cmd.execute(args)
-        
+
         # Generation will return placeholder code
         assert result in [0, 1]  # May fail without provider
 
@@ -218,9 +219,9 @@ class TestGenerateCommand:
                 output=output_file,
                 constraints=None,
             )
-            
+
             result = cmd.execute(args)
-            
+
             # Should create file if successful
             if result == 0:
                 assert output_file.exists()
@@ -235,9 +236,9 @@ class TestGenerateCommand:
             output=None,
             constraints=None,
         )
-        
+
         cmd.execute(args)
-        
+
         assert cmd.config.project.language == "python"
 
 
@@ -252,12 +253,10 @@ class TestValidateCommand:
 
             cmd = ValidateCommand()
             cmd.config.project.language = "typescript"
-            args = argparse.Namespace(
-                file=test_file, run_tests=False, type_check=False, fix=False
-            )
-            
+            args = argparse.Namespace(file=test_file, run_tests=False, type_check=False, fix=False)
+
             result = cmd.execute(args)
-            
+
             # Should validate (may pass or fail)
             assert result in [0, 1]
 
@@ -270,9 +269,9 @@ class TestValidateCommand:
             type_check=False,
             fix=False,
         )
-        
+
         result = cmd.execute(args)
-        
+
         assert result == 1
 
 
@@ -283,27 +282,27 @@ class TestStatsCommand:
         """Test stats with default options."""
         cmd = StatsCommand()
         args = argparse.Namespace(show_performance=False, show_cache=False, show_patterns=False)
-        
+
         result = cmd.execute(args)
-        
+
         assert result == 0
 
     def test_stats_show_performance(self):
         """Test stats showing performance."""
         cmd = StatsCommand()
         args = argparse.Namespace(show_performance=True, show_cache=False, show_patterns=False)
-        
+
         result = cmd.execute(args)
-        
+
         assert result == 0
 
     def test_stats_show_cache(self):
         """Test stats showing cache."""
         cmd = StatsCommand()
         args = argparse.Namespace(show_performance=False, show_cache=True, show_patterns=False)
-        
+
         result = cmd.execute(args)
-        
+
         assert result == 0
 
 
@@ -314,26 +313,26 @@ class TestDebugCommand:
         """Test basic debug output."""
         cmd = DebugCommand()
         args = argparse.Namespace(verbose=False, profile=False)
-        
+
         result = cmd.execute(args)
-        
+
         assert result == 0
 
     def test_debug_verbose(self):
         """Test debug with verbose output."""
         cmd = DebugCommand()
         args = argparse.Namespace(verbose=True, profile=False)
-        
+
         result = cmd.execute(args)
-        
+
         assert result == 0
 
     def test_debug_with_profiling(self):
         """Test debug with profiling enabled."""
         cmd = DebugCommand()
         args = argparse.Namespace(verbose=False, profile=True)
-        
+
         result = cmd.execute(args)
-        
+
         assert result == 0
         assert cmd.config.performance.enable_profiling is True

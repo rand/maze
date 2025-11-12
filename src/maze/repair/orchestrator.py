@@ -5,15 +5,13 @@ Analyzes validation failures, selects appropriate repair strategies,
 refines constraints, and learns from successful repairs for future use.
 """
 
-from dataclasses import dataclass, field
-from typing import Optional, Any, Literal, Protocol
-from enum import Enum
-import time
 import hashlib
-import re
+import time
+from dataclasses import dataclass
+from enum import Enum
+from typing import Any, Literal, Protocol
 
-from maze.validation.pipeline import ValidationPipeline, Diagnostic, ValidationContext, TypeContext
-from maze.validation.lint import LintRules
+from maze.validation.pipeline import Diagnostic, TypeContext, ValidationContext, ValidationPipeline
 
 
 class RepairStrategy(Enum):
@@ -54,7 +52,7 @@ class RepairResult:
     """Result of repair attempt."""
 
     success: bool
-    repaired_code: Optional[str]
+    repaired_code: str | None
     attempts: int
     strategies_used: list[str]
     diagnostics_resolved: list[Diagnostic]
@@ -68,8 +66,8 @@ class RepairResult:
 class RepairContext:
     """Context for repair."""
 
-    type_context: Optional[TypeContext] = None
-    validation_context: Optional[ValidationContext] = None
+    type_context: TypeContext | None = None
+    validation_context: ValidationContext | None = None
     original_prompt: str = ""
     max_attempts: int = 3
 
@@ -77,9 +75,7 @@ class RepairContext:
 class CodeGenerator(Protocol):
     """Protocol for code generation with constraints."""
 
-    def generate(
-        self, prompt: str, grammar: str, language: str, context: Any
-    ) -> str:
+    def generate(self, prompt: str, grammar: str, language: str, context: Any) -> str:
         """Generate code with grammar constraints."""
         ...
 
@@ -87,9 +83,7 @@ class CodeGenerator(Protocol):
 class ConstraintSynthesizer(Protocol):
     """Protocol for constraint synthesis."""
 
-    def refine_grammar(
-        self, grammar: str, diagnostics: list[Diagnostic], language: str
-    ) -> str:
+    def refine_grammar(self, grammar: str, diagnostics: list[Diagnostic], language: str) -> str:
         """Refine grammar based on diagnostics."""
         ...
 
@@ -100,8 +94,8 @@ class RepairOrchestrator:
     def __init__(
         self,
         validator: ValidationPipeline,
-        synthesizer: Optional[ConstraintSynthesizer] = None,
-        generator: Optional[CodeGenerator] = None,
+        synthesizer: ConstraintSynthesizer | None = None,
+        generator: CodeGenerator | None = None,
         max_attempts: int = 3,
         learning_enabled: bool = True,
     ):
@@ -146,8 +140,8 @@ class RepairOrchestrator:
         prompt: str,
         grammar: str,
         language: str,
-        context: Optional[RepairContext] = None,
-        max_attempts: Optional[int] = None,
+        context: RepairContext | None = None,
+        max_attempts: int | None = None,
     ) -> RepairResult:
         """
         Attempt to repair code with adaptive strategy.
@@ -243,9 +237,7 @@ class RepairOrchestrator:
                     pass
 
             # Validate repaired code
-            val_result = self.validator.validate(
-                current_code, language, validation_context
-            )
+            val_result = self.validator.validate(current_code, language, validation_context)
 
             if val_result.success:
                 # Repair successful
@@ -276,9 +268,7 @@ class RepairOrchestrator:
 
         # Max attempts exceeded
         self.stats["failed_repairs"] += 1
-        self.stats["avg_attempts"] = (
-            self.stats["total_attempts"] / self.stats["total_repairs"]
-        )
+        self.stats["avg_attempts"] = self.stats["total_attempts"] / self.stats["total_repairs"]
 
         return RepairResult(
             success=False,
@@ -456,9 +446,7 @@ class RepairOrchestrator:
         - Add mandatory structure
         - Include positive examples
         """
-        refinement = self._refine_constraints_internal(
-            analysis, strategy, grammar, "python"
-        )
+        refinement = self._refine_constraints_internal(analysis, strategy, grammar, "python")
         return refinement.refined_grammar
 
     def _refine_constraints_internal(
@@ -477,9 +465,7 @@ class RepairOrchestrator:
                 + analysis.test_errors
                 + analysis.lint_errors
             )
-            refined = self.synthesizer.refine_grammar(
-                grammar, all_diagnostics, language
-            )
+            refined = self.synthesizer.refine_grammar(grammar, all_diagnostics, language)
             return ConstraintRefinement(
                 original_grammar=grammar,
                 refined_grammar=refined,

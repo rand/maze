@@ -14,7 +14,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 try:
     import tomllib  # Python 3.11+
@@ -100,7 +100,7 @@ class LoggingConfig:
     level: str = "INFO"
     format: str = "json"
     output: str = "stdout"
-    log_file: Optional[Path] = None
+    log_file: Path | None = None
     metrics_enabled: bool = True
 
 
@@ -123,7 +123,7 @@ class Config:
     logging: LoggingConfig = field(default_factory=LoggingConfig)
 
     @classmethod
-    def load(cls, project_path: Optional[Path] = None) -> Config:
+    def load(cls, project_path: Path | None = None) -> Config:
         """Load configuration from global and project configs.
 
         Args:
@@ -156,7 +156,7 @@ class Config:
         return cls.from_dict(data)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> Config:
+    def from_dict(cls, data: dict[str, Any]) -> Config:
         """Create Config from dictionary."""
         return cls(
             project=cls._dict_to_dataclass(ProjectConfig, data.get("project", {})),
@@ -164,14 +164,12 @@ class Config:
             generation=cls._dict_to_dataclass(GenerationConfig, data.get("generation", {})),
             constraints=cls._dict_to_dataclass(ConstraintConfig, data.get("constraints", {})),
             validation=cls._dict_to_dataclass(ValidationConfig, data.get("validation", {})),
-            performance=cls._dict_to_dataclass(
-                PerformanceConfig, data.get("performance", {})
-            ),
+            performance=cls._dict_to_dataclass(PerformanceConfig, data.get("performance", {})),
             logging=cls._dict_to_dataclass(LoggingConfig, data.get("logging", {})),
         )
 
     @staticmethod
-    def _dict_to_dataclass(cls_type: type, data: Dict[str, Any]) -> Any:
+    def _dict_to_dataclass(cls_type: type, data: dict[str, Any]) -> Any:
         """Convert dict to dataclass, handling Path conversion."""
         kwargs = {}
         for key, value in data.items():
@@ -200,7 +198,7 @@ class Config:
         with open(path, "wb") as f:
             tomli_w.dump(data, f)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert Config to dictionary for serialization."""
         return {
             "project": self._dataclass_to_dict(self.project),
@@ -213,7 +211,7 @@ class Config:
         }
 
     @staticmethod
-    def _dataclass_to_dict(obj: Any) -> Dict[str, Any]:
+    def _dataclass_to_dict(obj: Any) -> dict[str, Any]:
         """Convert dataclass to dict, handling Path serialization."""
         result = {}
         for key, value in obj.__dict__.items():

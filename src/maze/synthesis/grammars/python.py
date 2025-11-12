@@ -131,8 +131,8 @@ union_type: type_expr "|" type_expr ("|" type_expr)*
 optional_type: type_expr "| None"
 
 IDENT: /[a-zA-Z_][a-zA-Z0-9_]*/
-NUMBER: /-?\d+(\.\d+)?([eE][+-]?\d+)?/ | /-?0[xX][0-9a-fA-F]+/ | /-?0[oO][0-7]+/ | /-?0[bB][01]+/
-STRING: /"([^"\\\\]|\\\\.)*"/ | /'([^'\\\\]|\\\\.)*'/ | /\"\"\"[\s\S]*?\"\"\"/ | /'''[\s\S]*?'''/
+NUMBER: /-?\\d+(\\.\\d+)?([eE][+-]?\\d+)?/ | /-?0[xX][0-9a-fA-F]+/ | /-?0[oO][0-7]+/ | /-?0[bB][01]+/
+STRING: /"([^"\\\\]|\\\\.)*"/ | /'([^'\\\\]|\\\\.)*'/ | /\"\"\"[\\s\\S]*?\"\"\"/ | /'''[\\s\\S]*?'''/
 BOOLEAN: "True" | "False"
 NONE: "None"
 
@@ -142,7 +142,7 @@ DEDENT: /<DEDENT>/
 
 %ignore /[ \\t]+/
 %ignore /#.*/
-"""
+""",
 )
 
 # Class definition grammar
@@ -208,7 +208,7 @@ type_args: type_expr ("," type_expr)*
 union_type: type_expr "|" type_expr
 
 IDENT: /[a-zA-Z_][a-zA-Z0-9_]*/
-NUMBER: /-?\d+(\.\d+)?/
+NUMBER: /-?\\d+(\\.\\d+)?/
 STRING: /"([^"\\\\]|\\\\.)*"/ | /'([^'\\\\]|\\\\.)*'/
 BOOLEAN: "True" | "False"
 NONE: "None"
@@ -219,7 +219,7 @@ DEDENT: /<DEDENT>/
 
 %ignore /[ \\t]+/
 %ignore /#.*/
-"""
+""",
 )
 
 # Module-level grammar (for complete files)
@@ -277,7 +277,7 @@ literal: NUMBER | STRING | BOOLEAN | NONE
 type_expr: IDENT
 
 IDENT: /[a-zA-Z_][a-zA-Z0-9_]*/
-NUMBER: /-?\d+(\.\d+)?/
+NUMBER: /-?\\d+(\\.\\d+)?/
 STRING: /"([^"\\\\]|\\\\.)*"/ | /'([^'\\\\]|\\\\.)*'/
 BOOLEAN: "True" | "False"
 NONE: "None"
@@ -288,7 +288,7 @@ DEDENT: /<DEDENT>/
 
 %ignore /[ \\t]+/
 %ignore /#.*/
-"""
+""",
 )
 
 # Function BODY grammar (for completing partial signatures)
@@ -395,7 +395,7 @@ union_type: type_expr "|" type_expr ("|" type_expr)*
 optional_type: type_expr "| None"
 
 IDENT: /[a-zA-Z_][a-zA-Z0-9_]*/
-NUMBER: /-?\d+(\.\d+)?([eE][+-]?\d+)?/ | /-?0[xX][0-9a-fA-F]+/ | /-?0[oO][0-7]+/ | /-?0[bB][01]+/
+NUMBER: /-?\\d+(\\.\\d+)?([eE][+-]?\\d+)?/ | /-?0[xX][0-9a-fA-F]+/ | /-?0[oO][0-7]+/ | /-?0[bB][01]+/
 STRING: /"([^"\\\\]|\\\\.)*"/ | /'([^'\\\\]|\\\\.)*'/ | /\\"\\"\\"[\\s\\S]*?\\"\\"\\"/ | /'''[\\s\\S]*?'''/
 BOOLEAN: "True" | "False"
 NONE: "None"
@@ -406,7 +406,7 @@ DEDENT: /<DEDENT>/
 
 %ignore /[ \\t]+/
 %ignore /#.*/
-"""
+""",
 )
 
 # Export all templates
@@ -418,9 +418,9 @@ ALL_TEMPLATES = [
 ]
 
 __all__ = [
-    'PYTHON_FUNCTION',
-    'PYTHON_FUNCTION_BODY',
-    'PYTHON_CLASS',
-    'PYTHON_MODULE',
-    'ALL_TEMPLATES',
+    "PYTHON_FUNCTION",
+    "PYTHON_FUNCTION_BODY",
+    "PYTHON_CLASS",
+    "PYTHON_MODULE",
+    "ALL_TEMPLATES",
 ]

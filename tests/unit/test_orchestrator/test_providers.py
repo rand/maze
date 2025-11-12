@@ -2,17 +2,17 @@
 Unit tests for provider adapters.
 """
 
+from unittest.mock import Mock, patch
+
 import pytest
-import sys
-from unittest.mock import Mock, patch, MagicMock
+
 from maze.orchestrator.providers import (
     GenerationRequest,
     GenerationResponse,
-    ProviderAdapter,
-    OpenAIProviderAdapter,
-    VLLMProviderAdapter,
-    SGLangProviderAdapter,
     LlamaCppProviderAdapter,
+    OpenAIProviderAdapter,
+    SGLangProviderAdapter,
+    VLLMProviderAdapter,
     create_provider_adapter,
 )
 
@@ -43,7 +43,7 @@ class TestDataclasses:
             temperature=0.5,
             top_p=0.9,
             stop_sequences=["</code>"],
-            metadata={"key": "value"}
+            metadata={"key": "value"},
         )
 
         assert request.prompt == "custom prompt"
@@ -61,7 +61,7 @@ class TestDataclasses:
             text="generated text",
             finish_reason="stop",
             tokens_generated=50,
-            metadata={"model": "gpt-4"}
+            metadata={"model": "gpt-4"},
         )
 
         assert response.text == "generated text"
@@ -101,10 +101,7 @@ class TestOpenAIProviderAdapter:
     def test_generate_with_grammar_raises_error(self):
         """Test that using grammar raises ValueError."""
         adapter = OpenAIProviderAdapter()
-        request = GenerationRequest(
-            prompt="test",
-            grammar="test grammar"
-        )
+        request = GenerationRequest(prompt="test", grammar="test grammar")
 
         with pytest.raises(ValueError, match="does not support grammar"):
             adapter.generate(request)
@@ -132,7 +129,7 @@ class TestOpenAIProviderAdapter:
         mock_openai_class = Mock(return_value=mock_client)
 
         # Patch the import
-        with patch.dict('sys.modules', {'openai': Mock(OpenAI=mock_openai_class)}):
+        with patch.dict("sys.modules", {"openai": Mock(OpenAI=mock_openai_class)}):
             adapter = OpenAIProviderAdapter(api_key="test-key")
             request = GenerationRequest(prompt="Write a function")
 
@@ -145,7 +142,7 @@ class TestOpenAIProviderAdapter:
 
     def test_generate_without_openai_package(self):
         """Test error when openai package not installed."""
-        with patch.dict('sys.modules', {'openai': None}):
+        with patch.dict("sys.modules", {"openai": None}):
             adapter = OpenAIProviderAdapter()
             request = GenerationRequest(prompt="test")
 
@@ -181,18 +178,15 @@ class TestVLLMProviderAdapter:
         mock_response = Mock()
         mock_response.json.return_value = {
             "choices": [{"text": "generated code", "finish_reason": "stop"}],
-            "usage": {"completion_tokens": 30}
+            "usage": {"completion_tokens": 30},
         }
 
         mock_requests = Mock()
         mock_requests.post.return_value = mock_response
 
-        with patch.dict('sys.modules', {'requests': mock_requests}):
+        with patch.dict("sys.modules", {"requests": mock_requests}):
             adapter = VLLMProviderAdapter(model="llama-3")
-            request = GenerationRequest(
-                prompt="test",
-                grammar="test grammar"
-            )
+            request = GenerationRequest(prompt="test", grammar="test grammar")
 
             response = adapter.generate(request)
 
@@ -228,21 +222,15 @@ class TestSGLangProviderAdapter:
         mock_response = Mock()
         mock_response.json.return_value = {
             "text": "generated text",
-            "meta_info": {
-                "finish_reason": "stop",
-                "completion_tokens": 20
-            }
+            "meta_info": {"finish_reason": "stop", "completion_tokens": 20},
         }
 
         mock_requests = Mock()
         mock_requests.post.return_value = mock_response
 
-        with patch.dict('sys.modules', {'requests': mock_requests}):
+        with patch.dict("sys.modules", {"requests": mock_requests}):
             adapter = SGLangProviderAdapter(model="test")
-            request = GenerationRequest(
-                prompt="test",
-                grammar="test regex"
-            )
+            request = GenerationRequest(prompt="test", grammar="test regex")
 
             response = adapter.generate(request)
 
@@ -281,18 +269,15 @@ class TestLlamaCppProviderAdapter:
             "stop_reason": "eos",
             "tokens_predicted": 15,
             "timings": {},
-            "truncated": False
+            "truncated": False,
         }
 
         mock_requests = Mock()
         mock_requests.post.return_value = mock_response
 
-        with patch.dict('sys.modules', {'requests': mock_requests}):
+        with patch.dict("sys.modules", {"requests": mock_requests}):
             adapter = LlamaCppProviderAdapter()
-            request = GenerationRequest(
-                prompt="test",
-                grammar="gbnf grammar"
-            )
+            request = GenerationRequest(prompt="test", grammar="gbnf grammar")
 
             response = adapter.generate(request)
 

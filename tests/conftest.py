@@ -2,23 +2,23 @@
 Pytest configuration and fixtures for Maze test suite.
 """
 
-import pytest
-import tempfile
-import shutil
-from pathlib import Path
-from typing import Generator, Dict, Any
 
 # Add src directory to path for imports
 import sys
+from pathlib import Path
+from typing import Any
+
+import pytest
+
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from maze.core.types import Type, TypeContext, FunctionSignature, TypeParameter
 from maze.core.constraints import ConstraintSet, SyntacticConstraint, TypeConstraint
-from maze.integrations.llguidance import LLGuidanceAdapter, TokenizerConfig
+from maze.core.types import FunctionSignature, Type, TypeContext, TypeParameter
 from maze.indexer.languages.typescript import TypeScriptIndexer
-
+from maze.integrations.llguidance import LLGuidanceAdapter, TokenizerConfig
 
 # Fixtures for core types
+
 
 @pytest.fixture
 def simple_type() -> Type:
@@ -39,14 +39,13 @@ def type_context() -> TypeContext:
     context.variables["userName"] = Type("string")
     context.variables["userAge"] = Type("number")
     context.functions["greet"] = FunctionSignature(
-        name="greet",
-        parameters=[TypeParameter("name", Type("string"))],
-        return_type=Type("string")
+        name="greet", parameters=[TypeParameter("name", Type("string"))], return_type=Type("string")
     )
     return context
 
 
 # Fixtures for constraints
+
 
 @pytest.fixture
 def syntactic_constraint() -> SyntacticConstraint:
@@ -65,15 +64,13 @@ def syntactic_constraint() -> SyntacticConstraint:
 @pytest.fixture
 def type_constraint(type_context: TypeContext) -> TypeConstraint:
     """Create a type constraint for testing."""
-    return TypeConstraint(
-        expected_type=Type("string"),
-        context=type_context,
-        strict=True
-    )
+    return TypeConstraint(expected_type=Type("string"), context=type_context, strict=True)
 
 
 @pytest.fixture
-def constraint_set(syntactic_constraint: SyntacticConstraint, type_constraint: TypeConstraint) -> ConstraintSet:
+def constraint_set(
+    syntactic_constraint: SyntacticConstraint, type_constraint: TypeConstraint
+) -> ConstraintSet:
     """Create a constraint set for testing."""
     constraints = ConstraintSet()
     constraints.add(syntactic_constraint)
@@ -83,17 +80,19 @@ def constraint_set(syntactic_constraint: SyntacticConstraint, type_constraint: T
 
 # Fixtures for llguidance
 
+
 @pytest.fixture
 def llguidance_adapter() -> LLGuidanceAdapter:
     """Create an LLGuidanceAdapter for testing."""
     return LLGuidanceAdapter(
         tokenizer_config=TokenizerConfig(vocab_size=10000),
         mask_cache_size=1000,
-        enable_profiling=True
+        enable_profiling=True,
     )
 
 
 # Fixtures for indexing
+
 
 @pytest.fixture
 def temp_project(tmp_path: Path) -> Path:
@@ -104,7 +103,8 @@ def temp_project(tmp_path: Path) -> Path:
 
     # Create sample TypeScript file
     ts_file = src_dir / "example.ts"
-    ts_file.write_text("""
+    ts_file.write_text(
+        """
 export interface User {
     name: string;
     age: number;
@@ -126,27 +126,32 @@ describe("greetUser", () => {
         expect(greetUser(user)).toBe("Hello, Bob!");
     });
 });
-""")
+"""
+    )
 
     # Create package.json
     package_json = tmp_path / "package.json"
-    package_json.write_text("""{
+    package_json.write_text(
+        """{
     "name": "test-project",
     "version": "1.0.0",
     "scripts": {
         "test": "jest"
     }
-}""")
+}"""
+    )
 
     # Create tsconfig.json
     tsconfig = tmp_path / "tsconfig.json"
-    tsconfig.write_text("""{
+    tsconfig.write_text(
+        """{
     "compilerOptions": {
         "target": "ES2020",
         "module": "commonjs",
         "strict": true
     }
-}""")
+}"""
+    )
 
     return tmp_path
 
@@ -158,6 +163,7 @@ def typescript_indexer(temp_project: Path) -> TypeScriptIndexer:
 
 
 # Fixtures for sample code
+
 
 @pytest.fixture
 def sample_typescript_code() -> str:
@@ -211,8 +217,9 @@ print(result)
 
 # Performance testing fixtures
 
+
 @pytest.fixture
-def performance_benchmark() -> Dict[str, Any]:
+def performance_benchmark() -> dict[str, Any]:
     """Configuration for performance benchmarks."""
     return {
         "mask_computation_target_us": 100,  # Target: <100μs
@@ -224,6 +231,7 @@ def performance_benchmark() -> Dict[str, Any]:
 
 # Cleanup fixture
 
+
 @pytest.fixture(autouse=True)
 def cleanup_after_test():
     """Clean up after each test."""
@@ -233,21 +241,12 @@ def cleanup_after_test():
 
 # Pytest configuration
 
+
 def pytest_configure(config):
     """Configure pytest with custom markers."""
     config.addinivalue_line(
-        "markers",
-        "slow: marks tests as slow (deselect with '-m \"not slow\"')"
+        "markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')"
     )
-    config.addinivalue_line(
-        "markers",
-        "integration: marks tests as integration tests"
-    )
-    config.addinivalue_line(
-        "markers",
-        "unit: marks tests as unit tests"
-    )
-    config.addinivalue_line(
-        "markers",
-        "performance: marks tests as performance benchmarks"
-    )
+    config.addinivalue_line("markers", "integration: marks tests as integration tests")
+    config.addinivalue_line("markers", "unit: marks tests as unit tests")
+    config.addinivalue_line("markers", "performance: marks tests as performance benchmarks")

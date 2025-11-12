@@ -14,7 +14,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from maze.config import Config
 from maze.core.types import TypeContext
@@ -26,12 +26,13 @@ from maze.indexer.languages.typescript import TypeScriptIndexer
 from maze.indexer.languages.zig import ZigIndexer
 from maze.logging import (
     GenerationResult as LogGenerationResult,
+)
+from maze.logging import (
     MetricsCollector,
     StructuredLogger,
 )
 from maze.orchestrator.providers import (
     GenerationRequest,
-    GenerationResponse,
     ProviderAdapter,
     create_provider_adapter,
 )
@@ -82,7 +83,7 @@ class IndexingMetrics:
     duration_ms: float
     files_indexed: int
     symbols_extracted: int
-    errors: List[str] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -93,7 +94,7 @@ class GenerationMetrics:
     tokens_generated: int
     provider: str
     model: str
-    constraints_applied: List[str] = field(default_factory=list)
+    constraints_applied: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -126,12 +127,12 @@ class PipelineResult:
     code: str
     prompt: str
     language: str
-    indexing: Optional[IndexingMetrics] = None
-    generation: Optional[GenerationMetrics] = None
-    validation: Optional[ValidationMetrics] = None
-    repair: Optional[RepairMetrics] = None
+    indexing: IndexingMetrics | None = None
+    generation: GenerationMetrics | None = None
+    validation: ValidationMetrics | None = None
+    repair: RepairMetrics | None = None
     total_duration_ms: float = 0.0
-    errors: List[str] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
 
 
 class Pipeline:
@@ -157,21 +158,21 @@ class Pipeline:
         self.metrics = MetricsCollector()
 
         # Initialize components
-        self.indexer: Optional[BaseIndexer] = None
+        self.indexer: BaseIndexer | None = None
         self.grammar_builder = GrammarBuilder()
         self.validator = ValidationPipeline()
-        self.repair_orchestrator: Optional[RepairOrchestrator] = None
-        self.provider: Optional[ProviderAdapter] = None
+        self.repair_orchestrator: RepairOrchestrator | None = None
+        self.provider: ProviderAdapter | None = None
 
         # Cached context from indexing
-        self._indexed_context: Optional[IndexingResult] = None
-        self._type_context: Optional[TypeContext] = None
-        
+        self._indexed_context: IndexingResult | None = None
+        self._type_context: TypeContext | None = None
+
         # Grammar cache
-        self._grammar_cache: Dict[str, str] = {}
+        self._grammar_cache: dict[str, str] = {}
         self._last_grammar: str = ""  # Store for repair
 
-    def index_project(self, project_path: Optional[Path] = None) -> IndexingResult:
+    def index_project(self, project_path: Path | None = None) -> IndexingResult:
         """Index project to extract context.
 
         Args:
@@ -231,9 +232,7 @@ class Pipeline:
 
         return result
 
-    def generate(
-        self, prompt: str, context: Optional[TypeContext] = None
-    ) -> PipelineResult:
+    def generate(self, prompt: str, context: TypeContext | None = None) -> PipelineResult:
         """Generate code with full pipeline.
 
         Args:
@@ -313,7 +312,7 @@ class Pipeline:
         return result
 
     def validate(
-        self, code: str, context: Optional[TypeContext] = None
+        self, code: str, context: TypeContext | None = None
     ) -> Any:  # Returns ValidationResult
         """Validate generated code.
 
@@ -342,9 +341,9 @@ class Pipeline:
     def repair(
         self,
         code: str,
-        errors: List[Any],  # List[Diagnostic]
+        errors: list[Any],  # List[Diagnostic]
         prompt: str,
-        context: Optional[TypeContext] = None,
+        context: TypeContext | None = None,
     ) -> Any:  # Returns RepairResult
         """Repair code based on validation errors.
 
@@ -375,62 +374,60 @@ class Pipeline:
             prompt=prompt,
             grammar=self._last_grammar,  # Use grammar from generation
             language=self.config.project.language,
-            context=repair_ctx
+            context=repair_ctx,
         )
 
         return result
 
     def _is_completion_prompt(self, prompt: str, language: str) -> bool:
         """Detect if prompt is for completion (partial code) vs full generation.
-        
+
         CRITICAL: This determines which grammar template to use.
         - Completion mode: Use *_BODY grammars (PYTHON_FUNCTION_BODY, etc.)
         - Full generation mode: Use full grammars (PYTHON_FUNCTION, etc.)
-        
+
         Why this matters:
         - Using full grammar for completion causes signature duplication
         - Using completion grammar for full generation produces incomplete code
-        
+
         Completion prompts end with colons, semicolons, or braces indicating
         the user wants to complete existing code structure.
-        
+
         Args:
             prompt: Generation prompt
             language: Programming language
-            
+
         Returns:
             True if completion mode, False if full generation
-            
+
         See: docs/GRAMMAR_CONSTRAINTS.md for details
         """
         prompt_stripped = prompt.rstrip()
-        
+
         # Python: Ends with colon (function/class signature)
         if language == "python":
             return prompt_stripped.endswith(":")
-        
+
         # TypeScript/JavaScript: Ends with ) or type annotation
         elif language in ("typescript", "javascript"):
             # "function foo(a: number): string" -> completion
             # "function foo" without closing ) -> full generation
             return "function" in prompt and ")" in prompt
-        
+
         # Rust: Ends with block or type
         elif language == "rust":
             # "fn foo() -> bool" -> completion
             # "fn foo" -> full generation
             return "fn" in prompt and ("->" in prompt or ")" in prompt)
-        
+
         # Go: Similar to Rust
         elif language == "go":
             return "func" in prompt and (")" in prompt or "{" in prompt)
-        
+
         # Default: Assume full generation
         return False
 
-    def _synthesize_constraints(
-        self, prompt: str, context: Optional[TypeContext]
-    ) -> str:
+    def _synthesize_constraints(self, prompt: str, context: TypeContext | None) -> str:
         """Synthesize constraints (grammar) for generation.
 
         Args:
@@ -444,28 +441,25 @@ class Pipeline:
             return ""
 
         language = self.config.project.language
-        
+
         # Detect completion vs full generation
         is_completion = self._is_completion_prompt(prompt, language)
         mode = "completion" if is_completion else "full"
-        
+
         # Check cache with mode-aware key
         cache_key = f"{language}:{mode}"
         if cache_key in self._grammar_cache:
             self.metrics.record_cache_hit("grammar")
             self.logger.log_info(
-                "grammar_cache_hit",
-                language=language,
-                mode=mode,
-                prompt_preview=prompt[:50]
+                "grammar_cache_hit", language=language, mode=mode, prompt_preview=prompt[:50]
             )
             return self._grammar_cache[cache_key]
-        
+
         self.metrics.record_cache_miss("grammar")
 
         # Load language-specific grammar templates
         template = None
-        
+
         if language == "typescript" or language == "javascript":
             if is_completion:
                 # Completing function body
@@ -478,7 +472,7 @@ class Pipeline:
                     template = TYPESCRIPT_FUNCTION
                 else:
                     template = TYPESCRIPT_FILE
-            
+
         elif language == "python":
             if is_completion:
                 # Completing function/method body
@@ -491,7 +485,7 @@ class Pipeline:
                     template = PYTHON_FUNCTION
                 else:
                     template = PYTHON_MODULE
-            
+
         elif language == "rust":
             if is_completion:
                 # Completing function body
@@ -504,32 +498,32 @@ class Pipeline:
                     template = RUST_IMPL
                 else:
                     template = RUST_FUNCTION
-        
+
         if template is None:
             # No grammar for this language yet
             return ""
-        
+
         # Build grammar
         builder = GrammarBuilder(language=language)
         builder.add_template(template)
         grammar = builder.load_template(template.name).build()
-        
+
         # Cache it
         self._grammar_cache[cache_key] = grammar
-        
+
         # Log selection
         self.logger.log_info(
             "grammar_selected",
             language=language,
             mode=mode,
             template=template.name,
-            grammar_size=len(grammar)
+            grammar_size=len(grammar),
         )
-        
+
         return grammar
 
     def _generate_with_constraints(
-        self, prompt: str, grammar: str, context: Optional[TypeContext]
+        self, prompt: str, grammar: str, context: TypeContext | None
     ) -> str:
         """Generate code with constraints.
 
@@ -547,7 +541,7 @@ class Pipeline:
         # Get or create provider
         if self.provider is None:
             import os
-            
+
             try:
                 # Get API key from environment
                 api_key = None
@@ -555,8 +549,8 @@ class Pipeline:
                     api_key = os.getenv("OPENAI_API_KEY")
                     if not api_key:
                         self.logger.log_warning("api_key_missing", provider="openai")
-                        return f"// OpenAI API key not found in OPENAI_API_KEY\n// Set: export OPENAI_API_KEY=sk-..."
-                
+                        return "// OpenAI API key not found in OPENAI_API_KEY\n// Set: export OPENAI_API_KEY=sk-..."
+
                 self.provider = create_provider_adapter(
                     provider=self.config.generation.provider,
                     model=self.config.generation.model,
@@ -566,7 +560,7 @@ class Pipeline:
                 # Provider not available, return placeholder
                 self.logger.log_warning("provider_unavailable", error=str(e))
                 return f"// Generated code for: {prompt}\n// Provider '{self.config.generation.provider}' not available"
-        
+
         # Create generation request
         request = GenerationRequest(
             prompt=prompt,
@@ -574,24 +568,24 @@ class Pipeline:
             max_tokens=self.config.generation.max_tokens,
             temperature=self.config.generation.temperature,
         )
-        
+
         # Retry logic
         max_retries = self.config.generation.retry_attempts
         last_error = None
-        
+
         for attempt in range(max_retries):
             try:
                 # Generate with provider
                 start = time.perf_counter()
                 response = self.provider.generate(request)
                 duration_ms = (time.perf_counter() - start) * 1000
-                
+
                 # Record metrics
                 self.metrics.record_latency("provider_call", duration_ms)
                 self.metrics.increment_counter("successful_generations")
-                
+
                 return response.text
-                
+
             except Exception as e:
                 last_error = e
                 self.logger.log_warning(
@@ -600,16 +594,16 @@ class Pipeline:
                     max_attempts=max_retries,
                     error=str(e),
                 )
-                
+
                 # Don't retry on certain errors
                 if "API key" in str(e) or "authentication" in str(e).lower():
                     break
-                
+
                 # Wait before retry (exponential backoff)
                 if attempt < max_retries - 1:
-                    wait_time = 2 ** attempt  # 1s, 2s, 4s
+                    wait_time = 2**attempt  # 1s, 2s, 4s
                     time.sleep(wait_time)
-        
+
         # All retries failed
         self.logger.log_error(
             "generation_failed",
@@ -618,10 +612,10 @@ class Pipeline:
             attempts=max_retries,
         )
         self.metrics.record_error("generation_failure")
-        
+
         return f"// Generation failed after {max_retries} attempts: {str(last_error)}\n// Prompt was: {prompt}"
 
-    def run(self, prompt: str, config: Optional[PipelineConfig] = None) -> PipelineResult:
+    def run(self, prompt: str, config: PipelineConfig | None = None) -> PipelineResult:
         """Run complete generation pipeline.
 
         High-level API that handles indexing, generation, validation, and repair.

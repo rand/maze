@@ -10,8 +10,6 @@ import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-import pytest
-
 from maze.config import Config
 from maze.core.pipeline import Pipeline
 from maze.orchestrator.providers import GenerationResponse
@@ -25,7 +23,7 @@ class TestPathAIntegration:
         config = Config()
         config.project.language = "typescript"
         config.constraints.syntactic_enabled = True
-        
+
         pipeline = Pipeline(config)
 
         with patch.dict(os.environ, {"OPENAI_API_KEY": "sk-test"}):
@@ -55,7 +53,7 @@ class TestPathAIntegration:
             config = Config()
             config.project.path = project_path
             config.project.language = "typescript"
-            
+
             pipeline = Pipeline(config)
 
             with patch.dict(os.environ, {"OPENAI_API_KEY": "sk-test"}):
@@ -73,10 +71,10 @@ class TestPathAIntegration:
 
                     # Should have indexed
                     assert pipeline._indexed_context is not None
-                    
+
                     # Should have generated
                     assert result.code == "const result = 42;"
-                    
+
                     # Should have validation metrics
                     assert result.validation is not None
 
@@ -96,7 +94,7 @@ class TestPathAIntegration:
 
                 # First generation
                 pipeline.generate("Create function 1")
-                
+
                 # Second generation
                 pipeline.generate("Create function 2")
 
@@ -143,13 +141,13 @@ class TestPathAIntegration:
                 pipeline.generate("test")
 
                 summary = pipeline.metrics.summary()
-                
+
                 # Should have recorded provider call
                 assert "provider_call" in summary["latencies"]
-                
+
                 # Should have successful generation counter
                 assert summary["counters"]["successful_generations"] >= 1
-                
+
                 # Should have cache metrics
                 assert "grammar" in summary["cache_hit_rates"]
 
@@ -175,7 +173,7 @@ class TestPathAIntegration:
 
                 # Use different providers
                 pipeline1.generate("test")
-                
+
                 # Second call should use different provider
                 pipeline2.generate("test")
 
@@ -194,7 +192,7 @@ class TestPathAIntegration:
         with patch.dict(os.environ, {"OPENAI_API_KEY": "sk-test"}):
             with patch("maze.core.pipeline.create_provider_adapter") as mock_create:
                 mock_provider = Mock()
-                
+
                 # Fail first, succeed second
                 mock_provider.generate.side_effect = [
                     Exception("Timeout"),
@@ -241,13 +239,13 @@ class TestPathAIntegration:
                 pipeline.generate("Create function 3")
 
                 summary = pipeline.metrics.summary()
-                
+
                 # Grammar cache should show hits
                 assert summary["cache_hit_rates"]["grammar"] > 0
-                
+
                 # Provider calls recorded
                 assert summary["latencies"]["provider_call"]["count"] == 3
-                
+
                 # Successful generations counted
                 assert summary["counters"]["successful_generations"] == 3
 
@@ -257,8 +255,9 @@ class TestPathAIntegration:
 
         with tempfile.TemporaryDirectory() as tmpdir:
             project_path = Path(tmpdir)
-            
+
             import os as os_module
+
             original_cwd = os_module.getcwd()
             os_module.chdir(project_path)
 

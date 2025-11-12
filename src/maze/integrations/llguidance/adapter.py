@@ -7,22 +7,13 @@ the llguidance library, achieving <100μs per-token mask computation.
 
 from __future__ import annotations
 
-import time
 import hashlib
-from typing import Any, Dict, List, Optional, Set, Tuple
-from dataclasses import dataclass, field
-from functools import lru_cache
 import logging
+import time
+from dataclasses import dataclass, field
+from typing import Any
 
 # Import llguidance for constraint enforcement
-from llguidance import (
-    LarkCompiler,
-    LLInterpreter,
-    LLTokenizer,
-    TokenizerWrapper,
-    LLParserLimits
-)
-
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +21,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class TokenizerConfig:
     """Configuration for tokenizer."""
+
     model_type: str = "transformers"
     vocab_size: int = 50257  # GPT-2 default
 
@@ -37,6 +29,7 @@ class TokenizerConfig:
 @dataclass
 class MaskComputationMetrics:
     """Metrics for mask computation performance."""
+
     computation_time_us: float
     cache_hit: bool
     state_size: int
@@ -49,10 +42,10 @@ class LRUCache:
 
     def __init__(self, capacity: int = 100000):
         self.capacity = capacity
-        self.cache: Dict[str, Any] = {}
-        self.access_order: List[str] = []
+        self.cache: dict[str, Any] = {}
+        self.access_order: list[str] = []
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         """Get item from cache."""
         if key in self.cache:
             # Move to end (most recently used)
@@ -102,9 +95,9 @@ class LLGuidanceAdapter:
 
     def __post_init__(self):
         """Initialize caches and metrics."""
-        self.grammar_cache: Dict[str, LLGuidance] = {}
+        self.grammar_cache: dict[str, LLGuidance] = {}
         self.mask_cache = LRUCache(self.mask_cache_size)
-        self.metrics: List[MaskComputationMetrics] = []
+        self.metrics: list[MaskComputationMetrics] = []
 
     def build_parser(self, grammar: str) -> LLGuidance:
         """
@@ -133,7 +126,7 @@ class LLGuidanceAdapter:
         parser = LLGuidance(
             grammar=grammar,
             tokenizer=self.tokenizer_config,
-            model_type=self.tokenizer_config.model_type
+            model_type=self.tokenizer_config.model_type,
         )
         compilation_time = time.perf_counter() - start
 
@@ -146,11 +139,8 @@ class LLGuidanceAdapter:
         return parser
 
     def compute_mask(
-        self,
-        parser: LLGuidance,
-        state: str,
-        vocab: Optional[List[str]] = None
-    ) -> Dict[str, Any]:
+        self, parser: LLGuidance, state: str, vocab: list[str] | None = None
+    ) -> dict[str, Any]:
         """
         Compute token mask with caching.
 
@@ -197,11 +187,7 @@ class LLGuidanceAdapter:
 
         return mask
 
-    def compute_mask_batch(
-        self,
-        parser: LLGuidance,
-        states: List[str]
-    ) -> List[Dict[str, Any]]:
+    def compute_mask_batch(self, parser: LLGuidance, states: list[str]) -> list[dict[str, Any]]:
         """
         Compute masks for multiple states in batch.
 
@@ -221,7 +207,7 @@ class LLGuidanceAdapter:
             results.append(mask)
         return results
 
-    def validate_grammar(self, grammar: str) -> Tuple[bool, Optional[str]]:
+    def validate_grammar(self, grammar: str) -> tuple[bool, str | None]:
         """
         Validate a Lark grammar before compilation.
 
@@ -258,14 +244,17 @@ class LLGuidanceAdapter:
 
         # Remove redundant whitespace ignores
         import re
-        optimized = re.sub(r'%ignore\s+/\\s\+/\s*\n\s*%ignore\s+/\\s\+/', '%ignore /\\s+/', optimized)
+
+        optimized = re.sub(
+            r"%ignore\s+/\\s\+/\s*\n\s*%ignore\s+/\\s\+/", "%ignore /\\s+/", optimized
+        )
 
         # Consolidate character classes
-        optimized = re.sub(r'\[a-zA-Z\]\[a-zA-Z0-9\]\*', '[a-zA-Z][a-zA-Z0-9]*', optimized)
+        optimized = re.sub(r"\[a-zA-Z\]\[a-zA-Z0-9\]\*", "[a-zA-Z][a-zA-Z0-9]*", optimized)
 
         return optimized
 
-    def grammar_from_json_schema(self, schema: Dict[str, Any]) -> str:
+    def grammar_from_json_schema(self, schema: dict[str, Any]) -> str:
         """
         Convert JSON Schema to Lark grammar.
 
@@ -280,7 +269,7 @@ class LLGuidanceAdapter:
             becomes grammar rules for JSON object with string field
         """
         # Base JSON grammar
-        base_grammar = '''
+        base_grammar = """
             ?start: json_value
 
             json_value: object | array | string | number | boolean | null
@@ -299,24 +288,24 @@ class LLGuidanceAdapter:
             SIGNED_NUMBER: /-?\\d+(\\.\\d+)?([eE][+-]?\\d+)?/
 
             %ignore /\\s+/
-        '''
+        """
 
         # Add schema-specific constraints based on JSON Schema
         if schema:
             # Extract constraints from schema
             constraints = []
-            
+
             # Object type with specific properties
             if schema.get("type") == "object" and "properties" in schema:
                 props = schema["properties"]
                 required = schema.get("required", [])
-                
+
                 # Build object grammar with specific properties
                 prop_rules = []
                 for prop_name, prop_schema in props.items():
                     is_required = prop_name in required
                     prop_type = prop_schema.get("type", "any")
-                    
+
                     # Add property grammar based on type
                     if prop_type == "string":
                         prop_rules.append(f'    "{prop_name}": string')
@@ -326,21 +315,21 @@ class LLGuidanceAdapter:
                         prop_rules.append(f'    "{prop_name}": boolean')
                     elif prop_type == "array":
                         prop_rules.append(f'    "{prop_name}": array')
-                
+
                 if prop_rules:
                     # Add specific object grammar
                     object_grammar = "{\n" + ",\n".join(prop_rules) + "\n}"
                     constraints.append(f"?start: {object_grammar}")
-            
+
             # Array type with item schema
             elif schema.get("type") == "array" and "items" in schema:
                 item_type = schema["items"].get("type", "any")
-                constraints.append(f"?start: array")
-            
+                constraints.append("?start: array")
+
             # If we have specific constraints, use them
             if constraints:
                 return base_grammar + "\n\n" + "\n".join(constraints)
-        
+
         # Otherwise, return base JSON grammar
         return base_grammar
 
@@ -355,13 +344,13 @@ class LLGuidanceAdapter:
         Returns:
             Lark grammar rule
         """
-        return f'''
+        return f"""
             ?start: {name.lower()}
             {name.lower()}: {name}
             {name}: /{pattern}/
-        '''
+        """
 
-    def merge_grammars(self, grammars: List[str]) -> str:
+    def merge_grammars(self, grammars: list[str]) -> str:
         """
         Merge multiple grammars into one.
 
@@ -379,18 +368,18 @@ class LLGuidanceAdapter:
         seen_rules = set()
 
         for grammar in grammars:
-            lines = grammar.strip().split('\n')
+            lines = grammar.strip().split("\n")
             for line in lines:
                 # Extract rule name if it's a rule definition
-                if ':' in line and not line.strip().startswith('%'):
-                    rule_name = line.split(':')[0].strip()
+                if ":" in line and not line.strip().startswith("%"):
+                    rule_name = line.split(":")[0].strip()
                     if rule_name not in seen_rules:
                         merged_rules.append(line)
                         seen_rules.add(rule_name)
                 elif line.strip() and not any(line.strip().startswith(r) for r in seen_rules):
                     merged_rules.append(line)
 
-        return '\n'.join(merged_rules)
+        return "\n".join(merged_rules)
 
     def clear_caches(self) -> None:
         """Clear all caches."""
@@ -399,7 +388,7 @@ class LLGuidanceAdapter:
         self.metrics.clear()
         logger.info("All caches cleared")
 
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def get_cache_stats(self) -> dict[str, Any]:
         """Get cache statistics."""
         return {
             "grammar_cache_size": len(self.grammar_cache),
@@ -408,7 +397,7 @@ class LLGuidanceAdapter:
             "metrics_collected": len(self.metrics),
         }
 
-    def get_performance_summary(self) -> Dict[str, float]:
+    def get_performance_summary(self) -> dict[str, float]:
         """Get performance metrics summary."""
         if not self.metrics:
             return {}
@@ -444,18 +433,14 @@ class LLGuidanceAdapter:
         return f"{grammar_hash}:{state_hash}"
 
     def _record_metrics(
-        self,
-        computation_time_us: float,
-        cache_hit: bool,
-        state_size: int,
-        mask_size: int
+        self, computation_time_us: float, cache_hit: bool, state_size: int, mask_size: int
     ) -> None:
         """Record performance metrics."""
         metric = MaskComputationMetrics(
             computation_time_us=computation_time_us,
             cache_hit=cache_hit,
             state_size=state_size,
-            mask_size=mask_size
+            mask_size=mask_size,
         )
         self.metrics.append(metric)
 
@@ -466,13 +451,14 @@ class LLGuidanceAdapter:
 
 # Specialized adapters for different providers
 
+
 class OpenAIAdapter(LLGuidanceAdapter):
     """Adapter specialized for OpenAI API with Structured Outputs."""
 
     def __init__(self):
         super().__init__(tokenizer_config=TokenizerConfig(model_type="openai"))
 
-    def to_structured_output_schema(self, grammar: str) -> Dict[str, Any]:
+    def to_structured_output_schema(self, grammar: str) -> dict[str, Any]:
         """Convert grammar to OpenAI Structured Output schema."""
         # OpenAI only supports JSON Schema, not arbitrary grammars
         # Would need to detect if grammar is JSON-compatible
@@ -485,7 +471,7 @@ class VLLMAdapter(LLGuidanceAdapter):
     def __init__(self):
         super().__init__(tokenizer_config=TokenizerConfig(model_type="vllm"))
 
-    def to_vllm_config(self, grammar: str) -> Dict[str, Any]:
+    def to_vllm_config(self, grammar: str) -> dict[str, Any]:
         """Convert to vLLM configuration."""
         return {
             "grammar": grammar,
@@ -507,6 +493,7 @@ class SGLangAdapter(LLGuidanceAdapter):
 
 
 # Factory function for creating adapters
+
 
 def create_adapter(provider: str = "default") -> LLGuidanceAdapter:
     """

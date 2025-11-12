@@ -5,13 +5,12 @@ Test coverage target: 85%
 
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock
 
 import pytest
 
 from maze.config import Config
 from maze.core.pipeline import (
-    IndexingMetrics,
     Pipeline,
     PipelineConfig,
     PipelineResult,
@@ -25,9 +24,7 @@ class TestPipelineConfig:
 
     def test_default_config(self):
         """Test default pipeline configuration."""
-        config = PipelineConfig(
-            project_path=Path("/tmp/project"), language="typescript"
-        )
+        config = PipelineConfig(project_path=Path("/tmp/project"), language="typescript")
 
         assert config.provider == "openai"
         assert config.model == "gpt-4"

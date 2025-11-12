@@ -7,10 +7,10 @@ between grammar/schema synthesis and provider-specific APIs.
 
 from __future__ import annotations
 
+import logging
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
-from abc import ABC, abstractmethod
-import logging
 
 from maze.synthesis.grammar_builder import GrammarBuilder
 from maze.synthesis.schema_builder import SchemaBuilder
@@ -21,23 +21,25 @@ logger = logging.getLogger(__name__)
 @dataclass
 class GenerationRequest:
     """Request for constrained code generation."""
+
     prompt: str
-    grammar: Optional[str] = None
-    schema: Optional[Dict[str, Any]] = None
+    grammar: str | None = None
+    schema: dict[str, Any] | None = None
     max_tokens: int = 2048
     temperature: float = 0.7
     top_p: float = 1.0
-    stop_sequences: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    stop_sequences: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
 class GenerationResponse:
     """Response from constrained code generation."""
+
     text: str
     finish_reason: str
     tokens_generated: int
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class ProviderAdapter(ABC):
@@ -48,7 +50,7 @@ class ProviderAdapter(ABC):
     representation and the provider's expected format.
     """
 
-    def __init__(self, model: str, api_key: Optional[str] = None):
+    def __init__(self, model: str, api_key: str | None = None):
         """
         Initialize provider adapter.
 
@@ -90,7 +92,7 @@ class OpenAIProviderAdapter(ProviderAdapter):
     OpenAI's Structured Outputs only support JSON Schema, not arbitrary grammars.
     """
 
-    def __init__(self, model: str = "gpt-4", api_key: Optional[str] = None):
+    def __init__(self, model: str = "gpt-4", api_key: str | None = None):
         """
         Initialize OpenAI adapter.
 
@@ -123,7 +125,9 @@ class OpenAIProviderAdapter(ProviderAdapter):
             ImportError: If openai package not installed
         """
         if request.grammar:
-            raise ValueError("OpenAI does not support grammar constraints. Use JSON Schema instead.")
+            raise ValueError(
+                "OpenAI does not support grammar constraints. Use JSON Schema instead."
+            )
 
         try:
             from openai import OpenAI
@@ -133,7 +137,7 @@ class OpenAIProviderAdapter(ProviderAdapter):
         client = OpenAI(api_key=self.api_key)
 
         # Build API call parameters
-        params: Dict[str, Any] = {
+        params: dict[str, Any] = {
             "model": self.model,
             "messages": [{"role": "user", "content": request.prompt}],
             "max_tokens": request.max_tokens,
@@ -148,11 +152,7 @@ class OpenAIProviderAdapter(ProviderAdapter):
         if request.schema:
             params["response_format"] = {
                 "type": "json_schema",
-                "json_schema": {
-                    "name": "response",
-                    "strict": True,
-                    "schema": request.schema
-                }
+                "json_schema": {"name": "response", "strict": True, "schema": request.schema},
             }
 
         # Make API call
@@ -166,7 +166,7 @@ class OpenAIProviderAdapter(ProviderAdapter):
             metadata={
                 "model": response.model,
                 "usage": response.usage.model_dump() if response.usage else None,
-            }
+            },
         )
 
 
@@ -231,7 +231,7 @@ class VLLMProviderAdapter(ProviderAdapter):
             payload["guided_generation"] = {
                 "type": "grammar",
                 "grammar": request.grammar,
-                "backend": "llguidance"
+                "backend": "llguidance",
             }
 
         # Add JSON Schema if provided (takes precedence)
@@ -239,14 +239,11 @@ class VLLMProviderAdapter(ProviderAdapter):
             payload["guided_generation"] = {
                 "type": "json_schema",
                 "schema": request.schema,
-                "backend": "llguidance"
+                "backend": "llguidance",
             }
 
         # Make API call
-        response = requests.post(
-            f"{self.api_base}/v1/completions",
-            json=payload
-        )
+        response = requests.post(f"{self.api_base}/v1/completions", json=payload)
         response.raise_for_status()
         data = response.json()
 
@@ -255,7 +252,7 @@ class VLLMProviderAdapter(ProviderAdapter):
             text=choice["text"],
             finish_reason=choice.get("finish_reason", "unknown"),
             tokens_generated=data.get("usage", {}).get("completion_tokens", 0),
-            metadata={"usage": data.get("usage")}
+            metadata={"usage": data.get("usage")},
         )
 
 
@@ -310,7 +307,7 @@ class SGLangProviderAdapter(ProviderAdapter):
                 "max_new_tokens": request.max_tokens,
                 "temperature": request.temperature,
                 "top_p": request.top_p,
-            }
+            },
         }
 
         if request.stop_sequences:
@@ -326,10 +323,7 @@ class SGLangProviderAdapter(ProviderAdapter):
             payload["sampling_params"]["json_schema"] = request.schema
 
         # Make API call
-        response = requests.post(
-            f"{self.api_base}/generate",
-            json=payload
-        )
+        response = requests.post(f"{self.api_base}/generate", json=payload)
         response.raise_for_status()
         data = response.json()
 
@@ -337,7 +331,7 @@ class SGLangProviderAdapter(ProviderAdapter):
             text=data.get("text", ""),
             finish_reason=data.get("meta_info", {}).get("finish_reason", "unknown"),
             tokens_generated=data.get("meta_info", {}).get("completion_tokens", 0),
-            metadata=data.get("meta_info", {})
+            metadata=data.get("meta_info", {}),
         )
 
 
@@ -406,10 +400,7 @@ class LlamaCppProviderAdapter(ProviderAdapter):
             payload["grammar"] = gbnf_grammar
 
         # Make API call
-        response = requests.post(
-            f"{self.api_base}/completion",
-            json=payload
-        )
+        response = requests.post(f"{self.api_base}/completion", json=payload)
         response.raise_for_status()
         data = response.json()
 
@@ -417,13 +408,10 @@ class LlamaCppProviderAdapter(ProviderAdapter):
             text=data.get("content", ""),
             finish_reason=data.get("stop_reason", "unknown"),
             tokens_generated=data.get("tokens_predicted", 0),
-            metadata={
-                "timings": data.get("timings"),
-                "truncated": data.get("truncated", False)
-            }
+            metadata={"timings": data.get("timings"), "truncated": data.get("truncated", False)},
         )
 
-    def _schema_to_gbnf(self, schema: Dict[str, Any]) -> str:
+    def _schema_to_gbnf(self, schema: dict[str, Any]) -> str:
         """Convert JSON Schema to GBNF grammar.
 
         Args:
@@ -436,36 +424,34 @@ class LlamaCppProviderAdapter(ProviderAdapter):
         if schema.get("type") == "object" and "properties" in schema:
             # Object with specific properties
             props = schema["properties"]
-            
+
             rules = ['root ::= "{"']
             prop_list = []
-            
+
             for i, (prop_name, prop_schema) in enumerate(props.items()):
                 sep = ' ","' if i > 0 else ""
                 prop_type = prop_schema.get("type", "string")
-                
+
                 if prop_type == "string":
                     prop_list.append(f'{sep} "\\"" {prop_name} "\\"" ":" "\\"" [^"]* "\\""')
                 elif prop_type == "number":
                     prop_list.append(f'{sep} "\\"" {prop_name} "\\"" ":" [0-9]+ ("." [0-9]+)?')
                 elif prop_type == "boolean":
                     prop_list.append(f'{sep} "\\"" {prop_name} "\\"" ":" ("true" | "false")')
-            
+
             rules.append(" ".join(prop_list) + ' "}"')
             return "\n".join(rules)
-        
+
         # Array type
         elif schema.get("type") == "array":
             return 'root ::= "[" json_value ("," json_value)* "]"'
-        
+
         # Fallback: generic JSON
-        return 'root ::= json_value'
+        return "root ::= json_value"
 
 
 def create_provider_adapter(
-    provider: str,
-    model: Optional[str] = None,
-    **kwargs
+    provider: str, model: str | None = None, **kwargs
 ) -> ProviderAdapter:
     """
     Create a provider adapter.
@@ -491,14 +477,14 @@ def create_provider_adapter(
         from maze.orchestrator.providers.modal import ModalProviderAdapter
     except ImportError:
         ModalProviderAdapter = None
-    
+
     adapters = {
         "openai": OpenAIProviderAdapter,
         "vllm": VLLMProviderAdapter,
         "sglang": SGLangProviderAdapter,
         "llamacpp": LlamaCppProviderAdapter,
     }
-    
+
     # Add Modal if available
     if ModalProviderAdapter:
         adapters["modal"] = ModalProviderAdapter
@@ -522,12 +508,12 @@ def create_provider_adapter(
 
 
 __all__ = [
-    'ProviderAdapter',
-    'GenerationRequest',
-    'GenerationResponse',
-    'OpenAIProviderAdapter',
-    'VLLMProviderAdapter',
-    'SGLangProviderAdapter',
-    'LlamaCppProviderAdapter',
-    'create_provider_adapter',
+    "ProviderAdapter",
+    "GenerationRequest",
+    "GenerationResponse",
+    "OpenAIProviderAdapter",
+    "VLLMProviderAdapter",
+    "SGLangProviderAdapter",
+    "LlamaCppProviderAdapter",
+    "create_provider_adapter",
 ]

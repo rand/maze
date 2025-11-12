@@ -3,23 +3,20 @@ Tests for mnemosyne integration.
 """
 
 import json
-import tempfile
-from pathlib import Path
-from unittest.mock import patch, MagicMock
 import subprocess
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from maze.integrations.mnemosyne import (
-    MnemosyneIntegration,
-    StoredPattern,
-    ScoredPattern,
+    EvolutionStats,
     GenerationContext,
     LearningTask,
+    MnemosyneIntegration,
     OrchestrationResult,
-    EvolutionStats,
+    ScoredPattern,
 )
-from maze.learning.pattern_mining import SyntacticPattern, TypePattern, SemanticPattern
+from maze.learning.pattern_mining import SemanticPattern, SyntacticPattern, TypePattern
 
 
 class TestMnemosyneIntegration:
@@ -33,19 +30,17 @@ class TestMnemosyneIntegration:
     @pytest.fixture
     def integration_local_cache(self, local_cache_path):
         """Integration with local cache (no mnemosyne)."""
-        with patch.object(MnemosyneIntegration, '_ensure_mnemosyne_available', return_value=False):
+        with patch.object(MnemosyneIntegration, "_ensure_mnemosyne_available", return_value=False):
             return MnemosyneIntegration(
-                enable_orchestration=False,
-                local_cache_path=local_cache_path
+                enable_orchestration=False, local_cache_path=local_cache_path
             )
 
     @pytest.fixture
     def integration_with_mnemosyne(self, local_cache_path):
         """Integration with mocked mnemosyne."""
-        with patch.object(MnemosyneIntegration, '_ensure_mnemosyne_available', return_value=True):
+        with patch.object(MnemosyneIntegration, "_ensure_mnemosyne_available", return_value=True):
             return MnemosyneIntegration(
-                enable_orchestration=False,
-                local_cache_path=local_cache_path
+                enable_orchestration=False, local_cache_path=local_cache_path
             )
 
     def test_init_local_cache(self, integration_local_cache, local_cache_path):
@@ -65,14 +60,11 @@ class TestMnemosyneIntegration:
             template="def foo(arg1, arg2): ...",
             frequency=5,
             examples=["def add(x, y): return x + y"],
-            context={"args_count": 2}
+            context={"args_count": 2},
         )
 
         integration_local_cache.store_pattern(
-            pattern=pattern,
-            namespace="project:test",
-            importance=8,
-            tags=["math", "function"]
+            pattern=pattern, namespace="project:test", importance=8, tags=["math", "function"]
         )
 
         assert integration_local_cache.stats["patterns_stored"] == 1
@@ -92,13 +84,11 @@ class TestMnemosyneIntegration:
             signature="int",
             common_usages=["x: int", "count: int"],
             frequency=10,
-            generic_variants=["T"]
+            generic_variants=["T"],
         )
 
         integration_local_cache.store_pattern(
-            pattern=pattern,
-            namespace="project:test",
-            importance=7
+            pattern=pattern, namespace="project:test", importance=7
         )
 
         assert integration_local_cache.stats["patterns_stored"] == 1
@@ -111,36 +101,28 @@ class TestMnemosyneIntegration:
             intent="error_handling",
             structure="try-except",
             implementations=["try:\n    op()\nexcept Exception:\n    handle()"],
-            frequency=3
+            frequency=3,
         )
 
         integration_local_cache.store_pattern(
-            pattern=pattern,
-            namespace="project:test",
-            importance=9
+            pattern=pattern, namespace="project:test", importance=9
         )
 
         assert integration_local_cache.stats["patterns_stored"] == 1
         stored = list(integration_local_cache.pattern_cache.values())[0]
         assert stored.pattern_type == "semantic"
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_store_pattern_with_mnemosyne(self, mock_run, integration_with_mnemosyne):
         """Test storing pattern with mnemosyne CLI."""
         mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
 
         pattern = SyntacticPattern(
-            pattern_type="function",
-            template="def foo(): ...",
-            frequency=1,
-            examples=[],
-            context={}
+            pattern_type="function", template="def foo(): ...", frequency=1, examples=[], context={}
         )
 
         integration_with_mnemosyne.store_pattern(
-            pattern=pattern,
-            namespace="project:test",
-            importance=5
+            pattern=pattern, namespace="project:test", importance=5
         )
 
         assert mock_run.called
@@ -148,23 +130,17 @@ class TestMnemosyneIntegration:
         assert "mnemosyne" in call_args
         assert "remember" in call_args
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_store_pattern_mnemosyne_fallback(self, mock_run, integration_with_mnemosyne):
         """Test fallback to local cache when mnemosyne fails."""
         mock_run.side_effect = subprocess.TimeoutExpired("mnemosyne", 1)
 
         pattern = SyntacticPattern(
-            pattern_type="function",
-            template="def foo(): ...",
-            frequency=1,
-            examples=[],
-            context={}
+            pattern_type="function", template="def foo(): ...", frequency=1, examples=[], context={}
         )
 
         integration_with_mnemosyne.store_pattern(
-            pattern=pattern,
-            namespace="project:test",
-            importance=5
+            pattern=pattern, namespace="project:test", importance=5
         )
 
         # Should fallback to local cache
@@ -182,21 +158,16 @@ class TestMnemosyneIntegration:
 
         for i, pattern in enumerate(patterns):
             integration_local_cache.store_pattern(
-                pattern=pattern,
-                namespace="project:test",
-                importance=5 + i
+                pattern=pattern, namespace="project:test", importance=5 + i
             )
 
         # Recall with context
         context = GenerationContext(
-            language="python",
-            task_description="add function implementation"
+            language="python", task_description="add function implementation"
         )
 
         recalled = integration_local_cache.recall_patterns(
-            context=context,
-            namespace="project:test",
-            limit=10
+            context=context, namespace="project:test", limit=10
         )
 
         assert len(recalled) > 0
@@ -208,35 +179,24 @@ class TestMnemosyneIntegration:
         # Store pattern matching language
         pattern1 = SyntacticPattern("function", "def python_func(): ...", 1, [], {})
         integration_local_cache.store_pattern(
-            pattern=pattern1,
-            namespace="project:test",
-            importance=5,
-            tags=["python"]
+            pattern=pattern1, namespace="project:test", importance=5, tags=["python"]
         )
 
         # Store pattern not matching
         pattern2 = TypePattern("int", [], 1, [])
         integration_local_cache.store_pattern(
-            pattern=pattern2,
-            namespace="project:test",
-            importance=5
+            pattern=pattern2, namespace="project:test", importance=5
         )
 
-        context = GenerationContext(
-            language="python",
-            task_description="function implementation"
-        )
+        context = GenerationContext(language="python", task_description="function implementation")
 
-        recalled = integration_local_cache.recall_patterns(
-            context=context,
-            limit=10
-        )
+        recalled = integration_local_cache.recall_patterns(context=context, limit=10)
 
         # Python function pattern should score higher
         assert len(recalled) >= 1
         assert recalled[0].score > 0
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_recall_patterns_with_mnemosyne(self, mock_run, integration_with_mnemosyne):
         """Test recalling patterns from mnemosyne."""
         # Mock mnemosyne response
@@ -248,23 +208,14 @@ class TestMnemosyneIntegration:
                 "importance": 7,
                 "tags": ["function"],
                 "timestamp": 1234567890,
-                "relevance": 0.8
+                "relevance": 0.8,
             }
         ]
-        mock_run.return_value = MagicMock(
-            returncode=0,
-            stdout=json.dumps(mock_memories)
-        )
+        mock_run.return_value = MagicMock(returncode=0, stdout=json.dumps(mock_memories))
 
-        context = GenerationContext(
-            language="python",
-            task_description="function"
-        )
+        context = GenerationContext(language="python", task_description="function")
 
-        recalled = integration_with_mnemosyne.recall_patterns(
-            context=context,
-            limit=10
-        )
+        recalled = integration_with_mnemosyne.recall_patterns(context=context, limit=10)
 
         assert len(recalled) == 1
         assert recalled[0].pattern.pattern_type == "syntactic"
@@ -275,28 +226,19 @@ class TestMnemosyneIntegration:
         # Store patterns in different namespaces
         pattern1 = SyntacticPattern("function", "def foo(): ...", 1, [], {})
         integration_local_cache.store_pattern(
-            pattern=pattern1,
-            namespace="project:app1",
-            importance=5
+            pattern=pattern1, namespace="project:app1", importance=5
         )
 
         pattern2 = SyntacticPattern("function", "def bar(): ...", 1, [], {})
         integration_local_cache.store_pattern(
-            pattern=pattern2,
-            namespace="project:app2",
-            importance=5
+            pattern=pattern2, namespace="project:app2", importance=5
         )
 
-        context = GenerationContext(
-            language="python",
-            task_description="function"
-        )
+        context = GenerationContext(language="python", task_description="function")
 
         # Recall only from app1
         recalled = integration_local_cache.recall_patterns(
-            context=context,
-            namespace="project:app1",
-            limit=10
+            context=context, namespace="project:app1", limit=10
         )
 
         assert all(p.pattern.namespace == "project:app1" for p in recalled)
@@ -305,9 +247,7 @@ class TestMnemosyneIntegration:
         """Test updating pattern score on success."""
         pattern = SyntacticPattern("function", "def foo(): ...", 1, [], {})
         integration_local_cache.store_pattern(
-            pattern=pattern,
-            namespace="project:test",
-            importance=5
+            pattern=pattern, namespace="project:test", importance=5
         )
 
         pattern_id = list(integration_local_cache.pattern_cache.keys())[0]
@@ -324,9 +264,7 @@ class TestMnemosyneIntegration:
         """Test updating pattern score on failure."""
         pattern = SyntacticPattern("function", "def foo(): ...", 1, [], {})
         integration_local_cache.store_pattern(
-            pattern=pattern,
-            namespace="project:test",
-            importance=5
+            pattern=pattern, namespace="project:test", importance=5
         )
 
         pattern_id = list(integration_local_cache.pattern_cache.keys())[0]
@@ -343,9 +281,7 @@ class TestMnemosyneIntegration:
         """Test importance adjustment based on success rate."""
         pattern = SyntacticPattern("function", "def foo(): ...", 1, [], {})
         integration_local_cache.store_pattern(
-            pattern=pattern,
-            namespace="project:test",
-            importance=5
+            pattern=pattern, namespace="project:test", importance=5
         )
 
         pattern_id = list(integration_local_cache.pattern_cache.keys())[0]
@@ -363,9 +299,7 @@ class TestMnemosyneIntegration:
         # Store some patterns
         pattern = SyntacticPattern("function", "def foo(): ...", 1, [], {})
         integration_local_cache.store_pattern(
-            pattern=pattern,
-            namespace="project:test",
-            importance=5
+            pattern=pattern, namespace="project:test", importance=5
         )
 
         stats = integration_local_cache.evolve_memories()
@@ -378,9 +312,7 @@ class TestMnemosyneIntegration:
         """Test pattern archival based on low success rate."""
         pattern = SyntacticPattern("function", "def foo(): ...", 1, [], {})
         integration_local_cache.store_pattern(
-            pattern=pattern,
-            namespace="project:test",
-            importance=5
+            pattern=pattern, namespace="project:test", importance=5
         )
 
         pattern_id = list(integration_local_cache.pattern_cache.keys())[0]
@@ -388,6 +320,7 @@ class TestMnemosyneIntegration:
 
         # Set old timestamp and low success rate
         import time
+
         stored.timestamp = time.time() - (31 * 86400)  # 31 days ago
         stored.recall_count = 10
         stored.success_count = 1  # 10% success rate
@@ -397,7 +330,7 @@ class TestMnemosyneIntegration:
         # Pattern should be archived
         assert pattern_id not in integration_local_cache.pattern_cache
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_evolve_memories_with_mnemosyne(self, mock_run, integration_with_mnemosyne):
         """Test memory evolution with mnemosyne."""
         mock_run.return_value = MagicMock(returncode=0, stdout="")
@@ -409,14 +342,8 @@ class TestMnemosyneIntegration:
 
     def test_orchestrate_learning_disabled(self, integration_local_cache):
         """Test orchestration when disabled."""
-        context = GenerationContext(
-            language="python",
-            task_description="test"
-        )
-        task = LearningTask(
-            task_type="pattern_discovery",
-            context=context
-        )
+        context = GenerationContext(language="python", task_description="test")
+        task = LearningTask(task_type="pattern_discovery", context=context)
 
         result = integration_local_cache.orchestrate_learning(task)
 
@@ -427,20 +354,13 @@ class TestMnemosyneIntegration:
 
     def test_orchestrate_learning_enabled(self, local_cache_path):
         """Test orchestration when enabled."""
-        with patch.object(MnemosyneIntegration, '_ensure_mnemosyne_available', return_value=False):
+        with patch.object(MnemosyneIntegration, "_ensure_mnemosyne_available", return_value=False):
             integration = MnemosyneIntegration(
-                enable_orchestration=True,
-                local_cache_path=local_cache_path
+                enable_orchestration=True, local_cache_path=local_cache_path
             )
 
-        context = GenerationContext(
-            language="python",
-            task_description="test"
-        )
-        task = LearningTask(
-            task_type="pattern_discovery",
-            context=context
-        )
+        context = GenerationContext(language="python", task_description="test")
+        task = LearningTask(task_type="pattern_discovery", context=context)
 
         result = integration.orchestrate_learning(task)
 
@@ -451,9 +371,7 @@ class TestMnemosyneIntegration:
         """Test statistics retrieval."""
         pattern = SyntacticPattern("function", "def foo(): ...", 1, [], {})
         integration_local_cache.store_pattern(
-            pattern=pattern,
-            namespace="project:test",
-            importance=5
+            pattern=pattern, namespace="project:test", importance=5
         )
 
         stats = integration_local_cache.get_stats()
@@ -466,9 +384,7 @@ class TestMnemosyneIntegration:
         """Test pattern persistence to disk."""
         pattern = SyntacticPattern("function", "def foo(): ...", 1, [], {})
         integration_local_cache.store_pattern(
-            pattern=pattern,
-            namespace="project:test",
-            importance=5
+            pattern=pattern, namespace="project:test", importance=5
         )
 
         # Verify file written
@@ -476,10 +392,9 @@ class TestMnemosyneIntegration:
         assert local_cache_path.stat().st_size > 0
 
         # Create new integration and verify pattern loaded
-        with patch.object(MnemosyneIntegration, '_ensure_mnemosyne_available', return_value=False):
+        with patch.object(MnemosyneIntegration, "_ensure_mnemosyne_available", return_value=False):
             new_integration = MnemosyneIntegration(
-                enable_orchestration=False,
-                local_cache_path=local_cache_path
+                enable_orchestration=False, local_cache_path=local_cache_path
             )
 
         assert len(new_integration.pattern_cache) == 1
@@ -487,13 +402,12 @@ class TestMnemosyneIntegration:
     def test_performance_store_pattern(self, integration_local_cache):
         """Test store_pattern performance (<50ms)."""
         import time
+
         pattern = SyntacticPattern("function", "def foo(): ...", 1, [], {})
 
         start = time.time()
         integration_local_cache.store_pattern(
-            pattern=pattern,
-            namespace="project:test",
-            importance=5
+            pattern=pattern, namespace="project:test", importance=5
         )
         elapsed_ms = (time.time() - start) * 1000
 
@@ -505,17 +419,12 @@ class TestMnemosyneIntegration:
 
         # Store some patterns
         for i in range(10):
-            pattern = SyntacticPattern(f"function", f"def func{i}(): ...", 1, [], {})
+            pattern = SyntacticPattern("function", f"def func{i}(): ...", 1, [], {})
             integration_local_cache.store_pattern(
-                pattern=pattern,
-                namespace="project:test",
-                importance=5
+                pattern=pattern, namespace="project:test", importance=5
             )
 
-        context = GenerationContext(
-            language="python",
-            task_description="function"
-        )
+        context = GenerationContext(language="python", task_description="function")
 
         start = time.time()
         integration_local_cache.recall_patterns(context=context, limit=10)
@@ -526,11 +435,10 @@ class TestMnemosyneIntegration:
     def test_performance_update_pattern_score(self, integration_local_cache):
         """Test update_pattern_score performance (<20ms)."""
         import time
+
         pattern = SyntacticPattern("function", "def foo(): ...", 1, [], {})
         integration_local_cache.store_pattern(
-            pattern=pattern,
-            namespace="project:test",
-            importance=5
+            pattern=pattern, namespace="project:test", importance=5
         )
 
         pattern_id = list(integration_local_cache.pattern_cache.keys())[0]
@@ -546,10 +454,9 @@ class TestMnemosyneIntegration:
         cache_path = tmp_path / "corrupted.jsonl"
         cache_path.write_text("invalid json\n{not json either\n")
 
-        with patch.object(MnemosyneIntegration, '_ensure_mnemosyne_available', return_value=False):
+        with patch.object(MnemosyneIntegration, "_ensure_mnemosyne_available", return_value=False):
             integration = MnemosyneIntegration(
-                enable_orchestration=False,
-                local_cache_path=cache_path
+                enable_orchestration=False, local_cache_path=cache_path
             )
 
         # Should start with empty cache
@@ -561,17 +468,13 @@ class TestMnemosyneIntegration:
         pattern2 = SyntacticPattern("function", "def foo(): ...", 1, [], {})
 
         integration_local_cache.store_pattern(
-            pattern=pattern1,
-            namespace="project:test",
-            importance=5
+            pattern=pattern1, namespace="project:test", importance=5
         )
 
         id1 = list(integration_local_cache.pattern_cache.keys())[0]
 
         integration_local_cache.store_pattern(
-            pattern=pattern2,
-            namespace="project:test",
-            importance=5
+            pattern=pattern2, namespace="project:test", importance=5
         )
 
         # Same pattern should generate same ID
@@ -583,20 +486,12 @@ class TestMnemosyneIntegration:
         for i in range(20):
             pattern = SyntacticPattern("function", f"def func{i}(): ...", 1, [], {})
             integration_local_cache.store_pattern(
-                pattern=pattern,
-                namespace="project:test",
-                importance=5
+                pattern=pattern, namespace="project:test", importance=5
             )
 
-        context = GenerationContext(
-            language="python",
-            task_description="function"
-        )
+        context = GenerationContext(language="python", task_description="function")
 
-        recalled = integration_local_cache.recall_patterns(
-            context=context,
-            limit=5
-        )
+        recalled = integration_local_cache.recall_patterns(context=context, limit=5)
 
         assert len(recalled) <= 5
 
@@ -605,10 +500,7 @@ class TestMnemosyneIntegration:
         # Pattern with high importance and success rate
         pattern = SyntacticPattern("function", "def python_func(): ...", 1, [], {})
         integration_local_cache.store_pattern(
-            pattern=pattern,
-            namespace="project:test",
-            importance=9,
-            tags=["python"]
+            pattern=pattern, namespace="project:test", importance=9, tags=["python"]
         )
 
         pattern_id = list(integration_local_cache.pattern_cache.keys())[0]
@@ -619,8 +511,7 @@ class TestMnemosyneIntegration:
             integration_local_cache.update_pattern_score(pattern_id, success=True)
 
         context = GenerationContext(
-            language="python",
-            task_description="python function implementation"
+            language="python", task_description="python function implementation"
         )
 
         recalled = integration_local_cache.recall_patterns(context=context, limit=10)

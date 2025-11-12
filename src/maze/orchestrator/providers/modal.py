@@ -4,7 +4,7 @@ Connects to Modal-deployed vLLM + llguidance inference server.
 
 Configuration:
     export MODAL_ENDPOINT_URL=https://<user>--maze-inference-fastapi-app.modal.run
-    
+
     maze config set generation.provider modal
     maze config set generation.model qwen2.5-coder-32b
 """
@@ -12,7 +12,6 @@ Configuration:
 from __future__ import annotations
 
 import os
-from typing import Optional
 
 from maze.orchestrator.providers import (
     GenerationRequest,
@@ -23,15 +22,15 @@ from maze.orchestrator.providers import (
 
 class ModalProviderAdapter(ProviderAdapter):
     """Adapter for Modal-deployed Maze inference server.
-    
+
     Connects to vLLM + llguidance running on Modal.com.
     """
 
     def __init__(
         self,
         model: str = "qwen2.5-coder-32b",
-        api_key: Optional[str] = None,
-        api_base: Optional[str] = None,
+        api_key: str | None = None,
+        api_base: str | None = None,
     ):
         """Initialize Modal provider adapter.
 
@@ -41,7 +40,7 @@ class ModalProviderAdapter(ProviderAdapter):
             api_base: Modal endpoint URL (or set MODAL_ENDPOINT_URL env var)
         """
         super().__init__(model, api_key)
-        
+
         # Try to get endpoint from multiple sources
         self.api_base = (
             api_base
@@ -49,7 +48,7 @@ class ModalProviderAdapter(ProviderAdapter):
             # Default to deployed endpoint (FastAPI app with /generate route)
             or "https://rand--maze-inference-mazeinferenceserver-fastapi-app.modal.run"
         )
-        
+
         if "not-configured" in self.api_base:
             raise ValueError(
                 "Modal endpoint not configured. Set MODAL_ENDPOINT_URL environment variable."
@@ -87,11 +86,11 @@ class ModalProviderAdapter(ProviderAdapter):
             "max_tokens": request.max_tokens,
             "temperature": request.temperature,
         }
-        
+
         # Add grammar if provided
         if request.grammar:
             payload["grammar"] = request.grammar
-        
+
         # Add language hint if available
         if "language" in request.metadata:
             payload["language"] = request.metadata["language"]
@@ -110,9 +109,9 @@ class ModalProviderAdapter(ProviderAdapter):
                 timeout=120,  # 2 minutes max
             )
             response.raise_for_status()
-            
+
             data = response.json()
-            
+
             # Parse response
             return GenerationResponse(
                 text=data["code"],
@@ -120,7 +119,7 @@ class ModalProviderAdapter(ProviderAdapter):
                 tokens_generated=data.get("metadata", {}).get("tokens_generated", 0),
                 metadata=data.get("metadata", {}),
             )
-            
+
         except requests.exceptions.Timeout:
             raise ValueError("Modal endpoint timeout (>120s)")
         except requests.exceptions.RequestException as e:

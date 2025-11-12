@@ -5,40 +5,39 @@ Provides pattern mining, constraint learning, and project adaptation.
 """
 
 # Core pattern mining (no circular dependencies)
-from maze.learning.pattern_mining import (
-    PatternMiningEngine,
-    SyntacticPattern,
-    TypePattern,
-    SemanticPattern,
-    PatternSet
-)
-
 # Constraint learning (no circular dependencies)
 from maze.learning.constraint_learning import (
     ConstraintLearningSystem,
     ConstraintRefinement,
     Feedback,
     GenerationResult,
-    ValidationResult,
-    RepairResult,
     LearningEvent,
-)
-
-# Project adaptation (no circular dependencies)
-from maze.learning.project_adaptation import (
-    ProjectAdaptationManager,
-    ProjectProfile,
-    ConventionSet,
-    AdaptationStats,
+    RepairResult,
+    ValidationResult,
 )
 
 # Hybrid weighting (no circular dependencies)
 from maze.learning.hybrid_weighting import (
-    HybridConstraintWeighter,
-    WeightedConstraintSet,
-    TokenWeights,
     ConstraintSet,
     GenerationState,
+    HybridConstraintWeighter,
+    TokenWeights,
+    WeightedConstraintSet,
+)
+from maze.learning.pattern_mining import (
+    PatternMiningEngine,
+    PatternSet,
+    SemanticPattern,
+    SyntacticPattern,
+    TypePattern,
+)
+
+# Project adaptation (no circular dependencies)
+from maze.learning.project_adaptation import (
+    AdaptationStats,
+    ConventionSet,
+    ProjectAdaptationManager,
+    ProjectProfile,
 )
 
 # Feedback orchestrator uses lazy import to avoid circular dependency

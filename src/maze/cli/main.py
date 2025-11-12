@@ -2,7 +2,6 @@
 
 import argparse
 import sys
-from typing import List, Optional
 
 from maze.cli.commands import (
     ConfigCommand,
@@ -19,7 +18,7 @@ from maze.config import Config
 class CLI:
     """Maze command-line interface."""
 
-    def __init__(self, config: Optional[Config] = None):
+    def __init__(self, config: Config | None = None):
         """Initialize CLI.
 
         Args:
@@ -48,9 +47,7 @@ class CLI:
             formatter_class=argparse.RawDescriptionHelpFormatter,
         )
 
-        parser.add_argument(
-            "--version", action="version", version="%(prog)s 0.1.0"
-        )
+        parser.add_argument("--version", action="version", version="%(prog)s 0.1.0")
 
         # Create subparsers for commands
         subparsers = parser.add_subparsers(
@@ -61,50 +58,36 @@ class CLI:
         )
 
         # Add init command
-        init_parser = subparsers.add_parser(
-            "init", help="Initialize a new Maze project"
-        )
+        init_parser = subparsers.add_parser("init", help="Initialize a new Maze project")
         InitCommand().setup_parser(init_parser)
 
         # Add config command
-        config_parser = subparsers.add_parser(
-            "config", help="Manage configuration"
-        )
+        config_parser = subparsers.add_parser("config", help="Manage configuration")
         ConfigCommand().setup_parser(config_parser)
 
         # Add index command
-        index_parser = subparsers.add_parser(
-            "index", help="Index project for code context"
-        )
+        index_parser = subparsers.add_parser("index", help="Index project for code context")
         IndexCommand().setup_parser(index_parser)
 
         # Add generate command
-        generate_parser = subparsers.add_parser(
-            "generate", help="Generate code from prompt"
-        )
+        generate_parser = subparsers.add_parser("generate", help="Generate code from prompt")
         GenerateCommand().setup_parser(generate_parser)
 
         # Add validate command
-        validate_parser = subparsers.add_parser(
-            "validate", help="Validate code file"
-        )
+        validate_parser = subparsers.add_parser("validate", help="Validate code file")
         ValidateCommand().setup_parser(validate_parser)
 
         # Add stats command
-        stats_parser = subparsers.add_parser(
-            "stats", help="Show project statistics"
-        )
+        stats_parser = subparsers.add_parser("stats", help="Show project statistics")
         StatsCommand().setup_parser(stats_parser)
 
         # Add debug command
-        debug_parser = subparsers.add_parser(
-            "debug", help="Debug tools and diagnostics"
-        )
+        debug_parser = subparsers.add_parser("debug", help="Debug tools and diagnostics")
         DebugCommand().setup_parser(debug_parser)
 
         return parser
 
-    def run(self, args: Optional[List[str]] = None) -> int:
+    def run(self, args: list[str] | None = None) -> int:
         """Run CLI with given arguments.
 
         Args:

@@ -5,8 +5,7 @@ Tests style and quality validation across Python, TypeScript, Rust, Go, and Zig
 with linter integration, output parsing, and auto-fix support.
 """
 
-import pytest
-from maze.validation.lint import LintValidator, LintRules
+from maze.validation.lint import LintRules, LintValidator
 
 
 class TestPythonLinting:
@@ -22,9 +21,7 @@ class TestPythonLinting:
         )
 
         # May succeed or warn about ruff not found
-        assert result.success or any(
-            "not found" in d.message for d in result.diagnostics
-        )
+        assert result.success or any("not found" in d.message for d in result.diagnostics)
 
     def test_python_style_violations(self):
         """Test detection of Python style violations."""
@@ -65,9 +62,7 @@ class TestTypeScriptLinting:
         )
 
         # May succeed or warn about eslint not found
-        assert result.success or any(
-            "not found" in d.message for d in result.diagnostics
-        )
+        assert result.success or any("not found" in d.message for d in result.diagnostics)
 
     def test_typescript_style_violations(self):
         """Test detection of TypeScript style violations."""
@@ -95,9 +90,7 @@ class TestRustLinting:
         )
 
         # May succeed or warn about clippy not found
-        assert result.success or any(
-            "not found" in d.message for d in result.diagnostics
-        )
+        assert result.success or any("not found" in d.message for d in result.diagnostics)
 
 
 class TestGoLinting:
@@ -113,9 +106,7 @@ class TestGoLinting:
         )
 
         # May succeed or warn about golangci-lint not found
-        assert result.success or any(
-            "not found" in d.message for d in result.diagnostics
-        )
+        assert result.success or any("not found" in d.message for d in result.diagnostics)
 
 
 class TestZigLinting:
@@ -126,14 +117,12 @@ class TestZigLinting:
         validator = LintValidator()
 
         result = validator.validate(
-            code='pub fn main() void {\n    const x: i32 = 42;\n    _ = x;\n}\n',
+            code="pub fn main() void {\n    const x: i32 = 42;\n    _ = x;\n}\n",
             language="zig",
         )
 
         # May succeed or warn about zig not found
-        assert result.success or any(
-            "not found" in d.message for d in result.diagnostics
-        )
+        assert result.success or any("not found" in d.message for d in result.diagnostics)
 
     def test_zig_formatting_needed(self):
         """Test detection of formatting issues."""
@@ -155,7 +144,9 @@ class TestOutputParsing:
         """Test parsing ruff JSON output."""
         validator = LintValidator()
 
-        json_output = '[{"code": "E501", "message": "Line too long", "location": {"row": 1, "column": 100}}]'
+        json_output = (
+            '[{"code": "E501", "message": "Line too long", "location": {"row": 1, "column": 100}}]'
+        )
 
         diagnostics = validator.parse_lint_output(json_output, "python")
 

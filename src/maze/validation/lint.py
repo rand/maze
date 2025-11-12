@@ -5,12 +5,12 @@ Provides style and quality checking across multiple languages with
 auto-fix support and configurable rules.
 """
 
+import json
+import os
 import subprocess
 import tempfile
-import os
-import json
 from dataclasses import dataclass, field
-from typing import Optional, Literal, Any
+from typing import Any
 
 from maze.validation.syntax import Diagnostic
 
@@ -73,7 +73,7 @@ class LintValidator:
         >>> assert len(result.diagnostics) > 0  # Missing spaces
     """
 
-    def __init__(self, rules: Optional[LintRules] = None, cache_size: int = 500):
+    def __init__(self, rules: LintRules | None = None, cache_size: int = 500):
         """
         Initialize lint validator.
 
@@ -93,7 +93,7 @@ class LintValidator:
         self.cache_size = cache_size
 
     def validate(
-        self, code: str, language: str, rules: Optional[LintRules] = None
+        self, code: str, language: str, rules: LintRules | None = None
     ) -> LintValidationResult:
         """
         Lint code for style and quality issues.
@@ -174,9 +174,7 @@ class LintValidator:
                 validation_time_ms=validation_time_ms,
             )
 
-    def run_linter(
-        self, code: str, language: str, rules: LintRules
-    ) -> str:
+    def run_linter(self, code: str, language: str, rules: LintRules) -> str:
         """
         Run linter and return output.
 
@@ -255,9 +253,7 @@ class LintValidator:
 
     def _run_ruff(self, code: str, rules: LintRules) -> str:
         """Run ruff linter on Python code."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".py", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
             temp_file = f.name
 
@@ -288,9 +284,7 @@ class LintValidator:
 
     def _run_eslint(self, code: str, rules: LintRules) -> str:
         """Run eslint on TypeScript code."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".ts", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".ts", delete=False) as f:
             f.write(code)
             temp_file = f.name
 
@@ -319,9 +313,7 @@ class LintValidator:
             # Create minimal Cargo project
             cargo_toml = os.path.join(temp_dir, "Cargo.toml")
             with open(cargo_toml, "w") as f:
-                f.write(
-                    '[package]\nname = "temp"\nversion = "0.1.0"\nedition = "2021"\n'
-                )
+                f.write('[package]\nname = "temp"\nversion = "0.1.0"\nedition = "2021"\n')
 
             src_dir = os.path.join(temp_dir, "src")
             os.makedirs(src_dir)
@@ -377,9 +369,7 @@ class LintValidator:
 
     def _run_zig_fmt(self, code: str, rules: LintRules) -> str:
         """Run zig fmt check on Zig code."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".zig", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".zig", delete=False) as f:
             f.write(code)
             temp_file = f.name
 
@@ -575,9 +565,7 @@ class LintValidator:
 
     def _auto_fix_ruff(self, code: str) -> str:
         """Auto-fix Python code with ruff."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".py", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
             temp_file = f.name
 
@@ -588,7 +576,7 @@ class LintValidator:
                 timeout=5,
             )
 
-            with open(temp_file, "r") as f:
+            with open(temp_file) as f:
                 return f.read()
 
         except (FileNotFoundError, subprocess.TimeoutExpired):
@@ -599,9 +587,7 @@ class LintValidator:
 
     def _auto_fix_eslint(self, code: str) -> str:
         """Auto-fix TypeScript code with eslint."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".ts", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".ts", delete=False) as f:
             f.write(code)
             temp_file = f.name
 
@@ -612,7 +598,7 @@ class LintValidator:
                 timeout=5,
             )
 
-            with open(temp_file, "r") as f:
+            with open(temp_file) as f:
                 return f.read()
 
         except (FileNotFoundError, subprocess.TimeoutExpired):
@@ -623,9 +609,7 @@ class LintValidator:
 
     def _auto_fix_zig_fmt(self, code: str) -> str:
         """Auto-format Zig code."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".zig", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".zig", delete=False) as f:
             f.write(code)
             temp_file = f.name
 
@@ -636,7 +620,7 @@ class LintValidator:
                 timeout=5,
             )
 
-            with open(temp_file, "r") as f:
+            with open(temp_file) as f:
                 return f.read()
 
         except (FileNotFoundError, subprocess.TimeoutExpired):
@@ -645,9 +629,7 @@ class LintValidator:
             if os.path.exists(temp_file):
                 os.unlink(temp_file)
 
-    def _cache_key(
-        self, code: str, language: str, rules: LintRules
-    ) -> str:
+    def _cache_key(self, code: str, language: str, rules: LintRules) -> str:
         """Generate cache key."""
         import hashlib
 

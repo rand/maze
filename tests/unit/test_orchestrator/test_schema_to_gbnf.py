@@ -3,7 +3,6 @@
 Test coverage target: 85%
 """
 
-import pytest
 
 from maze.orchestrator.providers import LlamaCppProviderAdapter
 
@@ -14,13 +13,13 @@ class TestSchemaToGBNF:
     def test_object_schema_to_gbnf(self):
         """Test converting object schema to GBNF."""
         adapter = LlamaCppProviderAdapter(model="test")
-        
+
         schema = {
             "type": "object",
             "properties": {
                 "name": {"type": "string"},
                 "age": {"type": "number"},
-            }
+            },
         }
 
         gbnf = adapter._schema_to_gbnf(schema)
@@ -32,11 +31,8 @@ class TestSchemaToGBNF:
     def test_array_schema_to_gbnf(self):
         """Test converting array schema to GBNF."""
         adapter = LlamaCppProviderAdapter(model="test")
-        
-        schema = {
-            "type": "array",
-            "items": {"type": "string"}
-        }
+
+        schema = {"type": "array", "items": {"type": "string"}}
 
         gbnf = adapter._schema_to_gbnf(schema)
 
@@ -46,13 +42,8 @@ class TestSchemaToGBNF:
     def test_string_property_gbnf(self):
         """Test string property in GBNF."""
         adapter = LlamaCppProviderAdapter(model="test")
-        
-        schema = {
-            "type": "object",
-            "properties": {
-                "text": {"type": "string"}
-            }
-        }
+
+        schema = {"type": "object", "properties": {"text": {"type": "string"}}}
 
         gbnf = adapter._schema_to_gbnf(schema)
 
@@ -62,13 +53,8 @@ class TestSchemaToGBNF:
     def test_number_property_gbnf(self):
         """Test number property in GBNF."""
         adapter = LlamaCppProviderAdapter(model="test")
-        
-        schema = {
-            "type": "object",
-            "properties": {
-                "count": {"type": "number"}
-            }
-        }
+
+        schema = {"type": "object", "properties": {"count": {"type": "number"}}}
 
         gbnf = adapter._schema_to_gbnf(schema)
 
@@ -78,13 +64,8 @@ class TestSchemaToGBNF:
     def test_boolean_property_gbnf(self):
         """Test boolean property in GBNF."""
         adapter = LlamaCppProviderAdapter(model="test")
-        
-        schema = {
-            "type": "object",
-            "properties": {
-                "active": {"type": "boolean"}
-            }
-        }
+
+        schema = {"type": "object", "properties": {"active": {"type": "boolean"}}}
 
         gbnf = adapter._schema_to_gbnf(schema)
 
@@ -94,7 +75,7 @@ class TestSchemaToGBNF:
     def test_fallback_to_generic_json(self):
         """Test fallback for unsupported schemas."""
         adapter = LlamaCppProviderAdapter(model="test")
-        
+
         schema = {"type": "unknown"}
 
         gbnf = adapter._schema_to_gbnf(schema)

@@ -5,8 +5,7 @@ Tests syntax validation across Python, TypeScript, Rust, Go, and Zig with
 error detection, suggested fixes, and caching.
 """
 
-import pytest
-from maze.validation.syntax import SyntaxValidator, Diagnostic
+from maze.validation.syntax import Diagnostic, SyntaxValidator
 
 
 class TestPythonSyntaxValidation:
@@ -49,8 +48,7 @@ class TestPythonSyntaxValidation:
 
         assert not result.success
         assert any(
-            ":" in d.message or "invalid syntax" in d.message.lower()
-            for d in result.diagnostics
+            ":" in d.message or "invalid syntax" in d.message.lower() for d in result.diagnostics
         )
 
     def test_indentation_error(self):
@@ -90,9 +88,7 @@ class TestTypeScriptSyntaxValidation:
         )
 
         # May succeed or warn about tsc not found
-        assert result.success or any(
-            "not found" in d.message for d in result.diagnostics
-        )
+        assert result.success or any("not found" in d.message for d in result.diagnostics)
 
     def test_detect_missing_semicolon(self):
         """Test detection of missing semicolon (if tsc available)."""
@@ -105,9 +101,7 @@ class TestTypeScriptSyntaxValidation:
         )
 
         # Should succeed (semicolons are optional in TS)
-        assert result.success or any(
-            "not found" in d.message for d in result.diagnostics
-        )
+        assert result.success or any("not found" in d.message for d in result.diagnostics)
 
     def test_detect_unmatched_braces(self):
         """Test detection of unmatched braces."""
@@ -121,9 +115,7 @@ class TestTypeScriptSyntaxValidation:
         # If tsc available, should detect error
         if result.success:
             # tsc not available
-            assert any(
-                "not found" in d.message for d in result.diagnostics
-            )
+            assert any("not found" in d.message for d in result.diagnostics)
 
 
 class TestRustSyntaxValidation:
@@ -139,9 +131,7 @@ class TestRustSyntaxValidation:
         )
 
         # May succeed or warn about cargo not found
-        assert result.success or any(
-            "not found" in d.message for d in result.diagnostics
-        )
+        assert result.success or any("not found" in d.message for d in result.diagnostics)
 
     def test_detect_rust_error(self):
         """Test detection of Rust syntax errors."""
@@ -170,9 +160,7 @@ class TestGoSyntaxValidation:
         )
 
         # May succeed or warn about go not found
-        assert result.success or any(
-            "not found" in d.message for d in result.diagnostics
-        )
+        assert result.success or any("not found" in d.message for d in result.diagnostics)
 
     def test_detect_go_error(self):
         """Test detection of Go syntax errors."""
@@ -201,9 +189,7 @@ class TestZigSyntaxValidation:
         )
 
         # May succeed or warn about zig not found
-        assert result.success or any(
-            "not found" in d.message for d in result.diagnostics
-        )
+        assert result.success or any("not found" in d.message for d in result.diagnostics)
 
     def test_detect_zig_error(self):
         """Test detection of Zig syntax errors."""
@@ -344,10 +330,7 @@ class TestPerformance:
         validator = SyntaxValidator()
 
         # Simulate a larger file (100 functions)
-        code = "\n".join([
-            f"def func_{i}():\n    return {i}"
-            for i in range(100)
-        ])
+        code = "\n".join([f"def func_{i}():\n    return {i}" for i in range(100)])
 
         result = validator.validate(code, "python")
 

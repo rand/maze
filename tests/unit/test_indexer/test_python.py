@@ -6,8 +6,6 @@ Test coverage target: 85%
 import tempfile
 from pathlib import Path
 
-import pytest
-
 from maze.indexer.languages.python import PythonIndexer
 
 
@@ -25,10 +23,12 @@ class TestPythonIndexer:
         """Test indexing simple function."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.py"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 def add(x: int, y: int) -> int:
     return x + y
-""")
+"""
+            )
 
             indexer = PythonIndexer()
             result = indexer.index_file(file_path)
@@ -43,10 +43,12 @@ def add(x: int, y: int) -> int:
         """Test indexing async function."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.py"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 async def fetch(url: str) -> dict:
     return {}
-""")
+"""
+            )
 
             indexer = PythonIndexer()
             result = indexer.index_file(file_path)
@@ -61,12 +63,14 @@ async def fetch(url: str) -> dict:
         """Test indexing class definition."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.py"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 class User:
     '''User model.'''
     def __init__(self, name: str):
         self.name = name
-""")
+"""
+            )
 
             indexer = PythonIndexer()
             result = indexer.index_file(file_path)
@@ -81,14 +85,16 @@ class User:
         """Test indexing dataclass."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.py"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 from dataclasses import dataclass
 
 @dataclass
 class Point:
     x: float
     y: float
-""")
+"""
+            )
 
             indexer = PythonIndexer()
             result = indexer.index_file(file_path)
@@ -100,10 +106,12 @@ class Point:
         """Test indexing variable with type annotation."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.py"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 x: int = 42
 users: list[str] = []
-""")
+"""
+            )
 
             indexer = PythonIndexer()
             result = indexer.index_file(file_path)
@@ -119,11 +127,13 @@ users: list[str] = []
         """Test extracting imports."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.py"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 import os
 from pathlib import Path
 from typing import Optional, List
-""")
+"""
+            )
 
             indexer = PythonIndexer()
             result = indexer.index_file(file_path)
@@ -139,13 +149,15 @@ from typing import Optional, List
         """Test detecting pytest test functions."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test_example.py"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 def test_addition():
     assert 1 + 1 == 2
 
 def test_subtraction():
     assert 2 - 1 == 1
-""")
+"""
+            )
 
             indexer = PythonIndexer()
             result = indexer.index_file(file_path)
@@ -158,13 +170,15 @@ def test_subtraction():
         """Test detecting unittest test cases."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.py"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 import unittest
 
 class TestMath(unittest.TestCase):
     def test_add(self):
         self.assertEqual(1 + 1, 2)
-""")
+"""
+            )
 
             indexer = PythonIndexer()
             result = indexer.index_file(file_path)
@@ -178,11 +192,13 @@ class TestMath(unittest.TestCase):
         """Test code style detection."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.py"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 def example():
     x = 'single quotes'
     return x
-""")
+"""
+            )
 
             indexer = PythonIndexer()
             result = indexer.index_file(file_path)
@@ -196,10 +212,12 @@ def example():
         """Test parsing union type hints."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.py"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 def func(x: int | str) -> bool:
     return True
-""")
+"""
+            )
 
             indexer = PythonIndexer()
             result = indexer.index_file(file_path)
@@ -211,10 +229,12 @@ def func(x: int | str) -> bool:
         """Test parsing generic type hints."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.py"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 def process(items: list[int]) -> dict[str, int]:
     return {}
-""")
+"""
+            )
 
             indexer = PythonIndexer()
             result = indexer.index_file(file_path)
@@ -226,7 +246,7 @@ def process(items: list[int]) -> dict[str, int]:
         """Test indexing directory of Python files."""
         with tempfile.TemporaryDirectory() as tmpdir:
             project = Path(tmpdir)
-            
+
             (project / "file1.py").write_text("def func1(): pass")
             (project / "file2.py").write_text("def func2(): pass")
             (project / "subdir").mkdir()
@@ -254,11 +274,13 @@ def process(items: list[int]) -> dict[str, int]:
         """Test extracting docstrings."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.py"
-            file_path.write_text('''
+            file_path.write_text(
+                '''
 def example():
     """This is a docstring."""
     pass
-''')
+'''
+            )
 
             indexer = PythonIndexer()
             result = indexer.index_file(file_path)
@@ -270,11 +292,13 @@ def example():
         """Test extracting decorators."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.py"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 @property
 @cache
 def expensive(): pass
-""")
+"""
+            )
 
             indexer = PythonIndexer()
             result = indexer.index_file(file_path)
@@ -287,14 +311,14 @@ def expensive(): pass
         """Test indexing performance on larger file."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "large.py"
-            
+
             # Generate file with 100 functions
             lines = []
             for i in range(100):
                 lines.append(f"def func{i}(x: int) -> int:")
                 lines.append(f"    return x + {i}")
                 lines.append("")
-            
+
             file_path.write_text("\n".join(lines))
 
             indexer = PythonIndexer()
@@ -302,7 +326,7 @@ def expensive(): pass
 
             # Should extract all 100 functions
             assert len(result.symbols) == 100
-            
+
             # Should be fast (<100ms for ~300 LOC)
             assert result.duration_ms < 100
 
@@ -310,7 +334,7 @@ def expensive(): pass
         """Test excluding __pycache__ directories."""
         with tempfile.TemporaryDirectory() as tmpdir:
             project = Path(tmpdir)
-            
+
             (project / "file.py").write_text("def func(): pass")
             (project / "__pycache__").mkdir()
             (project / "__pycache__" / "cached.py").write_text("def cached(): pass")

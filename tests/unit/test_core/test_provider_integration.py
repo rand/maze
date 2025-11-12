@@ -5,8 +5,6 @@ Test coverage target: 85%
 
 from unittest.mock import Mock, patch
 
-import pytest
-
 from maze.config import Config
 from maze.core.pipeline import Pipeline
 from maze.orchestrator.providers import GenerationRequest, GenerationResponse
@@ -53,7 +51,7 @@ class TestProviderIntegration:
 
             # First generation
             pipeline._generate_with_constraints("test1", "", None)
-            
+
             # Second generation
             pipeline._generate_with_constraints("test2", "", None)
 
@@ -88,7 +86,7 @@ class TestProviderIntegration:
         config.project.language = "typescript"
         config.generation.max_tokens = 1024
         config.generation.temperature = 0.9
-        
+
         pipeline = Pipeline(config)
 
         with patch("maze.core.pipeline.create_provider_adapter") as mock_create:
@@ -175,7 +173,7 @@ class TestProviderIntegration:
         config = Config()
         config.generation.provider = "vllm"
         config.generation.model = "llama-3"
-        
+
         pipeline = Pipeline(config)
 
         with patch("maze.core.pipeline.create_provider_adapter") as mock_create:

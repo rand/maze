@@ -2,19 +2,17 @@
 Unit tests for constraint abstractions.
 """
 
-import pytest
 from maze.core.constraints import (
-    TokenMask,
-    GenerationState,
-    Constraint,
-    SyntacticConstraint,
-    TypeConstraint,
-    SemanticConstraint,
-    ContextualConstraint,
+    ConstraintLevel,
     ConstraintSet,
-    ConstraintLevel
+    ContextualConstraint,
+    GenerationState,
+    SemanticConstraint,
+    SyntacticConstraint,
+    TokenMask,
+    TypeConstraint,
 )
-from maze.core.types import Type, TypeContext, FunctionSignature, TypeParameter
+from maze.core.types import Type, TypeContext
 
 
 class TestTokenMask:
@@ -80,7 +78,7 @@ class TestGenerationState:
             context=type_context,
             current_position=14,
             tokens_generated=3,
-            language="typescript"
+            language="typescript",
         )
 
         assert state.generated_text == "function hello"
@@ -95,7 +93,7 @@ class TestGenerationState:
             context=type_context,
             current_position=4,
             tokens_generated=1,
-            language="typescript"
+            language="typescript",
         )
 
         copy = original.copy()
@@ -138,11 +136,7 @@ class TestTypeConstraint:
 
     def test_type_constraint_creation(self, type_context):
         """Test creating type constraint."""
-        constraint = TypeConstraint(
-            expected_type=Type("string"),
-            context=type_context,
-            strict=True
-        )
+        constraint = TypeConstraint(expected_type=Type("string"), context=type_context, strict=True)
 
         assert constraint.level == ConstraintLevel.TYPE
         assert constraint.expected_type == Type("string")
@@ -152,9 +146,7 @@ class TestTypeConstraint:
         """Test type constraint with generic type."""
         array_of_numbers = Type("Array", (Type("number"),))
         constraint = TypeConstraint(
-            expected_type=array_of_numbers,
-            context=type_context,
-            strict=False
+            expected_type=array_of_numbers, context=type_context, strict=False
         )
 
         assert constraint.expected_type.name == "Array"
@@ -177,7 +169,9 @@ class TestSemanticConstraint:
         constraint.add_test_case("invalid", False)
 
         assert constraint.level == ConstraintLevel.SEMANTIC
-        assert constraint.specification == "validates_email: must validate email addresses correctly"
+        assert (
+            constraint.specification == "validates_email: must validate email addresses correctly"
+        )
         assert len(constraint.test_cases) == 2
 
 
@@ -260,7 +254,7 @@ class TestConstraintSet:
         """Test creating constraint set from list."""
         constraint_list = [
             SyntacticConstraint(grammar="?start: e", language="python"),
-            TypeConstraint(expected_type=Type("int"), context=TypeContext("python"))
+            TypeConstraint(expected_type=Type("int"), context=TypeContext("python")),
         ]
 
         constraints = ConstraintSet.from_list(constraint_list)

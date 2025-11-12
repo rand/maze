@@ -5,10 +5,9 @@ Tests end-to-end validation workflows across all validators,
 languages, and integration points.
 """
 
-import pytest
-from maze.validation.pipeline import ValidationPipeline, ValidationContext, TypeContext
-from maze.validation.lint import LintRules
 from maze.integrations.pedantic_raven import PedanticRavenIntegration, ReviewRules
+from maze.validation.lint import LintRules
+from maze.validation.pipeline import TypeContext, ValidationContext, ValidationPipeline
 
 
 class TestEndToEndValidation:
@@ -36,7 +35,7 @@ def multiply(a: int, b: int) -> int:
     return a * b
 '''
 
-        tests = '''
+        tests = """
 def test_add():
     assert add(2, 3) == 5
     assert add(-1, 1) == 0
@@ -44,7 +43,7 @@ def test_add():
 def test_multiply():
     assert multiply(2, 3) == 6
     assert multiply(0, 5) == 0
-'''
+"""
 
         context = ValidationContext(
             type_context=TypeContext(),
@@ -63,10 +62,10 @@ def test_multiply():
         """Test end-to-end validation of invalid Python code."""
         pipeline = ValidationPipeline()
 
-        code = '''
+        code = """
 def broken(
     # Missing closing parenthesis and body
-'''
+"""
 
         result = pipeline.validate(code, "python")
 
@@ -78,13 +77,13 @@ def broken(
         """Test end-to-end validation of valid TypeScript code."""
         pipeline = ValidationPipeline()
 
-        code = '''
+        code = """
 function add(a: number, b: number): number {
     return a + b;
 }
 
 const multiply = (a: number, b: number): number => a * b;
-'''
+"""
 
         context = ValidationContext(
             type_context=TypeContext(),
@@ -100,12 +99,12 @@ const multiply = (a: number, b: number): number => a * b;
         """Test end-to-end validation of invalid Rust code."""
         pipeline = ValidationPipeline()
 
-        code = '''
+        code = """
 fn broken() {
     let x = 5
     // Missing semicolon
 }
-'''
+"""
 
         result = pipeline.validate(code, "rust", stages=["syntax"])
 
@@ -139,15 +138,15 @@ def process(data):
         """Test validation running all stages."""
         pipeline = ValidationPipeline()
 
-        code = '''
+        code = """
 def calculate(x: int, y: int) -> int:
     return x + y
-'''
+"""
 
-        tests = '''
+        tests = """
 def test_calculate():
     assert calculate(1, 2) == 3
-'''
+"""
 
         context = ValidationContext(
             type_context=TypeContext(),
@@ -165,12 +164,13 @@ def test_calculate():
         """Test that validation meets performance targets."""
         pipeline = ValidationPipeline()
 
-        code = '''
+        code = """
 def simple():
     return 42
-'''
+"""
 
         import time
+
         start = time.perf_counter()
 
         result = pipeline.validate(code, "python", stages=["syntax", "lint"])
@@ -203,11 +203,7 @@ def simple():
         # Generate larger code sample
         functions = []
         for i in range(50):
-            functions.extend([
-                f"def function_{i}(x):",
-                f"    return x * {i}",
-                ""
-            ])
+            functions.extend([f"def function_{i}(x):", f"    return x * {i}", ""])
         code = "\n".join(functions)
 
         result = pipeline.validate(code, "python", stages=["syntax", "lint"])
@@ -240,7 +236,7 @@ class TestRepairLoopIntegration:
 
     def test_repair_syntax_error(self):
         """Test repair of syntax errors."""
-        from maze.repair.orchestrator import RepairOrchestrator, RepairContext
+        from maze.repair.orchestrator import RepairContext, RepairOrchestrator
 
         pipeline = ValidationPipeline()
         orchestrator = RepairOrchestrator(validator=pipeline, max_attempts=2)
@@ -267,10 +263,10 @@ class TestRepairLoopIntegration:
         orchestrator = RepairOrchestrator(validator=pipeline)
 
         # Code with type mismatch
-        code = '''
+        code = """
 def add(a: int, b: int) -> int:
     return "not an int"
-'''
+"""
 
         result = orchestrator.repair(
             code=code,
@@ -285,21 +281,21 @@ def add(a: int, b: int) -> int:
 
     def test_repair_test_failure(self):
         """Test repair of test failures."""
-        from maze.repair.orchestrator import RepairOrchestrator, RepairContext
+        from maze.repair.orchestrator import RepairContext, RepairOrchestrator
         from maze.validation.pipeline import ValidationContext
 
         pipeline = ValidationPipeline()
         orchestrator = RepairOrchestrator(validator=pipeline)
 
-        code = '''
+        code = """
 def add(a, b):
     return a - b  # Wrong implementation
-'''
+"""
 
-        tests = '''
+        tests = """
 def test_add():
     assert add(2, 3) == 5
-'''
+"""
 
         context = RepairContext(
             validation_context=ValidationContext(tests=tests),
@@ -319,7 +315,7 @@ def test_add():
 
     def test_repair_lint_violation(self):
         """Test repair of lint violations."""
-        from maze.repair.orchestrator import RepairOrchestrator, RepairContext
+        from maze.repair.orchestrator import RepairContext, RepairOrchestrator
         from maze.validation.pipeline import ValidationContext
 
         pipeline = ValidationPipeline()
@@ -408,7 +404,7 @@ def test_add():
 
     def test_repair_strategy_progression(self):
         """Test that repair strategies progress correctly."""
-        from maze.repair.orchestrator import RepairOrchestrator, RepairStrategy
+        from maze.repair.orchestrator import RepairOrchestrator
 
         pipeline = ValidationPipeline()
         orchestrator = RepairOrchestrator(validator=pipeline, max_attempts=3)
@@ -428,17 +424,17 @@ def test_add():
 
     def test_repair_with_pedantic_raven(self):
         """Test repair with pedantic_raven quality gate."""
-        from maze.repair.orchestrator import RepairOrchestrator
         from maze.integrations.pedantic_raven import PedanticRavenIntegration
+        from maze.repair.orchestrator import RepairOrchestrator
 
         raven = PedanticRavenIntegration(ReviewRules.lenient())
         pipeline = ValidationPipeline(pedantic_raven=raven)
         orchestrator = RepairOrchestrator(validator=pipeline)
 
-        code = '''
+        code = """
 def process(data):
     eval(data)  # Security issue
-'''
+"""
 
         result = orchestrator.repair(
             code=code,
@@ -461,6 +457,7 @@ def process(data):
         code = "def foo(): return 42"
 
         import time
+
         start = time.perf_counter()
 
         result = orchestrator.repair(
@@ -504,11 +501,11 @@ class TestSandboxIntegration:
             memory_limit_mb=10,
         )
 
-        code = '''
+        code = """
 import time
 def slow():
     time.sleep(1)
-'''
+"""
 
         tests = "def test_slow(): slow()"
 
@@ -523,11 +520,11 @@ def slow():
 
         sandbox = RuneExecutor()
 
-        code = '''
+        code = """
 import os
 def dangerous():
     os.system("ls")
-'''
+"""
 
         tests = "def test(): dangerous()"
 
@@ -618,12 +615,8 @@ class TestPropertyTests:
 
         code = "def foo(): return 42"
 
-        result_parallel = pipeline_parallel.validate(
-            code, "python", stages=["syntax", "lint"]
-        )
-        result_sequential = pipeline_sequential.validate(
-            code, "python", stages=["syntax", "lint"]
-        )
+        result_parallel = pipeline_parallel.validate(code, "python", stages=["syntax", "lint"])
+        result_sequential = pipeline_sequential.validate(code, "python", stages=["syntax", "lint"])
 
         # Both should have same success status
         assert result_parallel.success == result_sequential.success
@@ -641,8 +634,8 @@ class TestPropertyTests:
 
     def test_resource_bounds_respected(self):
         """Test that resource limits are respected."""
-        from maze.validation.tests import TestValidator
         from maze.integrations.rune import RuneExecutor
+        from maze.validation.tests import TestValidator
 
         sandbox = RuneExecutor(timeout_ms=500)
         validator = TestValidator(sandbox=sandbox)
@@ -668,6 +661,7 @@ class TestPerformanceTests:
         code = "def foo(): return 42"
 
         import time
+
         start = time.perf_counter()
         result = validator.validate(code, "python")
         elapsed = (time.perf_counter() - start) * 1000
@@ -679,12 +673,13 @@ class TestPerformanceTests:
         """Test that full pipeline completes in reasonable time."""
         pipeline = ValidationPipeline()
 
-        code = '''
+        code = """
 def calculate(x, y):
     return x + y
-'''
+"""
 
         import time
+
         start = time.perf_counter()
 
         result = pipeline.validate(code, "python", stages=["syntax", "lint"])

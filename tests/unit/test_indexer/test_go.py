@@ -8,13 +8,9 @@ from pathlib import Path
 
 import pytest
 
-from maze.indexer.languages.go import GoIndexer, TREE_SITTER_AVAILABLE
+from maze.indexer.languages.go import TREE_SITTER_AVAILABLE, GoIndexer
 
-
-pytestmark = pytest.mark.skipif(
-    not TREE_SITTER_AVAILABLE,
-    reason="tree-sitter-go not available"
-)
+pytestmark = pytest.mark.skipif(not TREE_SITTER_AVAILABLE, reason="tree-sitter-go not available")
 
 
 class TestGoIndexer:
@@ -30,13 +26,15 @@ class TestGoIndexer:
         """Test indexing simple Go function."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.go"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 package main
 
 func Add(x, y int) int {
     return x + y
 }
-""")
+"""
+            )
 
             indexer = GoIndexer()
             result = indexer.index_file(file_path)
@@ -49,7 +47,8 @@ func Add(x, y int) int {
         """Test indexing method on struct."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.go"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 package main
 
 type Service struct{}
@@ -57,7 +56,8 @@ type Service struct{}
 func (s *Service) Start() error {
     return nil
 }
-""")
+"""
+            )
 
             indexer = GoIndexer()
             result = indexer.index_file(file_path)
@@ -70,14 +70,16 @@ func (s *Service) Start() error {
         """Test indexing struct."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.go"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 package main
 
 type User struct {
     ID   string
     Name string
 }
-""")
+"""
+            )
 
             indexer = GoIndexer()
             result = indexer.index_file(file_path)
@@ -90,14 +92,16 @@ type User struct {
         """Test indexing interface."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.go"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 package main
 
 type Repository interface {
     Find(id string) (*User, error)
     Save(user *User) error
 }
-""")
+"""
+            )
 
             indexer = GoIndexer()
             result = indexer.index_file(file_path)
@@ -110,11 +114,13 @@ type Repository interface {
         """Test indexing type alias."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.go"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 package main
 
 type UserID string
-""")
+"""
+            )
 
             indexer = GoIndexer()
             result = indexer.index_file(file_path)
@@ -127,7 +133,8 @@ type UserID string
         """Test detecting Go test functions."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test_test.go"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 package main
 
 import "testing"
@@ -137,7 +144,8 @@ func TestAddition(t *testing.T) {
         t.Error("Expected 2")
     }
 }
-""")
+"""
+            )
 
             indexer = GoIndexer()
             result = indexer.index_file(file_path)
@@ -149,7 +157,7 @@ func TestAddition(t *testing.T) {
         """Test Go style detection."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.go"
-            file_path.write_text('package main\n\nfunc Test() {}')
+            file_path.write_text("package main\n\nfunc Test() {}")
 
             indexer = GoIndexer()
             result = indexer.index_file(file_path)
@@ -160,7 +168,7 @@ func TestAddition(t *testing.T) {
         """Test indexing Go directory."""
         with tempfile.TemporaryDirectory() as tmpdir:
             project = Path(tmpdir)
-            
+
             (project / "main.go").write_text("package main\n\nfunc main() {}")
             (project / "helper.go").write_text("package main\n\nfunc Helper() {}")
 
@@ -174,7 +182,7 @@ func TestAddition(t *testing.T) {
         """Test excluding vendor directory."""
         with tempfile.TemporaryDirectory() as tmpdir:
             project = Path(tmpdir)
-            
+
             (project / "main.go").write_text("package main\n\nfunc main() {}")
             (project / "vendor").mkdir()
             (project / "vendor" / "lib.go").write_text("package lib\n\nfunc Lib() {}")

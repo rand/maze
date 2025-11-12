@@ -5,15 +5,12 @@ Tests code quality enforcement, security vulnerability detection,
 performance anti-pattern detection, and documentation checking.
 """
 
-import pytest
 from maze.integrations.pedantic_raven import (
-    PedanticRavenIntegration,
-    ReviewRules,
-    SecurityFinding,
-    PerformanceFinding,
-    QualityReport,
-    DocumentationReport,
     CoverageReport,
+    DocumentationReport,
+    PedanticRavenIntegration,
+    QualityReport,
+    ReviewRules,
 )
 
 
@@ -24,11 +21,11 @@ class TestSecurityDetection:
         """Test detection of SQL injection vulnerabilities."""
         raven = PedanticRavenIntegration()
 
-        code = '''
+        code = """
 def query_user(user_id):
     query = "SELECT * FROM users WHERE id = %s" % user_id
     return execute(query)
-'''
+"""
 
         findings = raven.check_security(code, "python")
 
@@ -40,11 +37,11 @@ def query_user(user_id):
         """Test detection of XSS vulnerabilities."""
         raven = PedanticRavenIntegration()
 
-        code = '''
+        code = """
 function render(data) {
     document.getElementById("content").innerHTML = data;
 }
-'''
+"""
 
         findings = raven.check_security(code, "typescript")
 
@@ -56,11 +53,11 @@ function render(data) {
         """Test detection of command injection vulnerabilities."""
         raven = PedanticRavenIntegration()
 
-        code = '''
+        code = """
 import os
 def execute_command(cmd):
     os.system(cmd)
-'''
+"""
 
         findings = raven.check_security(code, "python")
 
@@ -71,11 +68,11 @@ def execute_command(cmd):
         """Test detection of dangerous eval() usage."""
         raven = PedanticRavenIntegration()
 
-        code = '''
+        code = """
 def process(data):
     result = eval(data)
     return result
-'''
+"""
 
         findings = raven.check_security(code, "python")
 
@@ -87,10 +84,10 @@ def process(data):
         """Test detection of hardcoded credentials."""
         raven = PedanticRavenIntegration()
 
-        code = '''
+        code = """
 API_KEY = "sk-1234567890abcdef"
 PASSWORD = "SuperSecret123"
-'''
+"""
 
         findings = raven.check_security(code, "python")
 
@@ -102,10 +99,10 @@ PASSWORD = "SuperSecret123"
         """Test that safe code has no security findings."""
         raven = PedanticRavenIntegration()
 
-        code = '''
+        code = """
 def add(a, b):
     return a + b
-'''
+"""
 
         findings = raven.check_security(code, "python")
 
@@ -149,7 +146,7 @@ def another_function(y):
         simple_report = raven.check_quality(simple_code, "python")
 
         # Complex code with many branches
-        complex_code = '''
+        complex_code = """
 def complex(x):
     if x > 10:
         if x > 20:
@@ -157,7 +154,7 @@ def complex(x):
                 if x > 40:
                     if x > 50:
                         return "very high"
-'''
+"""
 
         complex_report = raven.check_quality(complex_code, "python")
 
@@ -168,12 +165,12 @@ def complex(x):
         """Test comment ratio calculation."""
         raven = PedanticRavenIntegration()
 
-        code_with_comments = '''
+        code_with_comments = """
 # This is a comment
 def foo():
     # Another comment
     return 42
-'''
+"""
 
         report = raven.check_quality(code_with_comments, "python")
 
@@ -196,11 +193,11 @@ class TestPerformanceAntipatterns:
         """Test detection of performance anti-patterns."""
         raven = PedanticRavenIntegration()
 
-        code = '''
+        code = """
 def process_data(items):
     result = [x for x in [y for y in items]]
     return result
-'''
+"""
 
         findings = raven.check_performance(code, "python")
 
@@ -211,10 +208,10 @@ def process_data(items):
         """Test that efficient code has no performance findings."""
         raven = PedanticRavenIntegration()
 
-        code = '''
+        code = """
 def efficient(x):
     return x * 2
-'''
+"""
 
         findings = raven.check_performance(code, "python")
 
@@ -262,10 +259,10 @@ def foo():
         doc_report = raven.check_documentation(documented, "python")
 
         # Undocumented code
-        undocumented = '''
+        undocumented = """
 def bar():
     pass
-'''
+"""
 
         undoc_report = raven.check_documentation(undocumented, "python")
 
@@ -275,10 +272,10 @@ def bar():
         """Test detection of return type annotations."""
         raven = PedanticRavenIntegration()
 
-        code = '''
+        code = """
 def typed_function() -> int:
     return 42
-'''
+"""
 
         report = raven.check_documentation(code, "python")
 
@@ -288,14 +285,14 @@ def typed_function() -> int:
         """Test TypeScript documentation checking."""
         raven = PedanticRavenIntegration()
 
-        code = '''
+        code = """
 /**
  * Add two numbers
  */
 function add(a: number, b: number): number {
     return a + b;
 }
-'''
+"""
 
         report = raven.check_documentation(code, "typescript")
 
@@ -310,21 +307,21 @@ class TestCoverageCalculation:
         """Test test coverage calculation."""
         raven = PedanticRavenIntegration()
 
-        code = '''
+        code = """
 def add(a, b):
     return a + b
 
 def multiply(a, b):
     return a * b
-'''
+"""
 
-        tests = '''
+        tests = """
 def test_add():
     assert add(2, 3) == 5
 
 def test_multiply():
     assert multiply(2, 3) == 6
-'''
+"""
 
         report = raven.check_test_coverage(code, tests, "python")
 
@@ -344,13 +341,13 @@ def test_multiply():
         few_coverage = raven.check_test_coverage(code, few_tests, "python")
 
         # Many tests
-        many_tests = '''
+        many_tests = """
 def test_foo_1(): pass
 def test_foo_2(): pass
 def test_foo_3(): pass
 def test_foo_4(): pass
 def test_foo_5(): pass
-'''
+"""
 
         many_coverage = raven.check_test_coverage(code, many_tests, "python")
 
@@ -381,10 +378,10 @@ def simple_function(x: int) -> int:
         """Test that critical security issues block review."""
         raven = PedanticRavenIntegration(ReviewRules.strict())
 
-        code = '''
+        code = """
 def unsafe(data):
     eval(data)
-'''
+"""
 
         result = raven.review(code, "python")
 
@@ -488,9 +485,7 @@ class TestRuleEnforcement:
 
     def test_block_on_critical_security(self):
         """Test blocking on critical security issues."""
-        raven = PedanticRavenIntegration(
-            ReviewRules(block_on_critical_security=True)
-        )
+        raven = PedanticRavenIntegration(ReviewRules(block_on_critical_security=True))
 
         code = "def bad(x): eval(x)"
 
@@ -500,9 +495,7 @@ class TestRuleEnforcement:
 
     def test_min_quality_threshold(self):
         """Test minimum quality score threshold."""
-        raven = PedanticRavenIntegration(
-            ReviewRules(min_quality_score=100.0)  # Impossibly high
-        )
+        raven = PedanticRavenIntegration(ReviewRules(min_quality_score=100.0))  # Impossibly high
 
         code = "def foo(): return 42"
 
@@ -560,12 +553,12 @@ class TestEdgeCases:
         """Test code with multiple security issues."""
         raven = PedanticRavenIntegration()
 
-        code = '''
+        code = """
 def dangerous(data, query):
     eval(data)
     exec(query)
     os.system(data)
-'''
+"""
 
         result = raven.review(code, "python")
 

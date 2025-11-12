@@ -5,9 +5,8 @@ Tests the complete type system pipeline from type inference through
 grammar generation to hole filling.
 """
 
-import pytest
+from maze.core.types import ClassType, FunctionSignature, Type, TypeContext, TypeParameter
 from maze.type_system import TypeSystemOrchestrator
-from maze.core.types import Type, TypeContext, ClassType, FunctionSignature, TypeParameter
 
 
 class TestTypeSystemIntegration:
@@ -77,11 +76,7 @@ class TestTypeSystemIntegration:
         context = TypeContext(variables={"x": Type("number")})
 
         # Find path from unknown to number (should use variable x)
-        path = orchestrator.find_inhabitation_path(
-            Type("unknown"),
-            Type("number"),
-            context
-        )
+        path = orchestrator.find_inhabitation_path(Type("unknown"), Type("number"), context)
 
         assert path is not None
         assert path.target == Type("number")
@@ -107,7 +102,7 @@ class TestTypeSystemIntegration:
             prompt="Generate a number",
             context=context,
             expected_type=Type("number"),
-            provider=None  # No provider for test
+            provider=None,  # No provider for test
         )
 
         # Should have grammar even without provider
@@ -156,12 +151,7 @@ class TestComplexWorkflows:
 
         # Create Person class type
         person = ClassType(
-            name="Person",
-            properties={
-                "name": Type("string"),
-                "age": Type("number")
-            },
-            methods={}
+            name="Person", properties={"name": Type("string"), "age": Type("number")}, methods={}
         )
 
         context = TypeContext(classes={"Person": person})
@@ -179,21 +169,14 @@ class TestComplexWorkflows:
         # Create function signature
         add = FunctionSignature(
             name="add",
-            parameters=[
-                TypeParameter("a", Type("number")),
-                TypeParameter("b", Type("number"))
-            ],
-            return_type=Type("number")
+            parameters=[TypeParameter("a", Type("number")), TypeParameter("b", Type("number"))],
+            return_type=Type("number"),
         )
 
         context = TypeContext(functions={"add": add})
 
         # Infer function call type
-        expr = {
-            "kind": "call",
-            "callee": {"kind": "identifier", "name": "add"},
-            "arguments": []
-        }
+        expr = {"kind": "call", "callee": {"kind": "identifier", "name": "add"}, "arguments": []}
 
         result = orchestrator.infer_type(expr, context)
 
@@ -268,22 +251,14 @@ class TestPerformance:
         context = TypeContext(variables={"x": Type("number")})
 
         # First search
-        path1 = orchestrator.find_inhabitation_path(
-            Type("unknown"),
-            Type("number"),
-            context
-        )
+        path1 = orchestrator.find_inhabitation_path(Type("unknown"), Type("number"), context)
 
         # Get cache stats
         stats = orchestrator.get_cache_stats()
         initial_hits = stats["inhabitation_stats"]["hits"]
 
         # Second search (should use cache)
-        path2 = orchestrator.find_inhabitation_path(
-            Type("unknown"),
-            Type("number"),
-            context
-        )
+        path2 = orchestrator.find_inhabitation_path(Type("unknown"), Type("number"), context)
 
         # Cache hits should increase
         stats_after = orchestrator.get_cache_stats()
@@ -293,11 +268,9 @@ class TestPerformance:
         """Test performing multiple operations efficiently."""
         orchestrator = TypeSystemOrchestrator()
 
-        context = TypeContext(variables={
-            "x": Type("number"),
-            "y": Type("string"),
-            "z": Type("boolean")
-        })
+        context = TypeContext(
+            variables={"x": Type("number"), "y": Type("string"), "z": Type("boolean")}
+        )
 
         # Perform multiple inferences
         for var_name in ["x", "y", "z"]:

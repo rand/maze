@@ -116,16 +116,16 @@ array_type: type_expr "[" "]"
 tuple_type: "[" type_expr ("," type_expr)* "]"
 
 IDENT: /[a-zA-Z_$][a-zA-Z0-9_$]*/
-NUMBER: /-?\d+(\.\d+)?([eE][+-]?\d+)?/
+NUMBER: /-?\\d+(\\.\\d+)?([eE][+-]?\\d+)?/
 STRING: /"([^"\\\\]|\\\\.)*"/ | /'([^'\\\\]|\\\\.)*'/
 BOOLEAN: "true" | "false"
 NULL: "null"
 UNDEFINED: "undefined"
 
-%ignore /\s+/
-%ignore /\/\/.*/
-%ignore /\/\*[\s\S]*?\*\//
-"""
+%ignore /\\s+/
+%ignore /\\/\\/.*/
+%ignore /\\/\\*[\\s\\S]*?\\*\\//
+""",
 )
 
 # Interface grammar
@@ -133,7 +133,7 @@ TYPESCRIPT_INTERFACE = GrammarTemplate(
     name="typescript_interface",
     language="typescript",
     description="Grammar for TypeScript interface declarations",
-    grammar="""
+    grammar=r"""
 start: interface_decl
 
 interface_decl: export_modifier? "interface" IDENT type_params? extends_clause? "{" interface_members? "}"
@@ -187,7 +187,7 @@ IDENT: /[a-zA-Z_$][a-zA-Z0-9_$]*/
 %ignore /\s+/
 %ignore /\/\/.*/
 %ignore /\/\*[\s\S]*?\*\//
-"""
+""",
 )
 
 # Type alias grammar
@@ -234,14 +234,14 @@ tuple_elements: type_expr ("," type_expr)*
 literal_type: STRING | NUMBER | BOOLEAN
 
 IDENT: /[a-zA-Z_$][a-zA-Z0-9_$]*/
-NUMBER: /-?\d+(\.\d+)?/
+NUMBER: /-?\\d+(\\.\\d+)?/
 STRING: /"([^"\\\\]|\\\\.)*"/ | /'([^'\\\\]|\\\\.)*'/
 BOOLEAN: "true" | "false"
 
-%ignore /\s+/
-%ignore /\/\/.*/
-%ignore /\/\*[\s\S]*?\*\//
-"""
+%ignore /\\s+/
+%ignore /\\/\\/.*/
+%ignore /\\/\\*[\\s\\S]*?\\*\\//
+""",
 )
 
 # File-level grammar (for complete files)
@@ -296,10 +296,10 @@ module_specifier: STRING
 IDENT: /[a-zA-Z_$][a-zA-Z0-9_$]*/
 STRING: /"([^"\\\\]|\\\\.)*"/ | /'([^'\\\\]|\\\\.)*'/
 
-%ignore /\s+/
-%ignore /\/\/.*/
-%ignore /\/\*[\s\S]*?\*\//
-"""
+%ignore /\\s+/
+%ignore /\\/\\/.*/
+%ignore /\\/\\*[\\s\\S]*?\\*\\//
+""",
 )
 
 # Function BODY grammar (for completing partial signatures)
@@ -396,16 +396,16 @@ optional_marker: "?"
 array_type: type_expr "[" "]"
 
 IDENT: /[a-zA-Z_$][a-zA-Z0-9_$]*/
-NUMBER: /-?\d+(\.\d+)?([eE][+-]?\d+)?/
+NUMBER: /-?\\d+(\\.\\d+)?([eE][+-]?\\d+)?/
 STRING: /"([^"\\\\]|\\\\.)*"/ | /'([^'\\\\]|\\\\.)*'/
 BOOLEAN: "true" | "false"
 NULL: "null"
 UNDEFINED: "undefined"
 
-%ignore /\s+/
-%ignore /\/\/.*/
-%ignore /\/\*[\s\S]*?\*\//
-"""
+%ignore /\\s+/
+%ignore /\\/\\/.*/
+%ignore /\\/\\*[\\s\\S]*?\\*\\//
+""",
 )
 
 # Export all templates
@@ -418,10 +418,10 @@ ALL_TEMPLATES = [
 ]
 
 __all__ = [
-    'TYPESCRIPT_FUNCTION',
-    'TYPESCRIPT_FUNCTION_BODY',
-    'TYPESCRIPT_INTERFACE',
-    'TYPESCRIPT_TYPE_ALIAS',
-    'TYPESCRIPT_FILE',
-    'ALL_TEMPLATES',
+    "TYPESCRIPT_FUNCTION",
+    "TYPESCRIPT_FUNCTION_BODY",
+    "TYPESCRIPT_INTERFACE",
+    "TYPESCRIPT_TYPE_ALIAS",
+    "TYPESCRIPT_FILE",
+    "ALL_TEMPLATES",
 ]

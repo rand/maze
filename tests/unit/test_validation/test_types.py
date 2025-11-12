@@ -6,8 +6,9 @@ error detection and type-aware suggestions.
 """
 
 import pytest
+
+from maze.core.types import TypeContext
 from maze.validation.types import TypeValidator
-from maze.core.types import TypeContext, Type
 
 
 class TestTypeScriptTypeValidation:
@@ -25,9 +26,7 @@ class TestTypeScriptTypeValidation:
         )
 
         # May succeed or warn about tsc not found
-        assert result.success or any(
-            "not found" in d.message for d in result.diagnostics
-        )
+        assert result.success or any("not found" in d.message for d in result.diagnostics)
 
     def test_type_mismatch(self):
         """Test detection of type mismatch."""
@@ -91,9 +90,7 @@ class TestPythonTypeValidation:
         )
 
         # May succeed or warn about pyright not found
-        assert result.success or any(
-            "not found" in d.message for d in result.diagnostics
-        )
+        assert result.success or any("not found" in d.message for d in result.diagnostics)
 
     def test_python_type_mismatch(self):
         """Test detection of Python type mismatch."""
@@ -141,9 +138,7 @@ class TestRustTypeValidation:
         )
 
         # May succeed or warn about cargo not found
-        assert result.success or any(
-            "not found" in d.message for d in result.diagnostics
-        )
+        assert result.success or any("not found" in d.message for d in result.diagnostics)
 
     def test_rust_type_mismatch(self):
         """Test detection of Rust type mismatch."""
@@ -185,15 +180,13 @@ class TestGoTypeValidation:
         context = TypeContext()
 
         result = validator.validate(
-            code='package main\n\nfunc main() { var x int = 42; println(x) }',
+            code="package main\n\nfunc main() { var x int = 42; println(x) }",
             language="go",
             context=context,
         )
 
         # May succeed or warn about go not found
-        assert result.success or any(
-            "not found" in d.message for d in result.diagnostics
-        )
+        assert result.success or any("not found" in d.message for d in result.diagnostics)
 
     def test_go_type_mismatch(self):
         """Test detection of Go type mismatch."""
@@ -227,9 +220,11 @@ class TestZigTypeValidation:
 
         # May succeed or warn about zig not found
         # Zig may report warnings even for valid code
-        assert result.success or any(
-            "not found" in d.message for d in result.diagnostics
-        ) or all(d.level == "warning" for d in result.diagnostics)
+        assert (
+            result.success
+            or any("not found" in d.message for d in result.diagnostics)
+            or all(d.level == "warning" for d in result.diagnostics)
+        )
 
     def test_zig_type_mismatch(self):
         """Test detection of Zig type mismatch."""
@@ -267,7 +262,9 @@ class TestTypeErrorParsing:
         """Test parsing tsc output."""
         validator = TypeValidator()
 
-        tsc_output = "test.ts(10,5): error TS2322: Type 'string' is not assignable to type 'number'."
+        tsc_output = (
+            "test.ts(10,5): error TS2322: Type 'string' is not assignable to type 'number'."
+        )
 
         diagnostics = validator.parse_type_errors(tsc_output, "typescript")
 
@@ -378,9 +375,7 @@ class TestValidationResult:
         )
 
         # If tsc available and detected error
-        if not result.success and not any(
-            "not found" in d.message for d in result.diagnostics
-        ):
+        if not result.success and not any("not found" in d.message for d in result.diagnostics):
             assert len(result.type_errors) > 0
             assert all(isinstance(err, str) for err in result.type_errors)
 
@@ -418,9 +413,7 @@ class TestEdgeCases:
         )
 
         # Empty code should validate (or warn about missing checker)
-        assert result.success or any(
-            "not found" in d.message for d in result.diagnostics
-        )
+        assert result.success or any("not found" in d.message for d in result.diagnostics)
 
     def test_unsupported_language(self):
         """Test that unsupported language produces error."""
@@ -448,9 +441,7 @@ class TestEdgeCases:
         )
 
         # Should handle Unicode gracefully
-        assert result.success or any(
-            "not found" in d.message for d in result.diagnostics
-        )
+        assert result.success or any("not found" in d.message for d in result.diagnostics)
 
     def test_multiple_type_errors(self):
         """Test detection of multiple type errors."""

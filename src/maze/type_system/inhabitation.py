@@ -8,12 +8,9 @@ to target types, enabling type-directed code synthesis.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set, Tuple, Callable
-from enum import Enum
+from typing import Any
 
-from maze.core.types import (
-    Type, TypeContext, FunctionSignature, ClassType, InterfaceType
-)
+from maze.core.types import Type, TypeContext
 
 
 @dataclass
@@ -36,11 +33,12 @@ class Operation:
         ...     cost=1.0
         ... )
     """
+
     name: str
     input_type: Type
     output_type: Type
     cost: float = 1.0
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def applicable(self, type: Type) -> bool:
         """
@@ -97,7 +95,8 @@ class InhabitationPath:
         >>> print(path.cost)
         1.0
     """
-    operations: List[Operation]
+
+    operations: list[Operation]
     source: Type
     target: Type
 
@@ -172,17 +171,13 @@ class InhabitationSolver:
         """
         self.max_depth = max_depth
         self.cache_size = cache_size
-        self.cache: Dict[Tuple[Type, Type, int], List[InhabitationPath]] = {}
+        self.cache: dict[tuple[Type, Type, int], list[InhabitationPath]] = {}
         self.cache_hits = 0
         self.cache_misses = 0
 
     def find_paths(
-        self,
-        source: Type,
-        target: Type,
-        context: TypeContext,
-        max_results: int = 10
-    ) -> List[InhabitationPath]:
+        self, source: Type, target: Type, context: TypeContext, max_results: int = 10
+    ) -> list[InhabitationPath]:
         """
         Find all inhabitation paths from source to target.
 
@@ -231,11 +226,8 @@ class InhabitationSolver:
         return paths
 
     def find_best_path(
-        self,
-        source: Type,
-        target: Type,
-        context: TypeContext
-    ) -> Optional[InhabitationPath]:
+        self, source: Type, target: Type, context: TypeContext
+    ) -> InhabitationPath | None:
         """
         Find lowest-cost inhabitation path.
 
@@ -257,11 +249,7 @@ class InhabitationSolver:
         paths = self.find_paths(source, target, context, max_results=1)
         return paths[0] if paths else None
 
-    def is_inhabitable(
-        self,
-        target: Type,
-        context: TypeContext
-    ) -> bool:
+    def is_inhabitable(self, target: Type, context: TypeContext) -> bool:
         """
         Check if target type can be inhabited from context.
 
@@ -286,13 +274,8 @@ class InhabitationSolver:
     # Private helper methods
 
     def _search(
-        self,
-        current: Type,
-        target: Type,
-        context: TypeContext,
-        depth: int,
-        visited: Set[str]
-    ) -> List[InhabitationPath]:
+        self, current: Type, target: Type, context: TypeContext, depth: int, visited: set[str]
+    ) -> list[InhabitationPath]:
         """
         Recursive search for inhabitation paths.
 
@@ -338,19 +321,13 @@ class InhabitationSolver:
             # Prepend current operation to each sub-path
             for sub_path in sub_paths:
                 path = InhabitationPath(
-                    operations=[op] + sub_path.operations,
-                    source=current,
-                    target=target
+                    operations=[op] + sub_path.operations, source=current, target=target
                 )
                 paths.append(path)
 
         return paths
 
-    def _generate_operations(
-        self,
-        current: Type,
-        context: TypeContext
-    ) -> List[Operation]:
+    def _generate_operations(self, current: Type, context: TypeContext) -> list[Operation]:
         """
         Generate possible operations from current type.
 
@@ -366,12 +343,14 @@ class InhabitationSolver:
         # Special case: from "unknown" type, we can use any variable
         if current.name == "unknown":
             for var_name, var_type in context.variables.items():
-                operations.append(Operation(
-                    name=f"use {var_name}",
-                    input_type=current,
-                    output_type=var_type,
-                    cost=0.0  # Direct variable access is free
-                ))
+                operations.append(
+                    Operation(
+                        name=f"use {var_name}",
+                        input_type=current,
+                        output_type=var_type,
+                        cost=0.0,  # Direct variable access is free
+                    )
+                )
 
         # Function applications
         for func_name, func_sig in context.functions.items():
@@ -381,33 +360,39 @@ class InhabitationSolver:
                 if len(func_sig.parameters) == 1:
                     param_type = func_sig.parameters[0].type
                     if self._types_compatible(current, param_type):
-                        operations.append(Operation(
-                            name=f"call {func_name}",
-                            input_type=param_type,
-                            output_type=func_sig.return_type,
-                            cost=1.0
-                        ))
+                        operations.append(
+                            Operation(
+                                name=f"call {func_name}",
+                                input_type=param_type,
+                                output_type=func_sig.return_type,
+                                cost=1.0,
+                            )
+                        )
 
         # Property access
         if current.name in context.classes:
             class_type = context.classes[current.name]
             for prop_name, prop_type in class_type.properties.items():
-                operations.append(Operation(
-                    name=f"access {prop_name}",
-                    input_type=current,
-                    output_type=prop_type,
-                    cost=0.5  # Property access is cheap
-                ))
+                operations.append(
+                    Operation(
+                        name=f"access {prop_name}",
+                        input_type=current,
+                        output_type=prop_type,
+                        cost=0.5,  # Property access is cheap
+                    )
+                )
 
         if current.name in context.interfaces:
             interface_type = context.interfaces[current.name]
             for prop_name, prop_type in interface_type.properties.items():
-                operations.append(Operation(
-                    name=f"access {prop_name}",
-                    input_type=current,
-                    output_type=prop_type,
-                    cost=0.5
-                ))
+                operations.append(
+                    Operation(
+                        name=f"access {prop_name}",
+                        input_type=current,
+                        output_type=prop_type,
+                        cost=0.5,
+                    )
+                )
 
         return operations
 
@@ -511,7 +496,7 @@ class InhabitationSolver:
 
         return hash((var_items, func_items))
 
-    def get_cache_stats(self) -> Dict[str, int]:
+    def get_cache_stats(self) -> dict[str, int]:
         """
         Get cache statistics.
 
@@ -522,7 +507,7 @@ class InhabitationSolver:
             "hits": self.cache_hits,
             "misses": self.cache_misses,
             "size": len(self.cache),
-            "hit_rate": self.cache_hits / max(1, self.cache_hits + self.cache_misses)
+            "hit_rate": self.cache_hits / max(1, self.cache_hits + self.cache_misses),
         }
 
     def clear_cache(self) -> None:

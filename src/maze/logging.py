@@ -12,12 +12,10 @@ from __future__ import annotations
 
 import json
 import sys
-import time
 from collections import defaultdict
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from datetime import datetime
-from pathlib import Path
-from typing import Any, Dict, List, Optional, TextIO
+from typing import Any, TextIO
 
 from maze.config import LoggingConfig
 
@@ -33,7 +31,7 @@ class GenerationResult:
     model: str
     tokens_generated: int = 0
     success: bool = True
-    error: Optional[str] = None
+    error: str | None = None
 
 
 @dataclass
@@ -45,7 +43,7 @@ class ValidationResult:
     type_valid: bool = True
     tests_passed: int = 0
     tests_failed: int = 0
-    errors: List[str] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
     duration_ms: float = 0.0
 
 
@@ -56,7 +54,7 @@ class RepairResult:
     success: bool
     attempts: int
     final_code: str
-    errors_fixed: List[str] = field(default_factory=list)
+    errors_fixed: list[str] = field(default_factory=list)
     duration_ms: float = 0.0
 
 
@@ -67,7 +65,7 @@ class PerformanceMetrics:
     operation: str
     duration_ms: float
     timestamp: datetime = field(default_factory=datetime.now)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class StructuredLogger:
@@ -88,7 +86,7 @@ class StructuredLogger:
         else:
             self.output = sys.stdout if config.output == "stdout" else sys.stderr
 
-    def _write_log(self, level: str, event: str, data: Dict[str, Any]) -> None:
+    def _write_log(self, level: str, event: str, data: dict[str, Any]) -> None:
         """Write log entry.
 
         Args:
@@ -217,11 +215,11 @@ class MetricsCollector:
 
     def __init__(self):
         """Initialize metrics collector."""
-        self.latencies: Dict[str, List[float]] = defaultdict(list)
-        self.cache_hits: Dict[str, int] = defaultdict(int)
-        self.cache_misses: Dict[str, int] = defaultdict(int)
-        self.errors: Dict[str, int] = defaultdict(int)
-        self.counters: Dict[str, int] = defaultdict(int)
+        self.latencies: dict[str, list[float]] = defaultdict(list)
+        self.cache_hits: dict[str, int] = defaultdict(int)
+        self.cache_misses: dict[str, int] = defaultdict(int)
+        self.errors: dict[str, int] = defaultdict(int)
+        self.counters: dict[str, int] = defaultdict(int)
 
     def record_latency(self, operation: str, duration_ms: float) -> None:
         """Record operation latency.
@@ -265,7 +263,7 @@ class MetricsCollector:
         """
         self.counters[counter_name] += value
 
-    def get_latency_stats(self, operation: str) -> Optional[Dict[str, float]]:
+    def get_latency_stats(self, operation: str) -> dict[str, float] | None:
         """Get latency statistics for operation.
 
         Args:
@@ -321,10 +319,16 @@ class MetricsCollector:
             if latencies:
                 stats = self.get_latency_stats(operation)
                 lines.append(f"# HELP maze_latency_ms Latency for {operation}")
-                lines.append(f"# TYPE maze_latency_ms summary")
-                lines.append(f'maze_latency_ms{{operation="{operation}",quantile="0.5"}} {stats["p50"]}')
-                lines.append(f'maze_latency_ms{{operation="{operation}",quantile="0.95"}} {stats["p95"]}')
-                lines.append(f'maze_latency_ms{{operation="{operation}",quantile="0.99"}} {stats["p99"]}')
+                lines.append("# TYPE maze_latency_ms summary")
+                lines.append(
+                    f'maze_latency_ms{{operation="{operation}",quantile="0.5"}} {stats["p50"]}'
+                )
+                lines.append(
+                    f'maze_latency_ms{{operation="{operation}",quantile="0.95"}} {stats["p95"]}'
+                )
+                lines.append(
+                    f'maze_latency_ms{{operation="{operation}",quantile="0.99"}} {stats["p99"]}'
+                )
                 lines.append(f'maze_latency_ms_count{{operation="{operation}"}} {stats["count"]}')
                 lines.append(f'maze_latency_ms_sum{{operation="{operation}"}} {sum(latencies)}')
 
@@ -361,16 +365,14 @@ class MetricsCollector:
         self.errors.clear()
         self.counters.clear()
 
-    def summary(self) -> Dict[str, Any]:
+    def summary(self) -> dict[str, Any]:
         """Get summary of all metrics.
 
         Returns:
             Dictionary with all metrics
         """
         return {
-            "latencies": {
-                op: self.get_latency_stats(op) for op in self.latencies.keys()
-            },
+            "latencies": {op: self.get_latency_stats(op) for op in self.latencies.keys()},
             "cache_hit_rates": {
                 cache: self.get_cache_hit_rate(cache)
                 for cache in set(list(self.cache_hits.keys()) + list(self.cache_misses.keys()))

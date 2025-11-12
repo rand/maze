@@ -14,15 +14,15 @@ from __future__ import annotations
 import hashlib
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, Generic, Optional, TypeVar
+from typing import Any, Generic, TypeVar
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 @dataclass
 class CacheEntry(Generic[T]):
     """Cache entry with metadata."""
-    
+
     value: T
     timestamp: float
     hits: int = 0
@@ -41,15 +41,15 @@ class LRUCache(Generic[T]):
         """
         self.capacity = capacity
         self.max_size_bytes = max_size_mb * 1024 * 1024
-        self.cache: Dict[str, CacheEntry[T]] = {}
+        self.cache: dict[str, CacheEntry[T]] = {}
         self.access_order: list[str] = []
         self.total_size = 0
-        
+
         # Metrics
         self.hits = 0
         self.misses = 0
 
-    def get(self, key: str) -> Optional[T]:
+    def get(self, key: str) -> T | None:
         """Get value from cache.
 
         Args:
@@ -85,12 +85,11 @@ class LRUCache(Generic[T]):
 
         # Evict if necessary
         while (
-            len(self.cache) >= self.capacity
-            or self.total_size + size_bytes > self.max_size_bytes
+            len(self.cache) >= self.capacity or self.total_size + size_bytes > self.max_size_bytes
         ):
             if not self.access_order:
                 break
-            
+
             oldest_key = self.access_order.pop(0)
             if oldest_key in self.cache:
                 self.total_size -= self.cache[oldest_key].size_bytes
@@ -125,7 +124,7 @@ class LRUCache(Generic[T]):
         self.hits = 0
         self.misses = 0
 
-    def stats(self) -> Dict[str, Any]:
+    def stats(self) -> dict[str, Any]:
         """Get cache statistics.
 
         Returns:

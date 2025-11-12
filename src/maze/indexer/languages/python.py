@@ -8,9 +8,7 @@ Performance target: >1000 symbols/sec
 from __future__ import annotations
 
 import ast
-import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
 
 from maze.core.types import TypeContext
 from maze.indexer.base import (
@@ -26,7 +24,7 @@ from maze.indexer.base import (
 class PythonIndexer(BaseIndexer):
     """Python code indexer using AST parsing."""
 
-    def __init__(self, project_path: Optional[Path] = None):
+    def __init__(self, project_path: Path | None = None):
         """Initialize Python indexer.
 
         Args:
@@ -48,30 +46,30 @@ class PythonIndexer(BaseIndexer):
         import time
 
         start = time.perf_counter()
-        
-        symbols: List[Symbol] = []
-        imports: List[ImportInfo] = []
-        tests: List[TestCase] = []
-        errors: List[str] = []
+
+        symbols: list[Symbol] = []
+        imports: list[ImportInfo] = []
+        tests: list[TestCase] = []
+        errors: list[str] = []
 
         try:
             content = file_path.read_text(encoding="utf-8")
-            
+
             # Parse AST
             tree = ast.parse(content, filename=str(file_path))
-            
+
             # Extract symbols
             symbols = self._extract_symbols_from_ast(tree, str(file_path))
-            
+
             # Extract imports
             imports = self._extract_imports(tree, str(file_path))
-            
+
             # Detect tests
             tests = self._detect_test_patterns(tree, str(file_path))
-            
+
             # Detect style
             style = self._detect_style(content)
-            
+
         except SyntaxError as e:
             errors.append(f"Syntax error in {file_path}: {e}")
             style = StyleInfo()
@@ -106,12 +104,12 @@ class PythonIndexer(BaseIndexer):
 
         start = time.perf_counter()
 
-        all_symbols: List[Symbol] = []
-        all_imports: List[ImportInfo] = []
-        all_tests: List[TestCase] = []
-        all_errors: List[str] = []
-        all_files: List[str] = []
-        
+        all_symbols: list[Symbol] = []
+        all_imports: list[ImportInfo] = []
+        all_tests: list[TestCase] = []
+        all_errors: list[str] = []
+        all_files: list[str] = []
+
         # Default style (will be refined from first file)
         combined_style = StyleInfo(indent_size=4, indent_type="space", quotes="single")
 
@@ -120,17 +118,19 @@ class PythonIndexer(BaseIndexer):
 
         for file_path in python_files:
             # Skip __pycache__ and other excluded dirs
-            if any(excluded in file_path.parts for excluded in ["__pycache__", ".git", "venv", ".venv"]):
+            if any(
+                excluded in file_path.parts for excluded in ["__pycache__", ".git", "venv", ".venv"]
+            ):
                 continue
 
             result = self.index_file(file_path)
-            
+
             all_symbols.extend(result.symbols)
             all_imports.extend(result.imports)
             all_tests.extend(result.tests)
             all_errors.extend(result.errors)
             all_files.extend(result.files_processed)
-            
+
             # Use first file's style
             if file_path == python_files[0]:
                 combined_style = result.style
@@ -149,7 +149,7 @@ class PythonIndexer(BaseIndexer):
             duration_ms=duration_ms,
         )
 
-    def _extract_symbols_from_ast(self, tree: ast.Module, file_path: str) -> List[Symbol]:
+    def _extract_symbols_from_ast(self, tree: ast.Module, file_path: str) -> list[Symbol]:
         """Extract symbols from AST.
 
         Args:
@@ -166,18 +166,18 @@ class PythonIndexer(BaseIndexer):
             if isinstance(node, ast.FunctionDef) or isinstance(node, ast.AsyncFunctionDef):
                 is_async = isinstance(node, ast.AsyncFunctionDef)
                 kind = "async_function" if is_async else "function"
-                
+
                 # Extract return type
                 return_type = self._extract_type_hint(node.returns) if node.returns else "Any"
-                
+
                 # Build function signature
                 params = []
                 for arg in node.args.args:
                     arg_type = self._extract_type_hint(arg.annotation) if arg.annotation else "Any"
                     params.append(f"{arg.arg}: {arg_type}")
-                
+
                 type_str = f"({', '.join(params)}) -> {return_type}"
-                
+
                 symbols.append(
                     Symbol(
                         name=node.name,
@@ -189,7 +189,13 @@ class PythonIndexer(BaseIndexer):
                         end_line=node.end_lineno,
                         end_column=node.end_col_offset,
                         docstring=ast.get_docstring(node),
-                        metadata={"is_async": is_async, "decorators": [d.id if isinstance(d, ast.Name) else str(d) for d in node.decorator_list]},
+                        metadata={
+                            "is_async": is_async,
+                            "decorators": [
+                                d.id if isinstance(d, ast.Name) else str(d)
+                                for d in node.decorator_list
+                            ],
+                        },
                     )
                 )
 
@@ -197,10 +203,9 @@ class PythonIndexer(BaseIndexer):
             elif isinstance(node, ast.ClassDef):
                 # Check if dataclass
                 is_dataclass = any(
-                    isinstance(d, ast.Name) and d.id == "dataclass"
-                    for d in node.decorator_list
+                    isinstance(d, ast.Name) and d.id == "dataclass" for d in node.decorator_list
                 )
-                
+
                 symbols.append(
                     Symbol(
                         name=node.name,
@@ -212,14 +217,17 @@ class PythonIndexer(BaseIndexer):
                         end_line=node.end_lineno,
                         end_column=node.end_col_offset,
                         docstring=ast.get_docstring(node),
-                        metadata={"is_dataclass": is_dataclass, "bases": [self._get_base_name(b) for b in node.bases]},
+                        metadata={
+                            "is_dataclass": is_dataclass,
+                            "bases": [self._get_base_name(b) for b in node.bases],
+                        },
                     )
                 )
 
             # Variables with type annotations (PEP 526)
             elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
                 type_str = self._extract_type_hint(node.annotation)
-                
+
                 symbols.append(
                     Symbol(
                         name=node.target.id,
@@ -233,7 +241,7 @@ class PythonIndexer(BaseIndexer):
 
         return symbols
 
-    def _extract_type_hint(self, annotation: Optional[ast.AST]) -> str:
+    def _extract_type_hint(self, annotation: ast.AST | None) -> str:
         """Extract type hint as string.
 
         Args:
@@ -274,7 +282,7 @@ class PythonIndexer(BaseIndexer):
             except Exception:
                 return "Any"
 
-    def _extract_imports(self, tree: ast.Module, file_path: str) -> List[ImportInfo]:
+    def _extract_imports(self, tree: ast.Module, file_path: str) -> list[ImportInfo]:
         """Extract import statements.
 
         Args:
@@ -312,7 +320,7 @@ class PythonIndexer(BaseIndexer):
 
         return imports
 
-    def _detect_test_patterns(self, tree: ast.Module, file_path: str) -> List[TestCase]:
+    def _detect_test_patterns(self, tree: ast.Module, file_path: str) -> list[TestCase]:
         """Detect test cases in code.
 
         Args:
@@ -337,7 +345,7 @@ class PythonIndexer(BaseIndexer):
                             command=f"pytest {file_path}::{node.name}",
                         )
                     )
-            
+
             # unittest: TestCase classes
             elif isinstance(node, ast.ClassDef):
                 if any(self._get_base_name(base) == "TestCase" for base in node.bases):
@@ -367,7 +375,7 @@ class PythonIndexer(BaseIndexer):
         # Detect indentation
         indent_size = 4  # Python standard
         indent_type = "space"
-        
+
         # Detect quote preference
         single_quotes = content.count("'")
         double_quotes = content.count('"')
@@ -408,7 +416,7 @@ class PythonIndexer(BaseIndexer):
         else:
             return "Unknown"
 
-    def extract_symbols(self, content: str, file_path: Path) -> List[Symbol]:
+    def extract_symbols(self, content: str, file_path: Path) -> list[Symbol]:
         """Extract symbols from file content.
 
         Args:
@@ -435,11 +443,11 @@ class PythonIndexer(BaseIndexer):
             TypeContext with variables and functions
         """
         context = TypeContext()
-        
+
         try:
             tree = ast.parse(content, filename=str(file_path))
             symbols = self._extract_symbols_from_ast(tree, str(file_path))
-            
+
             for symbol in symbols:
                 if symbol.kind == "variable":
                     context.variables[symbol.name] = symbol.type_str
@@ -448,10 +456,10 @@ class PythonIndexer(BaseIndexer):
                     context.functions[symbol.name] = ([], symbol.type_str)
         except SyntaxError:
             pass
-        
+
         return context
 
-    def extract_tests(self, content: str, file_path: Path) -> List[TestCase]:
+    def extract_tests(self, content: str, file_path: Path) -> list[TestCase]:
         """Extract test cases from file.
 
         Args:

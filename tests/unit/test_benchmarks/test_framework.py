@@ -181,9 +181,7 @@ class TestBenchmarkRunner:
         config.project.language = "typescript"
         runner = BenchmarkRunner(config)
 
-        result = runner.benchmark_generation(
-            "Create a function", "Test Generation", iterations=2
-        )
+        result = runner.benchmark_generation("Create a function", "Test Generation", iterations=2)
 
         assert result.name == "Test Generation"
         assert result.category == "generation"

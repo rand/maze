@@ -2,14 +2,11 @@
 Tests for type inhabitation solver.
 """
 
-import pytest
+from maze.core.types import ClassType, FunctionSignature, Type, TypeContext, TypeParameter
 from maze.type_system.inhabitation import (
+    InhabitationPath,
     InhabitationSolver,
     Operation,
-    InhabitationPath,
-)
-from maze.core.types import (
-    Type, TypeContext, FunctionSignature, TypeParameter, ClassType
 )
 
 
@@ -36,13 +33,10 @@ class TestInhabitationSolver:
         to_string = FunctionSignature(
             name="toString",
             parameters=[TypeParameter("n", Type("number"))],
-            return_type=Type("string")
+            return_type=Type("string"),
         )
 
-        context = TypeContext(
-            variables={"x": Type("number")},
-            functions={"toString": to_string}
-        )
+        context = TypeContext(variables={"x": Type("number")}, functions={"toString": to_string})
 
         # Find path from number to string
         paths = solver.find_paths(Type("number"), Type("string"), context)
@@ -57,14 +51,10 @@ class TestInhabitationSolver:
 
         # Class Person with name property
         person_class = ClassType(
-            name="Person",
-            properties={"name": Type("string"), "age": Type("number")},
-            methods={}
+            name="Person", properties={"name": Type("string"), "age": Type("number")}, methods={}
         )
 
-        context = TypeContext(
-            classes={"Person": person_class}
-        )
+        context = TypeContext(classes={"Person": person_class})
 
         # Find path from Person to string via name property
         paths = solver.find_paths(Type("Person"), Type("string"), context)
@@ -81,18 +71,16 @@ class TestInhabitationSolver:
         address_class = ClassType(
             name="Address",
             properties={"street": Type("string"), "city": Type("string")},
-            methods={}
+            methods={},
         )
 
         person_class = ClassType(
             name="Person",
             properties={"name": Type("string"), "address": Type("Address")},
-            methods={}
+            methods={},
         )
 
-        context = TypeContext(
-            classes={"Person": person_class, "Address": address_class}
-        )
+        context = TypeContext(classes={"Person": person_class, "Address": address_class})
 
         # Find path from Person to string via address.street
         paths = solver.find_paths(Type("Person"), Type("string"), context)
@@ -121,13 +109,10 @@ class TestInhabitationSolver:
         to_string = FunctionSignature(
             name="toString",
             parameters=[TypeParameter("n", Type("number"))],
-            return_type=Type("string")
+            return_type=Type("string"),
         )
 
-        context = TypeContext(
-            variables={"x": Type("number")},
-            functions={"toString": to_string}
-        )
+        context = TypeContext(variables={"x": Type("number")}, functions={"toString": to_string})
 
         paths = solver.find_paths(Type("number"), Type("string"), context)
 
@@ -140,22 +125,18 @@ class TestInhabitationSolver:
         """Test that paths are ranked by cost."""
         solver = InhabitationSolver()
 
-        person_class = ClassType(
-            name="Person",
-            properties={"name": Type("string")},
-            methods={}
-        )
+        person_class = ClassType(name="Person", properties={"name": Type("string")}, methods={})
 
         to_string = FunctionSignature(
             name="toString",
             parameters=[TypeParameter("p", Type("Person"))],
-            return_type=Type("string")
+            return_type=Type("string"),
         )
 
         context = TypeContext(
             variables={"person": Type("Person")},
             classes={"Person": person_class},
-            functions={"toString": to_string}
+            functions={"toString": to_string},
         )
 
         # Find paths from Person to string
@@ -173,30 +154,14 @@ class TestInhabitationSolver:
         solver = InhabitationSolver(max_depth=2)
 
         # Create deep nesting
-        address_class = ClassType(
-            name="Address",
-            properties={"street": Type("string")},
-            methods={}
-        )
+        address_class = ClassType(name="Address", properties={"street": Type("string")}, methods={})
 
-        person_class = ClassType(
-            name="Person",
-            properties={"address": Type("Address")},
-            methods={}
-        )
+        person_class = ClassType(name="Person", properties={"address": Type("Address")}, methods={})
 
-        company_class = ClassType(
-            name="Company",
-            properties={"ceo": Type("Person")},
-            methods={}
-        )
+        company_class = ClassType(name="Company", properties={"ceo": Type("Person")}, methods={})
 
         context = TypeContext(
-            classes={
-                "Company": company_class,
-                "Person": person_class,
-                "Address": address_class
-            }
+            classes={"Company": company_class, "Person": person_class, "Address": address_class}
         )
 
         # This would require 3 steps: Company -> Person -> Address -> string
@@ -237,14 +202,10 @@ class TestInhabitationSolver:
 
         # Create self-referential class
         node_class = ClassType(
-            name="Node",
-            properties={"next": Type("Node"), "value": Type("number")},
-            methods={}
+            name="Node", properties={"next": Type("Node"), "value": Type("number")}, methods={}
         )
 
-        context = TypeContext(
-            classes={"Node": node_class}
-        )
+        context = TypeContext(classes={"Node": node_class})
 
         # Search should not infinite loop
         paths = solver.find_paths(Type("Node"), Type("number"), context)
@@ -257,21 +218,11 @@ class TestInhabitationSolver:
         """Test that max depth limit is enforced."""
         solver = InhabitationSolver(max_depth=1)
 
-        person_class = ClassType(
-            name="Person",
-            properties={"address": Type("Address")},
-            methods={}
-        )
+        person_class = ClassType(name="Person", properties={"address": Type("Address")}, methods={})
 
-        address_class = ClassType(
-            name="Address",
-            properties={"street": Type("string")},
-            methods={}
-        )
+        address_class = ClassType(name="Address", properties={"street": Type("string")}, methods={})
 
-        context = TypeContext(
-            classes={"Person": person_class, "Address": address_class}
-        )
+        context = TypeContext(classes={"Person": person_class, "Address": address_class})
 
         # 2-step path: Person -> Address -> string
         paths = solver.find_paths(Type("Person"), Type("string"), context)
@@ -320,22 +271,15 @@ class TestInhabitationSolver:
         """Test finding lowest-cost path."""
         solver = InhabitationSolver()
 
-        person_class = ClassType(
-            name="Person",
-            properties={"name": Type("string")},
-            methods={}
-        )
+        person_class = ClassType(name="Person", properties={"name": Type("string")}, methods={})
 
         to_string = FunctionSignature(
             name="toString",
             parameters=[TypeParameter("p", Type("Person"))],
-            return_type=Type("string")
+            return_type=Type("string"),
         )
 
-        context = TypeContext(
-            classes={"Person": person_class},
-            functions={"toString": to_string}
-        )
+        context = TypeContext(classes={"Person": person_class}, functions={"toString": to_string})
 
         # Find best path
         best = solver.find_best_path(Type("Person"), Type("string"), context)
@@ -372,10 +316,7 @@ class TestOperation:
     def test_operation_creation(self):
         """Test creating an operation."""
         op = Operation(
-            name="toString",
-            input_type=Type("number"),
-            output_type=Type("string"),
-            cost=1.0
+            name="toString", input_type=Type("number"), output_type=Type("string"), cost=1.0
         )
 
         assert op.name == "toString"
@@ -385,22 +326,14 @@ class TestOperation:
 
     def test_operation_applicable(self):
         """Test checking if operation is applicable."""
-        op = Operation(
-            name="toString",
-            input_type=Type("number"),
-            output_type=Type("string")
-        )
+        op = Operation(name="toString", input_type=Type("number"), output_type=Type("string"))
 
         assert op.applicable(Type("number")) is True
         assert op.applicable(Type("string")) is False
 
     def test_operation_apply(self):
         """Test applying an operation."""
-        op = Operation(
-            name="toString",
-            input_type=Type("number"),
-            output_type=Type("string")
-        )
+        op = Operation(name="toString", input_type=Type("number"), output_type=Type("string"))
 
         result = op.apply(Type("number"))
         assert result == Type("string")

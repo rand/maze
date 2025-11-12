@@ -3,6 +3,7 @@ Unit tests for grammar builder.
 """
 
 import pytest
+
 from maze.synthesis.grammar_builder import (
     GrammarBuilder,
     GrammarTemplate,
@@ -17,9 +18,7 @@ class TestGrammarTemplate:
     def test_template_creation(self):
         """Test creating a template."""
         template = GrammarTemplate(
-            name="test",
-            grammar="?start: {{rule}}\n{{rule}}: {{pattern}}",
-            language="test"
+            name="test", grammar="?start: {{rule}}\n{{rule}}: {{pattern}}", language="test"
         )
 
         assert template.name == "test"
@@ -29,9 +28,7 @@ class TestGrammarTemplate:
     def test_template_rendering(self):
         """Test rendering a template."""
         template = GrammarTemplate(
-            name="test",
-            grammar="?start: {{rule}}\n{{rule}}: {{pattern}}",
-            language="test"
+            name="test", grammar="?start: {{rule}}\n{{rule}}: {{pattern}}", language="test"
         )
 
         rendered = template.render(rule="expr", pattern="NUMBER")
@@ -41,9 +38,7 @@ class TestGrammarTemplate:
     def test_template_missing_variables(self):
         """Test error on missing variables."""
         template = GrammarTemplate(
-            name="test",
-            grammar="?start: {{rule}}\n{{rule}}: {{pattern}}",
-            language="test"
+            name="test", grammar="?start: {{rule}}\n{{rule}}: {{pattern}}", language="test"
         )
 
         with pytest.raises(ValueError, match="Missing required variables"):
@@ -115,7 +110,7 @@ class TestGrammarBuilder:
         assert "?start: expr" in grammar
         assert "expr: NUMBER | STRING" in grammar
         assert "NUMBER: /\\d+/" in grammar
-        assert "STRING: /\"[^\"]*\"/" in grammar
+        assert 'STRING: /"[^"]*"/' in grammar
         assert "%ignore /\\s+/" in grammar
 
     def test_validate_grammar_with_start(self):
@@ -140,9 +135,7 @@ class TestGrammarBuilder:
     def test_template_registration(self):
         """Test template registration and loading."""
         template = GrammarTemplate(
-            name="simple",
-            grammar="?start: {{rule}}\n{{rule}}: NUMBER",
-            language="test"
+            name="simple", grammar="?start: {{rule}}\n{{rule}}: NUMBER", language="test"
         )
 
         builder = GrammarBuilder()
@@ -153,9 +146,7 @@ class TestGrammarBuilder:
     def test_template_loading(self):
         """Test loading and rendering template."""
         template = GrammarTemplate(
-            name="simple",
-            grammar="?start: {{rule}}\n{{rule}}: NUMBER",
-            language="test"
+            name="simple", grammar="?start: {{rule}}\n{{rule}}: NUMBER", language="test"
         )
 
         builder = GrammarBuilder()
@@ -190,8 +181,7 @@ class TestGrammarBuilder:
         """Test method chaining."""
         builder = GrammarBuilder()
         result = (
-            builder
-            .add_rule("start", "expr", priority="?")
+            builder.add_rule("start", "expr", priority="?")
             .add_rule("expr", "NUMBER")
             .add_terminal("NUMBER", r"/\d+/")
             .ignore_whitespace()
@@ -210,10 +200,7 @@ class TestGrammarHelpers:
         """Test creating grammar from JSON schema."""
         schema = {
             "type": "object",
-            "properties": {
-                "name": {"type": "string"},
-                "age": {"type": "number"}
-            }
+            "properties": {"name": {"type": "string"}, "age": {"type": "number"}},
         }
 
         grammar = create_json_schema_grammar(schema)
@@ -242,7 +229,7 @@ STRING: /"[^"]*"/
         assert "?start: expr" in merged
         # Should have both terminals
         assert "NUMBER: /\\d+/" in merged
-        assert "STRING: /\"[^\"]*\"/" in merged
+        assert 'STRING: /"[^"]*"/' in merged
         # Should have directive
         assert "%ignore /\\s+/" in merged
 

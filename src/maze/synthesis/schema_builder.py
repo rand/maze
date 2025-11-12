@@ -7,12 +7,12 @@ sources (Pydantic models, TypeScript interfaces, Maze types) into JSON Schema.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Set, Type as PyType, get_type_hints
-import logging
 import inspect
+import logging
+from dataclasses import dataclass
+from typing import Any, get_type_hints
 
-from maze.core.types import Type, FunctionSignature, ClassType, InterfaceType
+from maze.core.types import ClassType, FunctionSignature, InterfaceType, Type
 
 logger = logging.getLogger(__name__)
 
@@ -31,14 +31,14 @@ class SchemaBuilder:
 
     strict: bool = True
     additional_properties: bool = False
-    definitions: Dict[str, Any] = None
+    definitions: dict[str, Any] = None
 
     def __post_init__(self):
         """Initialize definitions storage."""
         if self.definitions is None:
             self.definitions = {}
 
-    def from_pydantic(self, model: PyType) -> Dict[str, Any]:
+    def from_pydantic(self, model: type) -> dict[str, Any]:
         """
         Convert Pydantic model to JSON Schema.
 
@@ -69,7 +69,7 @@ class SchemaBuilder:
 
         return schema
 
-    def from_dataclass(self, cls: PyType) -> Dict[str, Any]:
+    def from_dataclass(self, cls: type) -> dict[str, Any]:
         """
         Convert Python dataclass to JSON Schema.
 
@@ -82,7 +82,7 @@ class SchemaBuilder:
         Raises:
             ValueError: If not a dataclass
         """
-        from dataclasses import is_dataclass, fields
+        from dataclasses import fields, is_dataclass
 
         if not is_dataclass(cls):
             raise ValueError(f"{cls} is not a dataclass")
@@ -102,6 +102,7 @@ class SchemaBuilder:
 
             # Check if field is required (no default)
             from dataclasses import MISSING
+
             if field.default is MISSING and field.default_factory is MISSING:
                 required.append(field_name)
 
@@ -116,7 +117,7 @@ class SchemaBuilder:
 
         return schema
 
-    def from_maze_type(self, maze_type: Type) -> Dict[str, Any]:
+    def from_maze_type(self, maze_type: Type) -> dict[str, Any]:
         """
         Convert Maze Type to JSON Schema.
 
@@ -128,7 +129,9 @@ class SchemaBuilder:
         """
         # Handle nullable types first (wraps the base type)
         if maze_type.nullable:
-            base_schema = self.from_maze_type(Type(maze_type.name, maze_type.parameters, nullable=False))
+            base_schema = self.from_maze_type(
+                Type(maze_type.name, maze_type.parameters, nullable=False)
+            )
             return {"anyOf": [base_schema, {"type": "null"}]}
 
         # Handle primitive types
@@ -159,7 +162,7 @@ class SchemaBuilder:
         else:
             return {"$ref": f"#/definitions/{maze_type.name}"}
 
-    def from_class_type(self, class_type: ClassType) -> Dict[str, Any]:
+    def from_class_type(self, class_type: ClassType) -> dict[str, Any]:
         """
         Convert Maze ClassType to JSON Schema.
 
@@ -191,7 +194,7 @@ class SchemaBuilder:
 
         return schema
 
-    def from_interface_type(self, interface: InterfaceType) -> Dict[str, Any]:
+    def from_interface_type(self, interface: InterfaceType) -> dict[str, Any]:
         """
         Convert Maze InterfaceType to JSON Schema.
 
@@ -220,10 +223,10 @@ class SchemaBuilder:
 
     def build_object_schema(
         self,
-        properties: Dict[str, Dict[str, Any]],
-        required: Optional[List[str]] = None,
-        additional_properties: Optional[bool] = None
-    ) -> Dict[str, Any]:
+        properties: dict[str, dict[str, Any]],
+        required: list[str] | None = None,
+        additional_properties: bool | None = None,
+    ) -> dict[str, Any]:
         """
         Build an object schema directly.
 
@@ -252,11 +255,11 @@ class SchemaBuilder:
 
     def build_array_schema(
         self,
-        items: Dict[str, Any],
-        min_items: Optional[int] = None,
-        max_items: Optional[int] = None,
-        unique_items: bool = False
-    ) -> Dict[str, Any]:
+        items: dict[str, Any],
+        min_items: int | None = None,
+        max_items: int | None = None,
+        unique_items: bool = False,
+    ) -> dict[str, Any]:
         """
         Build an array schema.
 
@@ -283,7 +286,7 @@ class SchemaBuilder:
 
         return schema
 
-    def build_enum_schema(self, values: List[Any]) -> Dict[str, Any]:
+    def build_enum_schema(self, values: list[Any]) -> dict[str, Any]:
         """
         Build an enum schema.
 
@@ -297,11 +300,11 @@ class SchemaBuilder:
 
     def build_string_schema(
         self,
-        pattern: Optional[str] = None,
-        min_length: Optional[int] = None,
-        max_length: Optional[int] = None,
-        format: Optional[str] = None
-    ) -> Dict[str, Any]:
+        pattern: str | None = None,
+        min_length: int | None = None,
+        max_length: int | None = None,
+        format: str | None = None,
+    ) -> dict[str, Any]:
         """
         Build a string schema with constraints.
 
@@ -329,13 +332,13 @@ class SchemaBuilder:
 
     def build_number_schema(
         self,
-        minimum: Optional[float] = None,
-        maximum: Optional[float] = None,
-        exclusive_minimum: Optional[float] = None,
-        exclusive_maximum: Optional[float] = None,
-        multiple_of: Optional[float] = None,
-        integer: bool = False
-    ) -> Dict[str, Any]:
+        minimum: float | None = None,
+        maximum: float | None = None,
+        exclusive_minimum: float | None = None,
+        exclusive_maximum: float | None = None,
+        multiple_of: float | None = None,
+        integer: bool = False,
+    ) -> dict[str, Any]:
         """
         Build a number schema with constraints.
 
@@ -365,7 +368,7 @@ class SchemaBuilder:
 
         return schema
 
-    def _python_type_to_schema(self, python_type: Any) -> Dict[str, Any]:
+    def _python_type_to_schema(self, python_type: Any) -> dict[str, Any]:
         """
         Convert Python type hint to JSON Schema.
 
@@ -388,19 +391,19 @@ class SchemaBuilder:
         # Handle typing module types
         origin = getattr(python_type, "__origin__", None)
 
-        if origin is list or origin is List:
+        if origin is list or origin is list:
             args = getattr(python_type, "__args__", ())
             if args:
                 return {"type": "array", "items": self._python_type_to_schema(args[0])}
             return {"type": "array"}
 
-        elif origin is dict or origin is Dict:
+        elif origin is dict or origin is dict:
             return {"type": "object"}
 
         # Default to any
         return {}
 
-    def _function_signature_to_schema(self, sig: FunctionSignature) -> Dict[str, Any]:
+    def _function_signature_to_schema(self, sig: FunctionSignature) -> dict[str, Any]:
         """
         Convert function signature to schema representation.
 
@@ -415,16 +418,13 @@ class SchemaBuilder:
             "properties": {
                 "parameters": {
                     "type": "array",
-                    "items": [
-                        {"type": "string", "const": param.name}
-                        for param in sig.parameters
-                    ]
+                    "items": [{"type": "string", "const": param.name} for param in sig.parameters],
                 },
-                "returnType": self.from_maze_type(sig.return_type)
-            }
+                "returnType": self.from_maze_type(sig.return_type),
+            },
         }
 
 
 __all__ = [
-    'SchemaBuilder',
+    "SchemaBuilder",
 ]

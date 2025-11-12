@@ -4,20 +4,21 @@ Performance tests for LLGuidance adapter.
 Tests that mask computation meets the <100μs target.
 """
 
-import pytest
-import time
 import statistics
-from typing import List
+import time
+
+import pytest
 
 from maze.integrations.llguidance import (
     LLGuidanceAdapter,
-    TokenizerConfig,
     create_adapter,
 )
 
 
 @pytest.mark.performance
-@pytest.mark.skip(reason="LLGuidance class not properly integrated - requires llguidance library updates")
+@pytest.mark.skip(
+    reason="LLGuidance class not properly integrated - requires llguidance library updates"
+)
 class TestLLGuidancePerformance:
     """Performance benchmarks for LLGuidance adapter."""
 
@@ -51,7 +52,7 @@ class TestLLGuidancePerformance:
             llguidance_adapter.compute_mask(parser, state)
 
         # Measure performance
-        times_us: List[float] = []
+        times_us: list[float] = []
 
         for state in test_states:
             # Clear cache to test actual computation
@@ -70,14 +71,18 @@ class TestLLGuidancePerformance:
             times_us.append(median_time)
 
             # Check individual state performance
-            assert median_time < 200, f"Mask computation for state '{state}' took {median_time:.1f}μs (target: <100μs, acceptable: <200μs)"
+            assert (
+                median_time < 200
+            ), f"Mask computation for state '{state}' took {median_time:.1f}μs (target: <100μs, acceptable: <200μs)"
 
         # Overall statistics
         avg_time = statistics.mean(times_us)
         p95_time = statistics.quantiles(times_us, n=20)[18]  # 95th percentile
-        p99_time = statistics.quantiles(times_us, n=100)[98] if len(times_us) >= 100 else max(times_us)
+        p99_time = (
+            statistics.quantiles(times_us, n=100)[98] if len(times_us) >= 100 else max(times_us)
+        )
 
-        print(f"\nMask Computation Performance:")
+        print("\nMask Computation Performance:")
         print(f"  Average: {avg_time:.1f}μs")
         print(f"  P95: {p95_time:.1f}μs")
         print(f"  P99: {p99_time:.1f}μs")
@@ -85,8 +90,12 @@ class TestLLGuidancePerformance:
         print(f"  Max: {max(times_us):.1f}μs")
 
         # Assert performance targets
-        assert avg_time < 100, f"Average mask computation time {avg_time:.1f}μs exceeds target of 100μs"
-        assert p95_time < 150, f"P95 mask computation time {p95_time:.1f}μs exceeds acceptable threshold of 150μs"
+        assert (
+            avg_time < 100
+        ), f"Average mask computation time {avg_time:.1f}μs exceeds target of 100μs"
+        assert (
+            p95_time < 150
+        ), f"P95 mask computation time {p95_time:.1f}μs exceeds acceptable threshold of 150μs"
 
     def test_cache_performance(self, llguidance_adapter: LLGuidanceAdapter):
         """Test cache hit performance."""
@@ -116,7 +125,7 @@ class TestLLGuidancePerformance:
         mask2 = llguidance_adapter.compute_mask(parser, state)
         hit_time = (time.perf_counter() - start) * 1_000_000
 
-        print(f"\nCache Performance:")
+        print("\nCache Performance:")
         print(f"  Cache miss: {miss_time:.1f}μs")
         print(f"  Cache hit: {hit_time:.1f}μs")
         print(f"  Speedup: {miss_time/hit_time:.1f}x")
@@ -169,7 +178,7 @@ class TestLLGuidancePerformance:
 
             IDENT: /[a-zA-Z_$][a-zA-Z0-9_$]*/
             STRING: /"[^"]*"/ | /'[^']*/
-            NUMBER: /-?[0-9]+(\.[0-9]+)?/
+            NUMBER: /-?[0-9]+(\\.[0-9]+)?/
 
             %ignore /\\s+/
             %ignore /\\/\\/[^\\n]*/
@@ -184,11 +193,13 @@ class TestLLGuidancePerformance:
         parser = llguidance_adapter.build_parser(grammar)
         compilation_time = (time.perf_counter() - start) * 1000  # Convert to milliseconds
 
-        print(f"\nGrammar Compilation Performance:")
+        print("\nGrammar Compilation Performance:")
         print(f"  Compilation time: {compilation_time:.2f}ms")
 
         # Check compilation performance
-        assert compilation_time < 100, f"Grammar compilation took {compilation_time:.2f}ms (target: <50ms, acceptable: <100ms)"
+        assert (
+            compilation_time < 100
+        ), f"Grammar compilation took {compilation_time:.2f}ms (target: <50ms, acceptable: <100ms)"
 
         # Test that cached compilation is instant
         start = time.perf_counter()
@@ -237,7 +248,7 @@ class TestLLGuidancePerformance:
             llguidance_adapter.compute_mask(parser, state)
         sequential_time = (time.perf_counter() - start) * 1000
 
-        print(f"\nBatch Performance:")
+        print("\nBatch Performance:")
         print(f"  Batch time: {batch_time:.2f}ms for {len(states)} states")
         print(f"  Sequential time: {sequential_time:.2f}ms")
         print(f"  Speedup: {sequential_time/batch_time:.1f}x")
@@ -246,7 +257,9 @@ class TestLLGuidancePerformance:
 
         # Check batch performance
         per_state_time = (batch_time / len(states)) * 1000  # Convert to microseconds
-        assert per_state_time < 100, f"Per-state batch time {per_state_time:.1f}μs exceeds target of 100μs"
+        assert (
+            per_state_time < 100
+        ), f"Per-state batch time {per_state_time:.1f}μs exceeds target of 100μs"
 
     def test_performance_summary(self, llguidance_adapter: LLGuidanceAdapter):
         """Test performance metrics summary."""
@@ -267,7 +280,7 @@ class TestLLGuidancePerformance:
         # Get summary
         summary = llguidance_adapter.get_performance_summary()
 
-        print(f"\nPerformance Summary:")
+        print("\nPerformance Summary:")
         print(f"  Mean: {summary.get('mean_us', 0):.1f}μs")
         print(f"  Min: {summary.get('min_us', 0):.1f}μs")
         print(f"  Max: {summary.get('max_us', 0):.1f}μs")
@@ -277,9 +290,9 @@ class TestLLGuidancePerformance:
         print(f"  Cache hit rate: {summary.get('cache_hit_rate', 0):.1%}")
 
         # Verify performance targets
-        assert summary.get('mean_us', float('inf')) < 100, "Mean time should be <100μs"
-        assert summary.get('p99_us', float('inf')) < 200, "P99 time should be <200μs"
-        assert summary.get('cache_hit_rate', 0) > 0.5, "Cache hit rate should be >50%"
+        assert summary.get("mean_us", float("inf")) < 100, "Mean time should be <100μs"
+        assert summary.get("p99_us", float("inf")) < 200, "P99 time should be <200μs"
+        assert summary.get("cache_hit_rate", 0) > 0.5, "Cache hit rate should be >50%"
 
 
 @pytest.mark.performance
@@ -296,8 +309,10 @@ def test_adapter_factory_performance():
         times[adapter_type] = elapsed
 
         # Adapter creation should be fast
-        assert elapsed < 10, f"Adapter creation for {adapter_type} took {elapsed:.2f}ms (target: <10ms)"
+        assert (
+            elapsed < 10
+        ), f"Adapter creation for {adapter_type} took {elapsed:.2f}ms (target: <10ms)"
 
-    print(f"\nAdapter Creation Times:")
+    print("\nAdapter Creation Times:")
     for adapter_type, elapsed in times.items():
         print(f"  {adapter_type}: {elapsed:.3f}ms")

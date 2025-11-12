@@ -2,12 +2,12 @@
 Unit tests for JSON Schema synthesis.
 """
 
-import pytest
 from dataclasses import dataclass
-from typing import List, Dict, Optional
 
+import pytest
+
+from maze.core.types import ClassType, Type
 from maze.synthesis.schema_builder import SchemaBuilder
-from maze.core.types import Type, ClassType, InterfaceType, FunctionSignature, TypeParameter
 
 
 class TestSchemaBuilderBasics:
@@ -66,10 +66,7 @@ class TestMazeTypeConversion:
         array_type = Type("Array", (Type("string"),))
         schema = builder.from_maze_type(array_type)
 
-        assert schema == {
-            "type": "array",
-            "items": {"type": "string"}
-        }
+        assert schema == {"type": "array", "items": {"type": "string"}}
 
     def test_array_type_no_params(self):
         """Test array without type parameters."""
@@ -114,7 +111,7 @@ class TestClassTypeConversion:
                 "name": Type("string"),
                 "age": Type("number"),
             },
-            methods={}
+            methods={},
         )
 
         schema = builder.from_class_type(class_type)
@@ -137,7 +134,7 @@ class TestClassTypeConversion:
                 "name": Type("string"),
                 "nickname": Type("string", nullable=True),
             },
-            methods={}
+            methods={},
         )
 
         schema = builder.from_class_type(class_type)
@@ -153,6 +150,7 @@ class TestDataclassConversion:
 
     def test_simple_dataclass(self):
         """Test simple dataclass conversion."""
+
         @dataclass
         class Person:
             name: str
@@ -169,6 +167,7 @@ class TestDataclassConversion:
 
     def test_dataclass_with_defaults(self):
         """Test dataclass with default values."""
+
         @dataclass
         class Person:
             name: str
@@ -183,21 +182,20 @@ class TestDataclassConversion:
 
     def test_dataclass_with_list(self):
         """Test dataclass with list field."""
+
         @dataclass
         class Team:
             name: str
-            members: List[str]
+            members: list[str]
 
         builder = SchemaBuilder()
         schema = builder.from_dataclass(Team)
 
-        assert schema["properties"]["members"] == {
-            "type": "array",
-            "items": {"type": "string"}
-        }
+        assert schema["properties"]["members"] == {"type": "array", "items": {"type": "string"}}
 
     def test_not_a_dataclass(self):
         """Test error on non-dataclass."""
+
         class NotADataclass:
             pass
 
@@ -230,6 +228,7 @@ class TestPydanticConversion:
 
     def test_not_a_pydantic_model(self):
         """Test error on non-Pydantic class."""
+
         class NotPydantic:
             pass
 
@@ -247,11 +246,7 @@ class TestSchemaBuilders:
         builder = SchemaBuilder()
 
         schema = builder.build_object_schema(
-            properties={
-                "name": {"type": "string"},
-                "age": {"type": "number"}
-            },
-            required=["name"]
+            properties={"name": {"type": "string"}, "age": {"type": "number"}}, required=["name"]
         )
 
         assert schema["type"] == "object"
@@ -264,10 +259,7 @@ class TestSchemaBuilders:
         builder = SchemaBuilder()
 
         schema = builder.build_array_schema(
-            items={"type": "string"},
-            min_items=1,
-            max_items=10,
-            unique_items=True
+            items={"type": "string"}, min_items=1, max_items=10, unique_items=True
         )
 
         assert schema["type"] == "array"
@@ -288,10 +280,7 @@ class TestSchemaBuilders:
         builder = SchemaBuilder()
 
         schema = builder.build_string_schema(
-            pattern="^[a-z]+$",
-            min_length=3,
-            max_length=20,
-            format="email"
+            pattern="^[a-z]+$", min_length=3, max_length=20, format="email"
         )
 
         assert schema["type"] == "string"
@@ -304,12 +293,7 @@ class TestSchemaBuilders:
         """Test building number schema with constraints."""
         builder = SchemaBuilder()
 
-        schema = builder.build_number_schema(
-            minimum=0,
-            maximum=100,
-            multiple_of=5,
-            integer=True
-        )
+        schema = builder.build_number_schema(minimum=0, maximum=100, multiple_of=5, integer=True)
 
         assert schema["type"] == "integer"
         assert schema["minimum"] == 0
@@ -320,10 +304,7 @@ class TestSchemaBuilders:
         """Test exclusive min/max."""
         builder = SchemaBuilder()
 
-        schema = builder.build_number_schema(
-            exclusive_minimum=0,
-            exclusive_maximum=1
-        )
+        schema = builder.build_number_schema(exclusive_minimum=0, exclusive_maximum=1)
 
         assert schema["exclusiveMinimum"] == 0
         assert schema["exclusiveMaximum"] == 1
@@ -339,20 +320,14 @@ class TestComplexSchemas:
         schema = builder.build_object_schema(
             properties={
                 "user": builder.build_object_schema(
-                    properties={
-                        "name": {"type": "string"},
-                        "email": {"type": "string"}
-                    },
-                    required=["name", "email"]
+                    properties={"name": {"type": "string"}, "email": {"type": "string"}},
+                    required=["name", "email"],
                 ),
                 "posts": builder.build_array_schema(
                     items=builder.build_object_schema(
-                        properties={
-                            "title": {"type": "string"},
-                            "content": {"type": "string"}
-                        }
+                        properties={"title": {"type": "string"}, "content": {"type": "string"}}
                     )
-                )
+                ),
             }
         )
 
@@ -364,9 +339,7 @@ class TestComplexSchemas:
         """Test strict mode enforcement."""
         builder = SchemaBuilder(strict=True, additional_properties=False)
 
-        schema = builder.build_object_schema(
-            properties={"name": {"type": "string"}}
-        )
+        schema = builder.build_object_schema(properties={"name": {"type": "string"}})
 
         assert schema["additionalProperties"] is False
 
@@ -374,8 +347,6 @@ class TestComplexSchemas:
         """Test non-strict mode."""
         builder = SchemaBuilder(strict=False)
 
-        schema = builder.build_object_schema(
-            properties={"name": {"type": "string"}}
-        )
+        schema = builder.build_object_schema(properties={"name": {"type": "string"}})
 
         assert "additionalProperties" not in schema

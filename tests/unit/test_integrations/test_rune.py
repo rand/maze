@@ -6,11 +6,9 @@ and cleanup mechanisms.
 """
 
 import pytest
+
 from maze.integrations.rune import (
     RuneExecutor,
-    ExecutionResult,
-    SecurityIssue,
-    RuneConfig,
 )
 
 
@@ -66,7 +64,7 @@ class TestRuneExecutor:
         executor = RuneExecutor()
 
         issues = executor.validate_security(
-            code='result = eval(user_input)',
+            code="result = eval(user_input)",
             language="python",
         )
 
@@ -79,7 +77,7 @@ class TestRuneExecutor:
         executor = RuneExecutor()
 
         issues = executor.validate_security(
-            code='import os\nos.system(user_command)',
+            code="import os\nos.system(user_command)",
             language="python",
         )
 
@@ -202,7 +200,7 @@ class TestSecurityValidation:
         executor = RuneExecutor()
 
         issues = executor.validate_security(
-            code='def add(a, b):\n    return a + b\n\nresult = add(2, 3)',
+            code="def add(a, b):\n    return a + b\n\nresult = add(2, 3)",
             language="python",
         )
 
@@ -213,7 +211,7 @@ class TestSecurityValidation:
         executor = RuneExecutor()
 
         issues = executor.validate_security(
-            code='element.innerHTML = userInput;',
+            code="element.innerHTML = userInput;",
             language="typescript",
         )
 
@@ -225,7 +223,7 @@ class TestSecurityValidation:
         executor = RuneExecutor()
 
         issues = executor.validate_security(
-            code='<div dangerouslySetInnerHTML={{__html: data}} />',
+            code="<div dangerouslySetInnerHTML={{__html: data}} />",
             language="typescript",
         )
 

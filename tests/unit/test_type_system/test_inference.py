@@ -2,13 +2,12 @@
 Tests for type inference engine.
 """
 
-import pytest
+from maze.core.types import ClassType, FunctionSignature, Type, TypeContext
 from maze.type_system.inference import (
-    TypeInferenceEngine,
     InferenceResult,
     TypeConstraint,
+    TypeInferenceEngine,
 )
-from maze.core.types import Type, TypeContext, ClassType, FunctionSignature, TypeParameter
 
 
 class TestTypeInference:
@@ -54,10 +53,12 @@ class TestTypeInference:
     def test_infer_variable_from_context(self):
         """Test inferring variable type from context."""
         engine = TypeInferenceEngine()
-        context = TypeContext(variables={
-            "x": Type("number"),
-            "name": Type("string"),
-        })
+        context = TypeContext(
+            variables={
+                "x": Type("number"),
+                "name": Type("string"),
+            }
+        )
 
         expr_x = {"kind": "identifier", "name": "x"}
         result_x = engine.infer_expression(expr_x, context)
@@ -86,11 +87,7 @@ class TestTypeInference:
         engine = TypeInferenceEngine()
 
         # Create context with function
-        get_name_sig = FunctionSignature(
-            name="getName",
-            parameters=[],
-            return_type=Type("string")
-        )
+        get_name_sig = FunctionSignature(name="getName", parameters=[], return_type=Type("string"))
 
         context = TypeContext(functions={"getName": get_name_sig})
 
@@ -98,7 +95,7 @@ class TestTypeInference:
         expr = {
             "kind": "call",
             "callee": {"kind": "identifier", "name": "getName"},
-            "arguments": []
+            "arguments": [],
         }
 
         result = engine.infer_expression(expr, context)
@@ -117,19 +114,18 @@ class TestTypeInference:
                 "name": Type("string"),
                 "age": Type("number"),
             },
-            methods={}
+            methods={},
         )
 
         context = TypeContext(
-            variables={"person": Type("Person")},
-            classes={"Person": person_class}
+            variables={"person": Type("Person")}, classes={"Person": person_class}
         )
 
         # Property access: person.name
         expr = {
             "kind": "property",
             "object": {"kind": "identifier", "name": "person"},
-            "property": "name"
+            "property": "name",
         }
 
         result = engine.infer_expression(expr, context)
@@ -148,7 +144,7 @@ class TestTypeInference:
                 {"kind": "literal", "value": 1},
                 {"kind": "literal", "value": 2},
                 {"kind": "literal", "value": 3},
-            ]
+            ],
         }
 
         result = engine.infer_expression(expr, context)
@@ -160,10 +156,7 @@ class TestTypeInference:
         engine = TypeInferenceEngine()
         context = TypeContext()
 
-        expr = {
-            "kind": "array",
-            "elements": []
-        }
+        expr = {"kind": "array", "elements": []}
 
         result = engine.infer_expression(expr, context)
 
@@ -180,7 +173,7 @@ class TestTypeInference:
             "properties": [
                 {"key": "name", "value": {"kind": "literal", "value": "Alice"}},
                 {"key": "age", "value": {"kind": "literal", "value": 30}},
-            ]
+            ],
         }
 
         result = engine.infer_expression(expr, context)
@@ -305,7 +298,7 @@ class TestTypeInference:
                 {"name": "x", "type": "number"},
                 {"name": "y", "type": "number"},
             ],
-            "returnType": "number"
+            "returnType": "number",
         }
 
         result = engine.infer_expression(expr, context)
@@ -320,11 +313,7 @@ class TestTypeConstraint:
 
     def test_constraint_creation(self):
         """Test creating type constraints."""
-        constraint = TypeConstraint(
-            variable="T",
-            constraint_type="subtype",
-            bound=Type("number")
-        )
+        constraint = TypeConstraint(variable="T", constraint_type="subtype", bound=Type("number"))
 
         assert constraint.variable == "T"
         assert constraint.constraint_type == "subtype"
@@ -347,11 +336,7 @@ class TestInferenceResult:
 
     def test_result_creation(self):
         """Test creating inference result."""
-        result = InferenceResult(
-            inferred_type=Type("number"),
-            constraints=[],
-            confidence=1.0
-        )
+        result = InferenceResult(inferred_type=Type("number"), constraints=[], confidence=1.0)
 
         assert result.inferred_type == Type("number")
         assert result.constraints == []
@@ -359,25 +344,16 @@ class TestInferenceResult:
 
     def test_result_with_constraints(self):
         """Test result with type constraints."""
-        constraints = [
-            TypeConstraint("T", "subtype", Type("number"))
-        ]
+        constraints = [TypeConstraint("T", "subtype", Type("number"))]
 
-        result = InferenceResult(
-            inferred_type=Type("T"),
-            constraints=constraints,
-            confidence=0.9
-        )
+        result = InferenceResult(inferred_type=Type("T"), constraints=constraints, confidence=0.9)
 
         assert len(result.constraints) == 1
         assert result.constraints[0].variable == "T"
 
     def test_result_string_representation(self):
         """Test result string representation."""
-        result = InferenceResult(
-            inferred_type=Type("number"),
-            confidence=1.0
-        )
+        result = InferenceResult(inferred_type=Type("number"), confidence=1.0)
 
         assert "number" in str(result)
         assert "1.00" in str(result)

@@ -8,13 +8,13 @@ and constrained hole filling with retry logic.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple, Literal
+from dataclasses import dataclass
+from typing import Any, Literal
 
 from maze.core.types import Type, TypeContext
-from maze.type_system.inference import TypeInferenceEngine
+from maze.orchestrator.providers import GenerationRequest, ProviderAdapter
 from maze.type_system.grammar_converter import TypeToGrammarConverter
-from maze.orchestrator.providers import ProviderAdapter, GenerationRequest
+from maze.type_system.inference import TypeInferenceEngine
 
 
 @dataclass
@@ -34,12 +34,14 @@ class Hole:
         ...     kind="expression"
         ... )
     """
+
     name: str
-    location: Tuple[int, int]  # (line, column)
-    expected_type: Optional[Type]
+    location: tuple[int, int]  # (line, column)
+    expected_type: Type | None
     context: TypeContext
     kind: Literal["expression", "statement", "type"]
     original_code: str = ""  # Code surrounding the hole
+
 
 @dataclass
 class HoleFillResult:
@@ -49,6 +51,7 @@ class HoleFillResult:
     Contains the filled code, inferred type, grammar used,
     and success status.
     """
+
     hole: Hole
     filled_code: str
     inferred_type: Type
@@ -57,7 +60,7 @@ class HoleFillResult:
     attempts: int
     error_message: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "hole_name": self.hole.name,
@@ -65,7 +68,7 @@ class HoleFillResult:
             "inferred_type": str(self.inferred_type),
             "success": self.success,
             "attempts": self.attempts,
-            "error_message": self.error_message
+            "error_message": self.error_message,
         }
 
 
@@ -84,14 +87,14 @@ class HoleFillingEngine:
     HOLE_PATTERNS = {
         "typescript": r"/\*__HOLE_(\w+)__\*/",
         "python": r"#\s*__HOLE_(\w+)__",
-        "rust": r"/\*\s*__HOLE_(\w+)__\s*\*/"
+        "rust": r"/\*\s*__HOLE_(\w+)__\s*\*/",
     }
 
     def __init__(
         self,
         inference_engine: TypeInferenceEngine,
         grammar_converter: TypeToGrammarConverter,
-        provider: Optional[ProviderAdapter] = None
+        provider: ProviderAdapter | None = None,
     ):
         """
         Initialize hole filling engine.
@@ -105,7 +108,7 @@ class HoleFillingEngine:
         self.converter = grammar_converter
         self.provider = provider
 
-    def identify_holes(self, code: str, language: str = "typescript") -> List[Hole]:
+    def identify_holes(self, code: str, language: str = "typescript") -> list[Hole]:
         """
         Identify typed holes in code.
 
@@ -134,8 +137,8 @@ class HoleFillingEngine:
             start_pos = match.start()
 
             # Calculate line and column
-            line = code[:start_pos].count('\n') + 1
-            column = start_pos - code[:start_pos].rfind('\n')
+            line = code[:start_pos].count("\n") + 1
+            column = start_pos - code[:start_pos].rfind("\n")
 
             # Create hole with empty context for now
             # Full implementation would parse surrounding code for context
@@ -145,18 +148,14 @@ class HoleFillingEngine:
                 expected_type=None,  # Will be inferred
                 context=TypeContext(language=language),
                 kind="expression",  # Simplified
-                original_code=code
+                original_code=code,
             )
 
             holes.append(hole)
 
         return holes
 
-    def infer_hole_type(
-        self,
-        hole: Hole,
-        context: TypeContext
-    ) -> Type:
+    def infer_hole_type(self, hole: Hole, context: TypeContext) -> Type:
         """
         Infer expected type for hole.
 
@@ -192,11 +191,7 @@ class HoleFillingEngine:
         # Default to unknown
         return Type("unknown")
 
-    def generate_grammar_for_hole(
-        self,
-        hole: Hole,
-        hole_type: Type
-    ) -> str:
+    def generate_grammar_for_hole(self, hole: Hole, hole_type: Type) -> str:
         """
         Generate grammar constrained by hole type.
 
@@ -219,11 +214,7 @@ class HoleFillingEngine:
         """
         return self.converter.convert(hole_type, hole.context)
 
-    def fill_hole(
-        self,
-        hole: Hole,
-        max_attempts: int = 3
-    ) -> HoleFillResult:
+    def fill_hole(self, hole: Hole, max_attempts: int = 3) -> HoleFillResult:
         """
         Fill hole with type-constrained generation.
 
@@ -262,7 +253,7 @@ class HoleFillingEngine:
                 grammar_used=grammar,
                 success=False,
                 attempts=0,
-                error_message="No provider configured"
+                error_message="No provider configured",
             )
 
         # Attempt to fill hole
@@ -273,7 +264,7 @@ class HoleFillingEngine:
                     prompt=f"Fill the hole {hole.name} with a value of type {hole_type}",
                     grammar=grammar,
                     max_tokens=100,
-                    temperature=0.7
+                    temperature=0.7,
                 )
 
                 response = self.provider.generate(request)
@@ -287,7 +278,7 @@ class HoleFillingEngine:
                         inferred_type=hole_type,
                         grammar_used=grammar,
                         success=True,
-                        attempts=attempt
+                        attempts=attempt,
                     )
 
             except Exception as e:
@@ -299,7 +290,7 @@ class HoleFillingEngine:
                         grammar_used=grammar,
                         success=False,
                         attempts=attempt,
-                        error_message=str(e)
+                        error_message=str(e),
                     )
 
         # All attempts failed
@@ -310,15 +301,12 @@ class HoleFillingEngine:
             grammar_used=grammar,
             success=False,
             attempts=max_attempts,
-            error_message="Max attempts exceeded"
+            error_message="Max attempts exceeded",
         )
 
     def fill_all_holes(
-        self,
-        code: str,
-        context: TypeContext,
-        language: str = "typescript"
-    ) -> Tuple[str, List[HoleFillResult]]:
+        self, code: str, context: TypeContext, language: str = "typescript"
+    ) -> tuple[str, list[HoleFillResult]]:
         """
         Fill all holes in code.
 

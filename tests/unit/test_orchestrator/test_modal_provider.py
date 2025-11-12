@@ -43,7 +43,7 @@ class TestModalProvider:
         """Test generation with grammar constraints."""
         with patch.dict(os.environ, {"MODAL_ENDPOINT_URL": "https://test.modal.run"}):
             adapter = ModalProviderAdapter()
-            
+
             with patch("requests.post") as mock_post:
                 mock_response = Mock()
                 mock_response.json.return_value = {
@@ -52,21 +52,21 @@ class TestModalProvider:
                     "metadata": {
                         "tokens_generated": 10,
                         "finish_reason": "stop",
-                    }
+                    },
                 }
                 mock_post.return_value = mock_response
-                
+
                 request = GenerationRequest(
                     prompt="def add(a, b):",
                     grammar="?start: function",
                     max_tokens=128,
                 )
-                
+
                 response = adapter.generate(request)
-                
+
                 assert response.text == "def add(a, b): return a + b"
                 assert response.tokens_generated == 10
-                
+
                 # Verify grammar was sent
                 call_args = mock_post.call_args[1]
                 assert call_args["json"]["grammar"] == "?start: function"
@@ -75,21 +75,21 @@ class TestModalProvider:
         """Test generation without grammar constraints."""
         with patch.dict(os.environ, {"MODAL_ENDPOINT_URL": "https://test.modal.run"}):
             adapter = ModalProviderAdapter()
-            
+
             with patch("requests.post") as mock_post:
                 mock_response = Mock()
                 mock_response.json.return_value = {
                     "success": True,
                     "code": "generated code",
-                    "metadata": {"tokens_generated": 5}
+                    "metadata": {"tokens_generated": 5},
                 }
                 mock_post.return_value = mock_response
-                
+
                 request = GenerationRequest(
                     prompt="test",
                     max_tokens=128,
                 )
-                
+
                 response = adapter.generate(request)
                 assert response.text == "generated code"
 
@@ -97,13 +97,14 @@ class TestModalProvider:
         """Test timeout handling."""
         with patch.dict(os.environ, {"MODAL_ENDPOINT_URL": "https://test.modal.run"}):
             adapter = ModalProviderAdapter()
-            
+
             with patch("requests.post") as mock_post:
                 import requests
+
                 mock_post.side_effect = requests.exceptions.Timeout()
-                
+
                 request = GenerationRequest(prompt="test")
-                
+
                 with pytest.raises(ValueError, match="timeout"):
                     adapter.generate(request)
 
@@ -111,12 +112,13 @@ class TestModalProvider:
         """Test error response handling."""
         with patch.dict(os.environ, {"MODAL_ENDPOINT_URL": "https://test.modal.run"}):
             adapter = ModalProviderAdapter()
-            
+
             with patch("requests.post") as mock_post:
                 import requests
+
                 mock_post.side_effect = requests.exceptions.RequestException("Connection failed")
-                
+
                 request = GenerationRequest(prompt="test")
-                
+
                 with pytest.raises(ValueError, match="endpoint error"):
                     adapter.generate(request)

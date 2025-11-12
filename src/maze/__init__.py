@@ -29,6 +29,7 @@ __all__ = [
     "__version__",
 ]
 
+
 def main() -> None:
     """Main entry point for the maze CLI."""
     print(f"Maze v{__version__} - Adaptive Constrained Code Generation System")

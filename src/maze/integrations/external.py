@@ -10,11 +10,9 @@ Provides graceful degradation when tools are unavailable.
 
 from __future__ import annotations
 
-import json
 import subprocess
 from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from maze.integrations.mnemosyne import MnemosyneIntegration
 
@@ -24,8 +22,8 @@ class ValidationResult:
     """Result from external validation."""
 
     success: bool
-    errors: List[str] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
     properties_checked: int = 0
     duration_ms: float = 0.0
 
@@ -39,7 +37,7 @@ class ExecutionResult:
     stderr: str = ""
     exit_code: int = 0
     duration_ms: float = 0.0
-    resource_usage: Dict[str, Any] = field(default_factory=dict)
+    resource_usage: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -49,8 +47,8 @@ class Pattern:
     content: str
     namespace: str
     importance: int
-    tags: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    tags: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class PedanticRavenClient:
@@ -85,7 +83,7 @@ class PedanticRavenClient:
             return False
 
     def validate(
-        self, code: str, language: str, properties: Optional[List[str]] = None
+        self, code: str, language: str, properties: list[str] | None = None
     ) -> ValidationResult:
         """Validate code with pedantic_raven.
 
@@ -173,7 +171,7 @@ class RuneExecutor:
             return False
 
     def execute(
-        self, code: str, language: str, tests: Optional[List[str]] = None
+        self, code: str, language: str, tests: list[str] | None = None
     ) -> ExecutionResult:
         """Execute code in sandbox.
 
@@ -244,9 +242,9 @@ class ExternalIntegrations:
             enable_raven: Whether to enable pedantic_raven
             enable_rune: Whether to enable RUNE
         """
-        self.mnemosyne: Optional[MnemosyneIntegration] = None
-        self.raven: Optional[PedanticRavenClient] = None
-        self.rune: Optional[RuneExecutor] = None
+        self.mnemosyne: MnemosyneIntegration | None = None
+        self.raven: PedanticRavenClient | None = None
+        self.rune: RuneExecutor | None = None
 
         if enable_mnemosyne:
             try:
@@ -262,7 +260,7 @@ class ExternalIntegrations:
             self.rune = RuneExecutor()
 
     def validate_with_raven(
-        self, code: str, language: str, properties: Optional[List[str]] = None
+        self, code: str, language: str, properties: list[str] | None = None
     ) -> ValidationResult:
         """Validate code with pedantic_raven.
 
@@ -283,7 +281,7 @@ class ExternalIntegrations:
         return self.raven.validate(code, language, properties)
 
     def execute_in_rune(
-        self, code: str, language: str, tests: Optional[List[str]] = None
+        self, code: str, language: str, tests: list[str] | None = None
     ) -> ExecutionResult:
         """Execute code in RUNE sandbox.
 
@@ -326,7 +324,7 @@ class ExternalIntegrations:
         except Exception:
             return False
 
-    def get_status(self) -> Dict[str, bool]:
+    def get_status(self) -> dict[str, bool]:
         """Get status of all integrations.
 
         Returns:

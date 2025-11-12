@@ -6,8 +6,6 @@ Test coverage target: 80%
 import tempfile
 from pathlib import Path
 
-import pytest
-
 from maze.indexer.languages.zig import ZigIndexer
 
 
@@ -24,11 +22,13 @@ class TestZigIndexer:
         """Test indexing simple Zig function."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.zig"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 pub fn add(a: i32, b: i32) i32 {
     return a + b;
 }
-""")
+"""
+            )
 
             indexer = ZigIndexer()
             result = indexer.index_file(file_path)
@@ -43,12 +43,14 @@ pub fn add(a: i32, b: i32) i32 {
         """Test indexing Zig struct."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.zig"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 pub const User = struct {
     name: []const u8,
     age: u32,
 };
-""")
+"""
+            )
 
             indexer = ZigIndexer()
             result = indexer.index_file(file_path)
@@ -62,12 +64,14 @@ pub const User = struct {
         """Test indexing Zig enum."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.zig"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 const Status = enum {
     Active,
     Inactive,
 };
-""")
+"""
+            )
 
             indexer = ZigIndexer()
             result = indexer.index_file(file_path)
@@ -80,10 +84,12 @@ const Status = enum {
         """Test indexing Zig imports."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.zig"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 const std = @import("std");
 const testing = @import("testing");
-""")
+"""
+            )
 
             indexer = ZigIndexer()
             result = indexer.index_file(file_path)
@@ -96,7 +102,8 @@ const testing = @import("testing");
         """Test detecting Zig test blocks."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.zig"
-            file_path.write_text("""
+            file_path.write_text(
+                """
 test "addition" {
     try testing.expectEqual(@as(i32, 2), add(1, 1));
 }
@@ -104,7 +111,8 @@ test "addition" {
 test "subtraction" {
     try testing.expectEqual(@as(i32, 0), sub(1, 1));
 }
-""")
+"""
+            )
 
             indexer = ZigIndexer()
             result = indexer.index_file(file_path)
@@ -117,7 +125,7 @@ test "subtraction" {
         """Test Zig style detection."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test.zig"
-            file_path.write_text('pub fn test() void {}')
+            file_path.write_text("pub fn test() void {}")
 
             indexer = ZigIndexer()
             result = indexer.index_file(file_path)
@@ -131,7 +139,7 @@ test "subtraction" {
             project = Path(tmpdir)
             src = project / "src"
             src.mkdir()
-            
+
             (src / "main.zig").write_text("pub fn main() void {}")
             (src / "lib.zig").write_text("pub fn helper() void {}")
 
@@ -145,13 +153,13 @@ test "subtraction" {
         """Test excluding zig-cache and zig-out."""
         with tempfile.TemporaryDirectory() as tmpdir:
             project = Path(tmpdir)
-            
+
             (project / "src").mkdir()
             (project / "src" / "main.zig").write_text("pub fn main() void {}")
-            
+
             (project / "zig-cache").mkdir()
             (project / "zig-cache" / "cached.zig").write_text("fn cached() void {}")
-            
+
             (project / "zig-out").mkdir()
             (project / "zig-out" / "output.zig").write_text("fn output() void {}")
 
@@ -166,14 +174,14 @@ test "subtraction" {
         """Test indexing performance."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "large.zig"
-            
+
             # Generate 50 functions
             lines = []
             for i in range(50):
                 lines.append(f"pub fn func{i}(x: i32) i32 {{")
                 lines.append(f"    return x + {i};")
                 lines.append("}")
-            
+
             file_path.write_text("\n".join(lines))
 
             indexer = ZigIndexer()

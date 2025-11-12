@@ -2,24 +2,22 @@
 Tests for feedback loop orchestrator.
 """
 
-from pathlib import Path
 import pytest
-from unittest.mock import Mock, MagicMock
 
+from maze.integrations.mnemosyne import MnemosyneIntegration
+from maze.learning.constraint_learning import (
+    ConstraintLearningSystem,
+    GenerationResult,
+    RepairResult,
+    ValidationResult,
+)
 from maze.learning.feedback_orchestrator import (
     FeedbackLoopOrchestrator,
     FeedbackResult,
     FeedbackStats,
 )
-from maze.learning.constraint_learning import (
-    ConstraintLearningSystem,
-    GenerationResult,
-    ValidationResult,
-    RepairResult,
-)
-from maze.learning.project_adaptation import ProjectAdaptationManager
 from maze.learning.pattern_mining import PatternMiningEngine
-from maze.integrations.mnemosyne import MnemosyneIntegration
+from maze.learning.project_adaptation import ProjectAdaptationManager
 
 
 class TestFeedbackLoopOrchestrator:
@@ -38,27 +36,20 @@ class TestFeedbackLoopOrchestrator:
     @pytest.fixture
     def adapter(self, pattern_miner, learner):
         """Create project adaptation manager."""
-        return ProjectAdaptationManager(
-            pattern_miner=pattern_miner,
-            learner=learner
-        )
+        return ProjectAdaptationManager(pattern_miner=pattern_miner, learner=learner)
 
     @pytest.fixture
     def memory(self, tmp_path):
         """Create mnemosyne integration."""
         return MnemosyneIntegration(
-            enable_orchestration=False,
-            local_cache_path=tmp_path / "cache.jsonl"
+            enable_orchestration=False, local_cache_path=tmp_path / "cache.jsonl"
         )
 
     @pytest.fixture
     def orchestrator(self, learner, adapter, memory):
         """Create feedback loop orchestrator."""
         return FeedbackLoopOrchestrator(
-            learner=learner,
-            adapter=adapter,
-            memory=memory,
-            enable_auto_persist=True
+            learner=learner, adapter=adapter, memory=memory, enable_auto_persist=True
         )
 
     def test_init(self, orchestrator, learner, adapter, memory):
@@ -73,9 +64,7 @@ class TestFeedbackLoopOrchestrator:
     def test_process_feedback_success(self, orchestrator):
         """Test processing successful feedback."""
         generation = GenerationResult(
-            code="def foo(): pass",
-            language="python",
-            generation_time_ms=50.0
+            code="def foo(): pass", language="python", generation_time_ms=50.0
         )
         validation = ValidationResult(success=True)
 
@@ -89,14 +78,9 @@ class TestFeedbackLoopOrchestrator:
 
     def test_process_feedback_failure(self, orchestrator):
         """Test processing failed feedback."""
-        generation = GenerationResult(
-            code="def foo(",
-            language="python",
-            generation_time_ms=50.0
-        )
+        generation = GenerationResult(code="def foo(", language="python", generation_time_ms=50.0)
         validation = ValidationResult(
-            success=False,
-            diagnostics=[{"severity": "error", "message": "SyntaxError"}]
+            success=False, diagnostics=[{"severity": "error", "message": "SyntaxError"}]
         )
 
         result = orchestrator.process_feedback(generation, validation)
@@ -110,9 +94,7 @@ class TestFeedbackLoopOrchestrator:
     def test_process_feedback_with_repair_success(self, orchestrator):
         """Test feedback with successful repair."""
         generation = GenerationResult(
-            code="def foo(): pass",
-            language="python",
-            generation_time_ms=50.0
+            code="def foo(): pass", language="python", generation_time_ms=50.0
         )
         validation = ValidationResult(success=True)
         repair = RepairResult(attempts=2, success=True, final_code="def foo(): pass")
@@ -124,14 +106,9 @@ class TestFeedbackLoopOrchestrator:
 
     def test_process_feedback_with_repair_failure(self, orchestrator):
         """Test feedback with failed repair."""
-        generation = GenerationResult(
-            code="def foo(",
-            language="python",
-            generation_time_ms=50.0
-        )
+        generation = GenerationResult(code="def foo(", language="python", generation_time_ms=50.0)
         validation = ValidationResult(
-            success=False,
-            diagnostics=[{"severity": "error", "message": "SyntaxError"}]
+            success=False, diagnostics=[{"severity": "error", "message": "SyntaxError"}]
         )
         repair = RepairResult(attempts=3, success=False)
 
@@ -148,17 +125,11 @@ class TestFeedbackLoopOrchestrator:
         orchestrator.adapter.initialize_project(project, language="python")
 
         generation = GenerationResult(
-            code="def bar(): pass",
-            language="python",
-            generation_time_ms=50.0
+            code="def bar(): pass", language="python", generation_time_ms=50.0
         )
         validation = ValidationResult(success=True)
 
-        result = orchestrator.process_feedback(
-            generation,
-            validation,
-            project_name="test_project"
-        )
+        result = orchestrator.process_feedback(generation, validation, project_name="test_project")
 
         assert isinstance(result, FeedbackResult)
         # Project profile should be updated
@@ -179,10 +150,7 @@ class TestFeedbackLoopOrchestrator:
 
     def test_compute_overall_score_with_tests(self, orchestrator):
         """Test score computation with test results."""
-        validation = ValidationResult(
-            success=True,
-            test_results={"total": 10, "passed": 8}
-        )
+        validation = ValidationResult(success=True, test_results={"total": 10, "passed": 8})
         score = orchestrator._compute_overall_score(validation, None)
         assert score > 1.0  # Success + partial test pass
 
@@ -192,18 +160,15 @@ class TestFeedbackLoopOrchestrator:
             success=False,
             security_violations=[
                 {"severity": "critical", "message": "SQL injection"},
-                {"severity": "critical", "message": "XSS"}
-            ]
+                {"severity": "critical", "message": "XSS"},
+            ],
         )
         score = orchestrator._compute_overall_score(validation, None)
         assert score <= -2.0  # Should be at minimum
 
     def test_compute_overall_score_clamped(self, orchestrator):
         """Test that scores are clamped to [-2, 2]."""
-        validation = ValidationResult(
-            success=True,
-            test_results={"total": 100, "passed": 100}
-        )
+        validation = ValidationResult(success=True, test_results={"total": 100, "passed": 100})
         score = orchestrator._compute_overall_score(validation, None)
         assert -2.0 <= score <= 2.0
 
@@ -231,7 +196,7 @@ class TestFeedbackLoopOrchestrator:
         generation = GenerationResult(
             code="def process_data(x):\n    return x * 2",
             language="python",
-            generation_time_ms=50.0
+            generation_time_ms=50.0,
         )
 
         patterns = orchestrator._extract_patterns_from_result(generation)
@@ -244,7 +209,7 @@ class TestFeedbackLoopOrchestrator:
         generation = GenerationResult(
             code="class Processor:\n    def run(self):\n        pass",
             language="python",
-            generation_time_ms=50.0
+            generation_time_ms=50.0,
         )
 
         patterns = orchestrator._extract_patterns_from_result(generation)
@@ -255,9 +220,7 @@ class TestFeedbackLoopOrchestrator:
     def test_extract_patterns_from_result_invalid_code(self, orchestrator):
         """Test pattern extraction from invalid code."""
         generation = GenerationResult(
-            code="def broken(",
-            language="python",
-            generation_time_ms=50.0
+            code="def broken(", language="python", generation_time_ms=50.0
         )
 
         patterns = orchestrator._extract_patterns_from_result(generation)
@@ -271,7 +234,7 @@ class TestFeedbackLoopOrchestrator:
             code="def foo(): pass",
             language="python",
             generation_time_ms=50.0,
-            patterns_used=["pat-1", "pat-2"]
+            patterns_used=["pat-1", "pat-2"],
         )
 
         patterns = orchestrator._extract_patterns_from_result(generation)
@@ -280,12 +243,7 @@ class TestFeedbackLoopOrchestrator:
 
     def test_update_learning_state(self, orchestrator):
         """Test learning state update."""
-        result = FeedbackResult(
-            pattern=None,
-            score=1.0,
-            refinements=[],
-            updated_weights={}
-        )
+        result = FeedbackResult(pattern=None, score=1.0, refinements=[], updated_weights={})
 
         # Should not raise error
         orchestrator.update_learning_state(result)
@@ -295,19 +253,10 @@ class TestFeedbackLoopOrchestrator:
         from maze.learning.pattern_mining import SyntacticPattern
 
         pattern = SyntacticPattern(
-            pattern_type="function",
-            template="def foo(): ...",
-            frequency=1,
-            examples=[],
-            context={}
+            pattern_type="function", template="def foo(): ...", frequency=1, examples=[], context={}
         )
 
-        result = FeedbackResult(
-            pattern=pattern,
-            score=1.5,
-            refinements=[],
-            updated_weights={}
-        )
+        result = FeedbackResult(pattern=pattern, score=1.5, refinements=[], updated_weights={})
 
         orchestrator.persist_to_memory(result, "test:namespace")
 
@@ -316,12 +265,7 @@ class TestFeedbackLoopOrchestrator:
 
     def test_persist_to_memory_no_pattern(self, orchestrator):
         """Test persisting feedback without pattern."""
-        result = FeedbackResult(
-            pattern=None,
-            score=1.0,
-            refinements=[],
-            updated_weights={}
-        )
+        result = FeedbackResult(pattern=None, score=1.0, refinements=[], updated_weights={})
 
         # Should not raise error
         orchestrator.persist_to_memory(result, "test:namespace")
@@ -338,7 +282,9 @@ class TestFeedbackLoopOrchestrator:
     def test_reset_stats(self, orchestrator):
         """Test resetting statistics."""
         # Process some feedback
-        generation = GenerationResult(code="def foo(): pass", language="python", generation_time_ms=50.0)
+        generation = GenerationResult(
+            code="def foo(): pass", language="python", generation_time_ms=50.0
+        )
         validation = ValidationResult(success=True)
         orchestrator.process_feedback(generation, validation)
 
@@ -352,11 +298,15 @@ class TestFeedbackLoopOrchestrator:
 
     def test_average_score_calculation(self, orchestrator):
         """Test average score calculation over multiple feedbacks."""
-        generation1 = GenerationResult(code="def foo(): pass", language="python", generation_time_ms=50.0)
+        generation1 = GenerationResult(
+            code="def foo(): pass", language="python", generation_time_ms=50.0
+        )
         validation1 = ValidationResult(success=True)
 
         generation2 = GenerationResult(code="def bar(", language="python", generation_time_ms=50.0)
-        validation2 = ValidationResult(success=False, diagnostics=[{"severity": "error", "message": "error"}])
+        validation2 = ValidationResult(
+            success=False, diagnostics=[{"severity": "error", "message": "error"}]
+        )
 
         orchestrator.process_feedback(generation1, validation1)
         orchestrator.process_feedback(generation2, validation2)
@@ -366,7 +316,9 @@ class TestFeedbackLoopOrchestrator:
 
     def test_refinements_applied_counter(self, orchestrator):
         """Test refinements applied counter."""
-        generation = GenerationResult(code="def foo(): pass", language="python", generation_time_ms=50.0)
+        generation = GenerationResult(
+            code="def foo(): pass", language="python", generation_time_ms=50.0
+        )
         validation = ValidationResult(success=True)
 
         orchestrator.process_feedback(generation, validation)
@@ -376,27 +328,24 @@ class TestFeedbackLoopOrchestrator:
     def test_auto_persist_disabled(self, learner, adapter, memory):
         """Test with auto-persist disabled."""
         orchestrator = FeedbackLoopOrchestrator(
-            learner=learner,
-            adapter=adapter,
-            memory=memory,
-            enable_auto_persist=False
+            learner=learner, adapter=adapter, memory=memory, enable_auto_persist=False
         )
 
-        generation = GenerationResult(code="def foo(): pass", language="python", generation_time_ms=50.0)
+        generation = GenerationResult(
+            code="def foo(): pass", language="python", generation_time_ms=50.0
+        )
         validation = ValidationResult(success=True)
 
-        result = orchestrator.process_feedback(
-            generation,
-            validation,
-            project_name="test_project"
-        )
+        result = orchestrator.process_feedback(generation, validation, project_name="test_project")
 
         # Should still work, just not persist automatically
         assert isinstance(result, FeedbackResult)
 
     def test_updated_weights_tracking(self, orchestrator):
         """Test that updated weights are tracked."""
-        generation = GenerationResult(code="def foo(): pass", language="python", generation_time_ms=50.0)
+        generation = GenerationResult(
+            code="def foo(): pass", language="python", generation_time_ms=50.0
+        )
         validation = ValidationResult(success=True)
 
         result = orchestrator.process_feedback(generation, validation)
@@ -409,9 +358,7 @@ class TestFeedbackLoopOrchestrator:
         """Test processing multiple feedbacks."""
         for i in range(5):
             generation = GenerationResult(
-                code=f"def func{i}(): pass",
-                language="python",
-                generation_time_ms=50.0
+                code=f"def func{i}(): pass", language="python", generation_time_ms=50.0
             )
             validation = ValidationResult(success=True)
             orchestrator.process_feedback(generation, validation)
@@ -428,7 +375,9 @@ class TestFeedbackLoopOrchestrator:
 
         # Negative
         gen2 = GenerationResult(code="def bar(", language="python", generation_time_ms=50.0)
-        val2 = ValidationResult(success=False, diagnostics=[{"severity": "error", "message": "error"}])
+        val2 = ValidationResult(
+            success=False, diagnostics=[{"severity": "error", "message": "error"}]
+        )
         orchestrator.process_feedback(gen2, val2)
 
         # Positive
@@ -444,7 +393,9 @@ class TestFeedbackLoopOrchestrator:
         """Test that feedback processing meets performance target."""
         import time
 
-        generation = GenerationResult(code="def foo(): pass", language="python", generation_time_ms=50.0)
+        generation = GenerationResult(
+            code="def foo(): pass", language="python", generation_time_ms=50.0
+        )
         validation = ValidationResult(success=True)
 
         start = time.perf_counter()
@@ -457,9 +408,12 @@ class TestFeedbackLoopOrchestrator:
     def test_last_update_timestamp(self, orchestrator):
         """Test that last_update timestamp is set."""
         import time
+
         before = time.time()
 
-        generation = GenerationResult(code="def foo(): pass", language="python", generation_time_ms=50.0)
+        generation = GenerationResult(
+            code="def foo(): pass", language="python", generation_time_ms=50.0
+        )
         validation = ValidationResult(success=True)
         orchestrator.process_feedback(generation, validation)
 
@@ -488,17 +442,12 @@ class TestFeedbackLoopOrchestrator:
         generation = GenerationResult(
             code="def transform(data):\n    return data.upper()",
             language="python",
-            generation_time_ms=50.0
+            generation_time_ms=50.0,
         )
-        validation = ValidationResult(
-            success=True,
-            test_results={"total": 5, "passed": 5}
-        )
+        validation = ValidationResult(success=True, test_results={"total": 5, "passed": 5})
 
         result = orchestrator.process_feedback(
-            generation,
-            validation,
-            project_name="integration_project"
+            generation, validation, project_name="integration_project"
         )
 
         # Verify all systems updated

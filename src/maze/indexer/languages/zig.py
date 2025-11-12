@@ -9,14 +9,15 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
 
 # Try to import tree-sitter-zig if available
 try:
-    from tree_sitter import Language, Parser, Node
+    from tree_sitter import Language, Node, Parser
+
     # Note: tree-sitter-zig may not be available, use fallback
     try:
         import tree_sitter_zig as ts_zig
+
         TREE_SITTER_AVAILABLE = True
     except ImportError:
         TREE_SITTER_AVAILABLE = False
@@ -37,7 +38,7 @@ from maze.indexer.base import (
 class ZigIndexer(BaseIndexer):
     """Zig code indexer using regex-based parsing (fallback if tree-sitter unavailable)."""
 
-    def __init__(self, project_path: Optional[Path] = None):
+    def __init__(self, project_path: Path | None = None):
         """Initialize Zig indexer.
 
         Args:
@@ -46,7 +47,7 @@ class ZigIndexer(BaseIndexer):
         super().__init__(project_path)
         self.language = "zig"
         self.file_extensions = {".zig"}
-        
+
         if TREE_SITTER_AVAILABLE:
             self.ts_language = Language(ts_zig.language())
             self.parser = Parser(self.ts_language)
@@ -65,21 +66,21 @@ class ZigIndexer(BaseIndexer):
         import time
 
         start = time.perf_counter()
-        
-        symbols: List[Symbol] = []
-        imports: List[ImportInfo] = []
-        tests: List[TestCase] = []
-        errors: List[str] = []
+
+        symbols: list[Symbol] = []
+        imports: list[ImportInfo] = []
+        tests: list[TestCase] = []
+        errors: list[str] = []
 
         try:
             content = file_path.read_text(encoding="utf-8")
-            
+
             # Use regex-based extraction (fallback approach)
             symbols = self._extract_symbols_regex(content, str(file_path))
             imports = self._extract_imports_regex(content, str(file_path))
             tests = self._detect_tests_regex(content, str(file_path))
             style = self._detect_style(content)
-            
+
         except Exception as e:
             errors.append(f"Error indexing {file_path}: {e}")
             style = StyleInfo()
@@ -111,12 +112,12 @@ class ZigIndexer(BaseIndexer):
 
         start = time.perf_counter()
 
-        all_symbols: List[Symbol] = []
-        all_imports: List[ImportInfo] = []
-        all_tests: List[TestCase] = []
-        all_errors: List[str] = []
-        all_files: List[str] = []
-        
+        all_symbols: list[Symbol] = []
+        all_imports: list[ImportInfo] = []
+        all_tests: list[TestCase] = []
+        all_errors: list[str] = []
+        all_files: list[str] = []
+
         combined_style = StyleInfo(indent_size=4, indent_type="space")
 
         zig_files = list(directory.rglob("*.zig"))
@@ -146,7 +147,7 @@ class ZigIndexer(BaseIndexer):
             duration_ms=duration_ms,
         )
 
-    def _extract_symbols_regex(self, content: str, file_path: str) -> List[Symbol]:
+    def _extract_symbols_regex(self, content: str, file_path: str) -> list[Symbol]:
         """Extract symbols using regex patterns.
 
         Args:
@@ -159,14 +160,14 @@ class ZigIndexer(BaseIndexer):
         symbols = []
 
         # Function pattern: pub fn name(...) type
-        fn_pattern = r'(pub\s+)?fn\s+(\w+)\s*\([^)]*\)\s*([^{]+)?'
+        fn_pattern = r"(pub\s+)?fn\s+(\w+)\s*\([^)]*\)\s*([^{]+)?"
         for match in re.finditer(fn_pattern, content):
             is_pub = match.group(1) is not None
             name = match.group(2)
             return_type = match.group(3).strip() if match.group(3) else "void"
-            
-            line = content[:match.start()].count('\n') + 1
-            
+
+            line = content[: match.start()].count("\n") + 1
+
             symbols.append(
                 Symbol(
                     name=name,
@@ -180,13 +181,13 @@ class ZigIndexer(BaseIndexer):
             )
 
         # Struct pattern: pub const Name = struct
-        struct_pattern = r'(pub\s+)?const\s+(\w+)\s*=\s*struct'
+        struct_pattern = r"(pub\s+)?const\s+(\w+)\s*=\s*struct"
         for match in re.finditer(struct_pattern, content):
             is_pub = match.group(1) is not None
             name = match.group(2)
-            
-            line = content[:match.start()].count('\n') + 1
-            
+
+            line = content[: match.start()].count("\n") + 1
+
             symbols.append(
                 Symbol(
                     name=name,
@@ -200,13 +201,13 @@ class ZigIndexer(BaseIndexer):
             )
 
         # Enum pattern: pub const Name = enum
-        enum_pattern = r'(pub\s+)?const\s+(\w+)\s*=\s*enum'
+        enum_pattern = r"(pub\s+)?const\s+(\w+)\s*=\s*enum"
         for match in re.finditer(enum_pattern, content):
             is_pub = match.group(1) is not None
             name = match.group(2)
-            
-            line = content[:match.start()].count('\n') + 1
-            
+
+            line = content[: match.start()].count("\n") + 1
+
             symbols.append(
                 Symbol(
                     name=name,
@@ -221,7 +222,7 @@ class ZigIndexer(BaseIndexer):
 
         return symbols
 
-    def _extract_imports_regex(self, content: str, file_path: str) -> List[ImportInfo]:
+    def _extract_imports_regex(self, content: str, file_path: str) -> list[ImportInfo]:
         """Extract imports using regex."""
         imports = []
 
@@ -230,8 +231,8 @@ class ZigIndexer(BaseIndexer):
         for match in re.finditer(import_pattern, content):
             alias = match.group(1)
             module = match.group(2)
-            line = content[:match.start()].count('\n') + 1
-            
+            line = content[: match.start()].count("\n") + 1
+
             imports.append(
                 ImportInfo(
                     module=module,
@@ -244,7 +245,7 @@ class ZigIndexer(BaseIndexer):
 
         return imports
 
-    def _detect_tests_regex(self, content: str, file_path: str) -> List[TestCase]:
+    def _detect_tests_regex(self, content: str, file_path: str) -> list[TestCase]:
         """Detect test functions (test "name" pattern)."""
         tests = []
 
@@ -252,8 +253,8 @@ class ZigIndexer(BaseIndexer):
         test_pattern = r'test\s+"([^"]+)"'
         for match in re.finditer(test_pattern, content):
             test_name = match.group(1)
-            line = content[:match.start()].count('\n') + 1
-            
+            line = content[: match.start()].count("\n") + 1
+
             tests.append(
                 TestCase(
                     name=test_name,
@@ -283,7 +284,7 @@ class ZigIndexer(BaseIndexer):
             },
         )
 
-    def extract_symbols(self, content: str, file_path: Path) -> List[Symbol]:
+    def extract_symbols(self, content: str, file_path: Path) -> list[Symbol]:
         """Extract symbols from file content."""
         return self._extract_symbols_regex(content, str(file_path))
 
@@ -291,13 +292,13 @@ class ZigIndexer(BaseIndexer):
         """Extract type context from Zig file."""
         context = TypeContext()
         symbols = self.extract_symbols(content, file_path)
-        
+
         for symbol in symbols:
             if symbol.kind == "function":
                 context.functions[symbol.name] = ([], symbol.type_str)
-        
+
         return context
 
-    def extract_tests(self, content: str, file_path: Path) -> List[TestCase]:
+    def extract_tests(self, content: str, file_path: Path) -> list[TestCase]:
         """Extract test cases from file."""
         return self._detect_tests_regex(content, str(file_path))

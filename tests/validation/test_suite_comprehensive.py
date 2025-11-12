@@ -27,15 +27,12 @@ import pytest
 from maze.config import Config
 from maze.core.pipeline import Pipeline
 
-
 # Skip if no provider configured
-PROVIDER_AVAILABLE = bool(
-    os.getenv("MODAL_ENDPOINT_URL") or os.getenv("OPENAI_API_KEY")
-)
+PROVIDER_AVAILABLE = bool(os.getenv("MODAL_ENDPOINT_URL") or os.getenv("OPENAI_API_KEY"))
 
 pytestmark = pytest.mark.skipif(
     not PROVIDER_AVAILABLE,
-    reason="No provider configured (set MODAL_ENDPOINT_URL or OPENAI_API_KEY)"
+    reason="No provider configured (set MODAL_ENDPOINT_URL or OPENAI_API_KEY)",
 )
 
 
@@ -47,17 +44,15 @@ class TestTypeScriptGeneration:
         config = Config()
         config.project.language = "typescript"
         config.generation.max_tokens = 256
-        
+
         pipeline = Pipeline(config)
-        
-        result = pipeline.run(
-            "function add(a: number, b: number): number"
-        )
-        
+
+        result = pipeline.run("function add(a: number, b: number): number")
+
         # Should generate function body
         assert result.code is not None
         assert len(result.code) > 10
-        
+
         pipeline.close()
 
     def test_typescript_interface(self):
@@ -65,16 +60,14 @@ class TestTypeScriptGeneration:
         config = Config()
         config.project.language = "typescript"
         config.generation.max_tokens = 256
-        
+
         pipeline = Pipeline(config)
-        
-        result = pipeline.run(
-            "Create interface User with id: string, name: string, email: string"
-        )
-        
+
+        result = pipeline.run("Create interface User with id: string, name: string, email: string")
+
         assert result.code is not None
         assert len(result.code) > 20
-        
+
         pipeline.close()
 
     def test_typescript_class(self):
@@ -82,13 +75,11 @@ class TestTypeScriptGeneration:
         config = Config()
         config.project.language = "typescript"
         config.generation.max_tokens = 512
-        
+
         pipeline = Pipeline(config)
-        
-        result = pipeline.run(
-            "Create class Calculator with add and subtract methods"
-        )
-        
+
+        result = pipeline.run("Create class Calculator with add and subtract methods")
+
         assert result.code is not None
         pipeline.close()
 
@@ -97,13 +88,13 @@ class TestTypeScriptGeneration:
         config = Config()
         config.project.language = "typescript"
         config.generation.max_tokens = 512
-        
+
         pipeline = Pipeline(config)
-        
+
         result = pipeline.run(
             "Create async function fetchUser that takes userId and returns Promise<User>"
         )
-        
+
         assert result.code is not None
         pipeline.close()
 
@@ -116,18 +107,16 @@ class TestPythonGeneration:
         config = Config()
         config.project.language = "python"
         config.generation.max_tokens = 256
-        
+
         pipeline = Pipeline(config)
-        
-        result = pipeline.run(
-            "def calculate_bmi(weight: float, height: float) -> float:"
-        )
-        
+
+        result = pipeline.run("def calculate_bmi(weight: float, height: float) -> float:")
+
         # Should generate function body (may or may not include "def" depending on completion)
         assert result.code is not None
         assert len(result.code) > 10
         assert "return" in result.code.lower()
-        
+
         pipeline.close()
 
     def test_python_dataclass(self):
@@ -135,13 +124,11 @@ class TestPythonGeneration:
         config = Config()
         config.project.language = "python"
         config.generation.max_tokens = 512
-        
+
         pipeline = Pipeline(config)
-        
-        result = pipeline.run(
-            "Create dataclass User with name: str, email: str, age: int"
-        )
-        
+
+        result = pipeline.run("Create dataclass User with name: str, email: str, age: int")
+
         assert result.code is not None
         pipeline.close()
 
@@ -150,13 +137,13 @@ class TestPythonGeneration:
         config = Config()
         config.project.language = "python"
         config.generation.max_tokens = 512
-        
+
         pipeline = Pipeline(config)
-        
+
         result = pipeline.run(
             "Create async function fetch_data(url: str) -> dict with error handling"
         )
-        
+
         assert result.code is not None
         pipeline.close()
 
@@ -165,13 +152,13 @@ class TestPythonGeneration:
         config = Config()
         config.project.language = "python"
         config.generation.max_tokens = 256
-        
+
         pipeline = Pipeline(config)
-        
+
         result = pipeline.run(
             "Create function to filter even numbers from list using comprehension"
         )
-        
+
         assert result.code is not None
         pipeline.close()
 
@@ -184,13 +171,11 @@ class TestRustGeneration:
         config = Config()
         config.project.language = "rust"
         config.generation.max_tokens = 512
-        
+
         pipeline = Pipeline(config)
-        
-        result = pipeline.run(
-            "fn divide(a: f64, b: f64) -> Result<f64, String>"
-        )
-        
+
+        result = pipeline.run("fn divide(a: f64, b: f64) -> Result<f64, String>")
+
         assert result.code is not None
         pipeline.close()
 
@@ -199,13 +184,13 @@ class TestRustGeneration:
         config = Config()
         config.project.language = "rust"
         config.generation.max_tokens = 512
-        
+
         pipeline = Pipeline(config)
-        
+
         result = pipeline.run(
             "Create struct Point with x and y fields, and impl block with new() method"
         )
-        
+
         assert result.code is not None
         pipeline.close()
 
@@ -214,13 +199,11 @@ class TestRustGeneration:
         config = Config()
         config.project.language = "rust"
         config.generation.max_tokens = 512
-        
+
         pipeline = Pipeline(config)
-        
-        result = pipeline.run(
-            "Implement Display trait for struct User"
-        )
-        
+
+        result = pipeline.run("Implement Display trait for struct User")
+
         assert result.code is not None
         pipeline.close()
 
@@ -229,13 +212,11 @@ class TestRustGeneration:
         config = Config()
         config.project.language = "rust"
         config.generation.max_tokens = 256
-        
+
         pipeline = Pipeline(config)
-        
-        result = pipeline.run(
-            "Create function find_user that returns Option<User>"
-        )
-        
+
+        result = pipeline.run("Create function find_user that returns Option<User>")
+
         assert result.code is not None
         pipeline.close()
 
@@ -248,13 +229,11 @@ class TestGoGeneration:
         config = Config()
         config.project.language = "go"
         config.generation.max_tokens = 256
-        
+
         pipeline = Pipeline(config)
-        
-        result = pipeline.run(
-            "func Divide(a, b float64) (float64, error)"
-        )
-        
+
+        result = pipeline.run("func Divide(a, b float64) (float64, error)")
+
         assert result.code is not None
         pipeline.close()
 
@@ -263,13 +242,13 @@ class TestGoGeneration:
         config = Config()
         config.project.language = "go"
         config.generation.max_tokens = 512
-        
+
         pipeline = Pipeline(config)
-        
+
         result = pipeline.run(
             "Create struct Counter with pointer receiver methods Increment and Value"
         )
-        
+
         assert result.code is not None
         pipeline.close()
 
@@ -278,13 +257,11 @@ class TestGoGeneration:
         config = Config()
         config.project.language = "go"
         config.generation.max_tokens = 256
-        
+
         pipeline = Pipeline(config)
-        
-        result = pipeline.run(
-            "Create interface Repository with Find and Save methods"
-        )
-        
+
+        result = pipeline.run("Create interface Repository with Find and Save methods")
+
         assert result.code is not None
         pipeline.close()
 
@@ -297,13 +274,11 @@ class TestZigGeneration:
         config = Config()
         config.project.language = "zig"
         config.generation.max_tokens = 256
-        
+
         pipeline = Pipeline(config)
-        
-        result = pipeline.run(
-            "pub fn add(a: i32, b: i32) i32"
-        )
-        
+
+        result = pipeline.run("pub fn add(a: i32, b: i32) i32")
+
         assert result.code is not None
         pipeline.close()
 
@@ -312,13 +287,11 @@ class TestZigGeneration:
         config = Config()
         config.project.language = "zig"
         config.generation.max_tokens = 256
-        
+
         pipeline = Pipeline(config)
-        
-        result = pipeline.run(
-            "Create pub const Point = struct with x and y fields"
-        )
-        
+
+        result = pipeline.run("Create pub const Point = struct with x and y fields")
+
         assert result.code is not None
         pipeline.close()
 
@@ -332,15 +305,15 @@ class TestCrossLanguageScenarios:
         config = Config()
         config.project.language = language
         config.generation.max_tokens = 256
-        
+
         pipeline = Pipeline(config)
-        
+
         result = pipeline.run(f"Create a hello world function for {language}")
-        
+
         assert result is not None
         assert result.code is not None
         assert len(result.code) > 10
-        
+
         pipeline.close()
 
     @pytest.mark.parametrize("language", ["typescript", "python", "rust"])
@@ -349,17 +322,17 @@ class TestCrossLanguageScenarios:
         config = Config()
         config.project.language = language
         config.generation.max_tokens = 512
-        
+
         pipeline = Pipeline(config)
-        
+
         prompts = {
             "typescript": "Create function with try/catch error handling",
             "python": "Create function with try/except error handling",
             "rust": "Create function returning Result with error handling",
         }
-        
+
         result = pipeline.run(prompts[language])
-        
+
         assert result.code is not None
         pipeline.close()
 
@@ -372,24 +345,27 @@ class TestGrammarConstraints:
         with tempfile.TemporaryDirectory() as tmpdir:
             project = Path(tmpdir)
             (project / "main.py").write_text("def existing(): pass")
-            
+
             config = Config()
             config.project.path = project
             config.project.language = "python"
             config.constraints.syntactic_enabled = True
-            
+
             pipeline = Pipeline(config)
-            
+
             # Index to get context
             pipeline.index_project(project)
-            
+
             # Generate with grammar
             result = pipeline.generate("Create function to add two numbers")
-            
+
             # Verify grammar was loaded
             assert pipeline._last_grammar != ""
-            assert "def" in pipeline._last_grammar.lower() or "function" in pipeline._last_grammar.lower()
-            
+            assert (
+                "def" in pipeline._last_grammar.lower()
+                or "function" in pipeline._last_grammar.lower()
+            )
+
             pipeline.close()
 
     def test_typescript_type_constraints(self):
@@ -398,16 +374,14 @@ class TestGrammarConstraints:
         config.project.language = "typescript"
         config.constraints.syntactic_enabled = True
         config.constraints.type_enabled = True
-        
+
         pipeline = Pipeline(config)
-        
-        result = pipeline.generate(
-            "Create function validateEmail(email: string): boolean"
-        )
-        
+
+        result = pipeline.generate("Create function validateEmail(email: string): boolean")
+
         # Grammar should be loaded
         assert pipeline._last_grammar != ""
-        
+
         pipeline.close()
 
 
@@ -419,20 +393,22 @@ class TestComplexScenarios:
         config = Config()
         config.project.language = "python"
         config.generation.max_tokens = 1024
-        
+
         pipeline = Pipeline(config)
-        
-        result = pipeline.run("""
+
+        result = pipeline.run(
+            """
 Create FastAPI POST endpoint for user creation:
 - Endpoint: @app.post("/users")
 - Request model: UserCreate with name and email
 - Response model: UserResponse with id, name, email
 - Include validation
-""")
-        
+"""
+        )
+
         assert result.code is not None
         assert len(result.code) > 100
-        
+
         pipeline.close()
 
     def test_typescript_react_component(self):
@@ -440,16 +416,18 @@ Create FastAPI POST endpoint for user creation:
         config = Config()
         config.project.language = "typescript"
         config.generation.max_tokens = 1024
-        
+
         pipeline = Pipeline(config)
-        
-        result = pipeline.run("""
+
+        result = pipeline.run(
+            """
 Create React component UserCard with:
 - Props: user: User
 - Display user name and email
 - Click handler for delete
-""")
-        
+"""
+        )
+
         assert result.code is not None
         pipeline.close()
 
@@ -458,17 +436,19 @@ Create React component UserCard with:
         config = Config()
         config.project.language = "rust"
         config.generation.max_tokens = 1024
-        
+
         pipeline = Pipeline(config)
-        
-        result = pipeline.run("""
+
+        result = pipeline.run(
+            """
 Create async function fetch_user_data:
 - Parameter: user_id: &str
 - Returns: Result<User, reqwest::Error>
 - Use reqwest for HTTP
 - Error handling with ?
-""")
-        
+"""
+        )
+
         assert result.code is not None
         pipeline.close()
 
@@ -481,23 +461,24 @@ class TestPerformanceMetrics:
         config = Config()
         config.project.language = "python"
         config.generation.max_tokens = 256
-        
+
         pipeline = Pipeline(config)
-        
+
         import time
+
         start = time.time()
-        
+
         result = pipeline.run("def fibonacci(n: int) -> int:")
-        
+
         duration = time.time() - start
-        
+
         # Should complete in reasonable time
         assert duration < 30  # 30 seconds max
-        
+
         print(f"\nGeneration time: {duration:.2f}s")
         if result.generation:
             print(f"Tokens generated: {result.generation.tokens_generated}")
-        
+
         pipeline.close()
 
     def test_batch_generation(self):
@@ -505,27 +486,27 @@ class TestPerformanceMetrics:
         config = Config()
         config.project.language = "python"
         config.generation.max_tokens = 256
-        
+
         pipeline = Pipeline(config)
-        
+
         prompts = [
             "def add(a, b):",
             "def subtract(a, b):",
             "def multiply(a, b):",
         ]
-        
+
         results = []
         for prompt in prompts:
             result = pipeline.generate(prompt)
             results.append(result)
-        
+
         # All should succeed or produce code
         assert all(r.code is not None for r in results)
-        
+
         # Check cache hit rate improved
         hit_rate = pipeline.metrics.get_cache_hit_rate("grammar")
         print(f"\nGrammar cache hit rate: {hit_rate:.1%}")
-        
+
         pipeline.close()
 
 
@@ -537,37 +518,35 @@ class TestValidationIntegration:
         config = Config()
         config.project.language = "python"
         config.validation.syntax_check = True
-        
+
         pipeline = Pipeline(config)
-        
+
         # Generate
         result = pipeline.generate("def test(): pass")
-        
+
         # Validate
         if result.code:
             val_result = pipeline.validate(result.code)
-            
+
             # Should have validation result
             assert val_result is not None
             print(f"\nSyntax valid: {val_result.success}")
-        
+
         pipeline.close()
 
     def test_typescript_type_checking(self):
         """Test TypeScript type validation."""
         config = Config()
         config.project.language = "typescript"
-        
+
         pipeline = Pipeline(config)
-        
-        result = pipeline.generate(
-            "function greet(name: string): string"
-        )
-        
+
+        result = pipeline.generate("function greet(name: string): string")
+
         if result.code:
             val_result = pipeline.validate(result.code)
             assert val_result is not None
-        
+
         pipeline.close()
 
 
@@ -578,14 +557,14 @@ class TestEdgeCases:
         """Test handling of empty prompt."""
         config = Config()
         config.project.language = "python"
-        
+
         pipeline = Pipeline(config)
-        
+
         result = pipeline.run("")
-        
+
         # Should not crash
         assert result is not None
-        
+
         pipeline.close()
 
     def test_very_long_prompt(self):
@@ -593,24 +572,24 @@ class TestEdgeCases:
         config = Config()
         config.project.language = "python"
         config.generation.max_tokens = 256
-        
+
         pipeline = Pipeline(config)
-        
+
         long_prompt = "Create a function " + "that does something " * 50
-        
+
         result = pipeline.run(long_prompt)
-        
+
         assert result is not None
-        
+
         pipeline.close()
 
     def test_unsupported_language_graceful(self):
         """Test graceful handling of unsupported language."""
         config = Config()
         config.project.language = "unsupported"
-        
+
         pipeline = Pipeline(config)
-        
+
         with pytest.raises(ValueError, match="not yet supported"):
             pipeline.index_project(Path("/tmp"))
 
@@ -623,20 +602,22 @@ class TestRealWorldScenarios:
         config = Config()
         config.project.language = "python"
         config.generation.max_tokens = 1024
-        
+
         pipeline = Pipeline(config)
-        
-        result = pipeline.run("""
+
+        result = pipeline.run(
+            """
 Create Python class UserRepository with methods:
 - find_by_id(user_id: str) -> Optional[User]
 - save(user: User) -> User
 - delete(user_id: str) -> bool
 Use type hints throughout
-""")
-        
+"""
+        )
+
         assert result.code is not None
         assert len(result.code) > 200
-        
+
         pipeline.close()
 
     def test_error_type_hierarchy(self):
@@ -644,17 +625,19 @@ Use type hints throughout
         config = Config()
         config.project.language = "rust"
         config.generation.max_tokens = 1024
-        
+
         pipeline = Pipeline(config)
-        
-        result = pipeline.run("""
+
+        result = pipeline.run(
+            """
 Create Rust error enum AppError with variants:
 - NotFound(String)
 - ValidationError(String)
 - DatabaseError
 Use thiserror derive
-""")
-        
+"""
+        )
+
         assert result.code is not None
         pipeline.close()
 
@@ -663,17 +646,19 @@ Use thiserror derive
         config = Config()
         config.project.language = "go"
         config.generation.max_tokens = 1024
-        
+
         pipeline = Pipeline(config)
-        
-        result = pipeline.run("""
+
+        result = pipeline.run(
+            """
 Create Go function ProcessConcurrently that:
 - Takes items []string
 - Processes each in goroutine
 - Returns []string results
 - Uses channels for coordination
-""")
-        
+"""
+        )
+
         assert result.code is not None
         pipeline.close()
 
@@ -685,46 +670,46 @@ class TestMetricsCollection:
         """Test all metrics are recorded."""
         config = Config()
         config.project.language = "python"
-        
+
         pipeline = Pipeline(config)
-        
+
         # Generate something
         pipeline.run("def test(): pass")
-        
+
         # Check metrics
         summary = pipeline.metrics.summary()
-        
+
         assert "latencies" in summary
         assert "counters" in summary
         assert "cache_hit_rates" in summary
-        
+
         # Should have some latency data
         assert len(summary["latencies"]) > 0
-        
-        print(f"\nMetrics collected:")
+
+        print("\nMetrics collected:")
         print(f"  Latencies: {list(summary['latencies'].keys())}")
         print(f"  Cache hit rates: {summary['cache_hit_rates']}")
-        
+
         pipeline.close()
 
     def test_provider_call_tracking(self):
         """Test provider calls are tracked."""
         config = Config()
         config.project.language = "python"
-        
+
         if os.getenv("MODAL_ENDPOINT_URL"):
             # Only test if Modal configured
             pipeline = Pipeline(config)
-            
+
             pipeline.generate("def test(): pass")
-            
+
             summary = pipeline.metrics.summary()
-            
+
             # Should track provider calls if Modal used
             if "provider_call" in summary["latencies"]:
                 stats = summary["latencies"]["provider_call"]
-                print(f"\nProvider call stats:")
+                print("\nProvider call stats:")
                 print(f"  Mean: {stats['mean']:.0f}ms")
                 print(f"  Count: {stats['count']}")
-            
+
             pipeline.close()

@@ -2,9 +2,8 @@
 Tests for TypeScript type system.
 """
 
-import pytest
-from maze.type_system.languages.typescript import TypeScriptTypeSystem
 from maze.core.types import Type
+from maze.type_system.languages.typescript import TypeScriptTypeSystem
 
 
 class TestTypeScriptTypeSystem:

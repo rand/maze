@@ -5,10 +5,10 @@ Provides comprehensive code review including security vulnerability scanning,
 performance anti-pattern detection, quality metrics, and documentation checking.
 """
 
-from dataclasses import dataclass, field
-from typing import Optional, Literal, Any
-import re
 import ast
+import re
+from dataclasses import dataclass, field
+from typing import Any, Literal, Optional
 
 
 @dataclass
@@ -20,8 +20,8 @@ class SecurityFinding:
     message: str
     line: int
     column: int = 0
-    cwe_id: Optional[str] = None
-    suggested_fix: Optional[str] = None
+    cwe_id: str | None = None
+    suggested_fix: str | None = None
 
 
 @dataclass
@@ -33,7 +33,7 @@ class PerformanceFinding:
     message: str
     line: int
     column: int = 0
-    suggested_fix: Optional[str] = None
+    suggested_fix: str | None = None
 
 
 @dataclass
@@ -81,7 +81,7 @@ class ReviewResult:
     performance_findings: list[PerformanceFinding]
     quality_report: QualityReport
     documentation_report: DocumentationReport
-    coverage_report: Optional[CoverageReport]
+    coverage_report: CoverageReport | None
     overall_score: float  # 0-100
 
 
@@ -134,7 +134,7 @@ class ReviewRules:
 class PedanticRavenIntegration:
     """Code quality and security enforcement."""
 
-    def __init__(self, rules: Optional[ReviewRules] = None):
+    def __init__(self, rules: ReviewRules | None = None):
         """
         Initialize pedantic_raven integration.
 
@@ -151,8 +151,8 @@ class PedanticRavenIntegration:
         self,
         code: str,
         language: str,
-        tests: Optional[str] = None,
-        rules: Optional[ReviewRules] = None,
+        tests: str | None = None,
+        rules: ReviewRules | None = None,
     ) -> ReviewResult:
         """
         Comprehensive code review.
@@ -212,9 +212,7 @@ class PedanticRavenIntegration:
 
         # Block on critical security issues
         if active_rules.block_on_critical_security:
-            critical_security = [
-                f for f in security_findings if f.severity == "critical"
-            ]
+            critical_security = [f for f in security_findings if f.severity == "critical"]
             if critical_security:
                 success = False
 
@@ -222,10 +220,7 @@ class PedanticRavenIntegration:
         if quality_report.quality_score < active_rules.min_quality_score:
             success = False
 
-        if (
-            documentation_report.completeness_score
-            < active_rules.min_documentation_score
-        ):
+        if documentation_report.completeness_score < active_rules.min_documentation_score:
             success = False
 
         if coverage_report and coverage_report.line_coverage < active_rules.min_coverage:
@@ -305,9 +300,7 @@ class PedanticRavenIntegration:
                 quality_score=50.0,
             )
 
-    def check_performance(
-        self, code: str, language: str
-    ) -> list[PerformanceFinding]:
+    def check_performance(self, code: str, language: str) -> list[PerformanceFinding]:
         """
         Performance anti-patterns.
 
@@ -334,9 +327,7 @@ class PedanticRavenIntegration:
 
         return findings
 
-    def check_documentation(
-        self, code: str, language: str
-    ) -> DocumentationReport:
+    def check_documentation(self, code: str, language: str) -> DocumentationReport:
         """
         Documentation completeness.
 
@@ -370,9 +361,7 @@ class PedanticRavenIntegration:
                 completeness_score=0.0,
             )
 
-    def check_test_coverage(
-        self, code: str, tests: str, language: str
-    ) -> CoverageReport:
+    def check_test_coverage(self, code: str, tests: str, language: str) -> CoverageReport:
         """
         Test coverage analysis.
 
@@ -442,9 +431,7 @@ class PedanticRavenIntegration:
                 )
 
             # Check for SQL injection patterns
-            if re.search(r"['\"]SELECT.*%s", line) or re.search(
-                r"['\"]SELECT.*\+\s*\w+", line
-            ):
+            if re.search(r"['\"]SELECT.*%s", line) or re.search(r"['\"]SELECT.*\+\s*\w+", line):
                 findings.append(
                     SecurityFinding(
                         category="injection",
@@ -457,7 +444,9 @@ class PedanticRavenIntegration:
                 )
 
             # Check for command injection
-            if re.search(r"os\.system\s*\(", line) or re.search(r"subprocess\.call\s*\([^,]*\+", line):
+            if re.search(r"os\.system\s*\(", line) or re.search(
+                r"subprocess\.call\s*\([^,]*\+", line
+            ):
                 findings.append(
                     SecurityFinding(
                         category="injection",
@@ -724,7 +713,7 @@ class PedanticRavenIntegration:
         performance_findings: list[PerformanceFinding],
         quality_report: QualityReport,
         documentation_report: DocumentationReport,
-        coverage_report: Optional[CoverageReport],
+        coverage_report: CoverageReport | None,
     ) -> float:
         """Calculate overall review score."""
         score = quality_report.quality_score

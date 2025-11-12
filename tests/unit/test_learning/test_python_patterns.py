@@ -7,8 +7,6 @@ import ast
 import tempfile
 from pathlib import Path
 
-import pytest
-
 from maze.learning.pattern_mining import PatternMiningEngine
 
 
@@ -19,24 +17,28 @@ class TestPythonPatternMining:
         """Test mining patterns from Python project."""
         with tempfile.TemporaryDirectory() as tmpdir:
             project = Path(tmpdir)
-            
+
             # Create sample Python files
-            (project / "module1.py").write_text("""
+            (project / "module1.py").write_text(
+                """
 def calculate(x: int, y: int) -> int:
     return x + y
 
 async def fetch_data(url: str) -> dict:
     return {}
-""")
-            
-            (project / "module2.py").write_text("""
+"""
+            )
+
+            (project / "module2.py").write_text(
+                """
 from dataclasses import dataclass
 
 @dataclass
 class User:
     name: str
     email: str
-""")
+"""
+            )
 
             miner = PatternMiningEngine(language="python", min_frequency=1)
             patterns = miner.mine_patterns(project)

@@ -3,19 +3,15 @@ Tests for pattern mining engine.
 """
 
 import ast
-import tempfile
-from pathlib import Path
 
-import pytest
-
+from maze.core.types import Type, TypeContext
 from maze.learning.pattern_mining import (
     PatternMiningEngine,
+    PatternSet,
+    SemanticPattern,
     SyntacticPattern,
     TypePattern,
-    SemanticPattern,
-    PatternSet
 )
-from maze.core.types import TypeContext, Type
 
 
 class TestPatternMiningEngine:
@@ -25,7 +21,8 @@ class TestPatternMiningEngine:
         """Test basic pattern mining."""
         # Create small test codebase
         test_file = tmp_path / "test.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 def add(a, b):
     return a + b
 
@@ -35,7 +32,8 @@ def subtract(a, b):
 class Calculator:
     def multiply(self, a, b):
         return a * b
-""")
+"""
+        )
 
         engine = PatternMiningEngine(language="python", min_frequency=1)
         result = engine.mine_patterns(tmp_path, "python")
@@ -149,7 +147,9 @@ except Exception:
         engine = PatternMiningEngine(language="python")
 
         # Weight examples more heavily
-        ranked = engine.rank_patterns(patterns, {"frequency": 0.3, "examples": 0.7, "complexity": 0})
+        ranked = engine.rank_patterns(
+            patterns, {"frequency": 0.3, "examples": 0.7, "complexity": 0}
+        )
 
         # Pattern with more examples should rank higher despite lower frequency
         assert len(ranked[0].examples) > len(ranked[1].examples)
@@ -177,14 +177,16 @@ except Exception:
         # Create moderate-sized codebase
         for i in range(20):
             test_file = tmp_path / f"module_{i}.py"
-            test_file.write_text(f"""
+            test_file.write_text(
+                f"""
 def function_{i}(x):
     return x * {i}
 
 class Class_{i}:
     def method(self):
         return {i}
-""")
+"""
+            )
 
         engine = PatternMiningEngine(language="python", min_frequency=1)
         result = engine.mine_patterns(tmp_path, "python")
@@ -211,20 +213,20 @@ class Class_{i}:
     def test_min_frequency_filter(self, tmp_path):
         """Test minimum frequency filtering."""
         test_file = tmp_path / "test.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 def foo(): pass
 def bar(): pass
 def baz(): pass
-""")
+"""
+        )
 
         # High min_frequency should filter out unique patterns
         engine = PatternMiningEngine(language="python", min_frequency=5)
         result = engine.mine_patterns(tmp_path, "python")
 
         # Should have fewer patterns due to high min_frequency
-        assert result.total_patterns == 0 or all(
-            p.frequency >= 5 for p in result.syntactic
-        )
+        assert result.total_patterns == 0 or all(p.frequency >= 5 for p in result.syntactic)
 
     def test_max_patterns_limit(self, tmp_path):
         """Test maximum patterns limit."""
@@ -354,12 +356,14 @@ async def async_function(a, b):
     def test_semantic_pattern_disabled(self, tmp_path):
         """Test with semantic extraction disabled."""
         test_file = tmp_path / "test.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 try:
     risky()
 except:
     pass
-""")
+"""
+        )
 
         engine = PatternMiningEngine(language="python", enable_semantic=False, min_frequency=1)
         result = engine.mine_patterns(tmp_path, "python")

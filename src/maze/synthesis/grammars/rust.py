@@ -18,7 +18,7 @@ function_def: attributes? visibility? qualifiers? "fn" IDENT generics? "(" param
 
 attributes: attribute+
 attribute: "#" "[" attribute_content "]"
-attribute_content: /[^\]]+/
+attribute_content: /[^\\]]+/
 
 visibility: "pub" visibility_restriction?
 visibility_restriction: "(" ("crate" | "super" | "self" | "in" path) ")"
@@ -132,7 +132,7 @@ continue_expr: "continue"
 
 macro_call: path "!" macro_args
 macro_args: "(" macro_tokens ")" | "[" macro_tokens "]" | "{" macro_tokens "}"
-macro_tokens: /[^)\]\}]*/
+macro_tokens: /[^)\\]\\}]*/
 
 closure: "|" closure_params? "|" (return_type)? (expression | block)
 closure_params: closure_param ("," closure_param)*
@@ -151,7 +151,7 @@ struct_fields: struct_field ("," struct_field)* ","?
 struct_field: IDENT ":" expression | IDENT
 
 literal: NUMBER | STRING | CHAR | BOOLEAN
-NUMBER: /-?\d+(_?\d)*(\.\d+(_?\d)*)?([eE][+-]?\d+)?/ | /-?0[xX][0-9a-fA-F]+(_?[0-9a-fA-F])*/ | /-?0[oO][0-7]+(_?[0-7])*/ | /-?0[bB][01]+(_?[01])*/
+NUMBER: /-?\\d+(_?\\d)*(\\.\\d+(_?\\d)*)?([eE][+-]?\\d+)?/ | /-?0[xX][0-9a-fA-F]+(_?[0-9a-fA-F])*/ | /-?0[oO][0-7]+(_?[0-7])*/ | /-?0[bB][01]+(_?[01])*/
 STRING: /"([^"\\\\]|\\\\.)*"/ | /r(#*)".*?"\\1/
 CHAR: /'([^'\\\\]|\\\\.)'/
 BOOLEAN: "true" | "false"
@@ -192,7 +192,7 @@ IDENT: /[a-zA-Z_][a-zA-Z0-9_]*/
 %ignore /[ \\t\\r\\n]+/
 %ignore /\\/\\/.*/
 %ignore /\\/\\*[\\s\\S]*?\\*\\//
-"""
+""",
 )
 
 # Struct definition grammar
@@ -207,7 +207,7 @@ struct_def: attributes? visibility? "struct" IDENT generics? struct_body where_c
 
 attributes: attribute+
 attribute: "#" "[" attribute_content "]"
-attribute_content: /[^\]]+/
+attribute_content: /[^\\]]+/
 
 visibility: "pub" visibility_restriction?
 visibility_restriction: "(" ("crate" | "super" | "self") ")"
@@ -251,12 +251,12 @@ tuple_type: "(" type_list ")"
 type_list: type_expr ("," type_expr)* ","?
 
 IDENT: /[a-zA-Z_][a-zA-Z0-9_]*/
-NUMBER: /\d+/
+NUMBER: /\\d+/
 
 %ignore /[ \\t\\r\\n]+/
 %ignore /\\/\\/.*/
 %ignore /\\/\\*[\\s\\S]*?\\*\\//
-"""
+""",
 )
 
 # Impl block grammar
@@ -305,7 +305,7 @@ IDENT: /[a-zA-Z_][a-zA-Z0-9_]*/
 
 %ignore /[ \\t\\r\\n]+/
 %ignore /\\/\\/.*/
-"""
+""",
 )
 
 # Function BODY grammar (for completing partial signatures)
@@ -400,7 +400,7 @@ continue_expr: "continue"
 
 macro_call: path "!" macro_args
 macro_args: "(" macro_tokens ")" | "[" macro_tokens "]" | "{" macro_tokens "}"
-macro_tokens: /[^)\]\}]*/
+macro_tokens: /[^)\\]\\}]*/
 
 closure: "|" closure_params? "|" (return_type)? (expression | block)
 closure_params: closure_param ("," closure_param)*
@@ -420,7 +420,7 @@ struct_fields: struct_field ("," struct_field)* ","?
 struct_field: IDENT ":" expression | IDENT
 
 literal: NUMBER | STRING | CHAR | BOOLEAN
-NUMBER: /-?\d+(_?\d)*(\.\d+(_?\d)*)?([eE][+-]?\d+)?/ | /-?0[xX][0-9a-fA-F]+(_?[0-9a-fA-F])*/ | /-?0[oO][0-7]+(_?[0-7])*/ | /-?0[bB][01]+(_?[01])*/
+NUMBER: /-?\\d+(_?\\d)*(\\.\\d+(_?\\d)*)?([eE][+-]?\\d+)?/ | /-?0[xX][0-9a-fA-F]+(_?[0-9a-fA-F])*/ | /-?0[oO][0-7]+(_?[0-7])*/ | /-?0[bB][01]+(_?[01])*/
 STRING: /"([^"\\\\]|\\\\.)*"/ | /r(#*)".*?"\\1/
 CHAR: /'([^'\\\\]|\\\\.)'/
 BOOLEAN: "true" | "false"
@@ -463,7 +463,7 @@ IDENT: /[a-zA-Z_][a-zA-Z0-9_]*/
 %ignore /[ \\t\\r\\n]+/
 %ignore /\\/\\/.*/
 %ignore /\\/\\*[\\s\\S]*?\\*\\//
-"""
+""",
 )
 
 # Export all templates
@@ -475,9 +475,9 @@ ALL_TEMPLATES = [
 ]
 
 __all__ = [
-    'RUST_FUNCTION',
-    'RUST_FUNCTION_BODY',
-    'RUST_STRUCT',
-    'RUST_IMPL',
-    'ALL_TEMPLATES',
+    "RUST_FUNCTION",
+    "RUST_FUNCTION_BODY",
+    "RUST_STRUCT",
+    "RUST_IMPL",
+    "ALL_TEMPLATES",
 ]

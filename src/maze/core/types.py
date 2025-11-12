@@ -7,14 +7,14 @@ the system for type-directed synthesis and constraint generation.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import (
-    Any, Dict, List, Optional, Tuple, Union, Set,
-    Literal, Protocol, runtime_checkable
-)
-from enum import Enum
-from datetime import datetime
 import hashlib
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import (
+    Any,
+    Literal,
+)
 
 
 @dataclass(frozen=True)
@@ -28,10 +28,11 @@ class Type:
         - Type("Promise", [Type("User")]) - Promise<User>
         - Type("function", [Type("number"), Type("string")]) - number => string
     """
+
     name: str
-    parameters: Tuple[Type, ...] = field(default_factory=tuple)
+    parameters: tuple[Type, ...] = field(default_factory=tuple)
     nullable: bool = False
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def __hash__(self) -> int:
         """Generate hash for type caching."""
@@ -61,7 +62,7 @@ class Type:
         """Check if this type has generic parameters."""
         return bool(self.parameters)
 
-    def substitute(self, mapping: Dict[str, Type]) -> Type:
+    def substitute(self, mapping: dict[str, Type]) -> Type:
         """Substitute type variables with concrete types."""
         if self.name in mapping:
             return mapping[self.name]
@@ -75,20 +76,44 @@ class Type:
 
 # Common primitive types across languages
 PRIMITIVE_TYPES = {
-    "string", "number", "boolean", "null", "undefined", "void",
-    "int", "float", "double", "char", "byte",
-    "str", "bool", "int", "float", "None",  # Python
-    "i8", "i16", "i32", "i64", "u8", "u16", "u32", "u64", "f32", "f64", "usize", "isize",  # Rust
+    "string",
+    "number",
+    "boolean",
+    "null",
+    "undefined",
+    "void",
+    "int",
+    "float",
+    "double",
+    "char",
+    "byte",
+    "str",
+    "bool",
+    "None",  # Python
+    "i8",
+    "i16",
+    "i32",
+    "i64",
+    "u8",
+    "u16",
+    "u32",
+    "u64",
+    "f32",
+    "f64",
+    "usize",
+    "isize",  # Rust
     "rune",  # Go
-    "u8", "u16", "u32", "u64", "i8", "i16", "i32", "i64", "f16", "f32", "f64", "f128",  # Zig
+    "f16",
+    "f128",  # Zig
 }
 
 
 @dataclass
 class TypeVariable:
     """Type variable for generic/polymorphic types."""
+
     name: str
-    constraints: List[Type] = field(default_factory=list)
+    constraints: list[Type] = field(default_factory=list)
 
     def __str__(self) -> str:
         if self.constraints:
@@ -100,10 +125,11 @@ class TypeVariable:
 @dataclass
 class TypeParameter:
     """Parameter in a type signature."""
+
     name: str
     type: Type
     optional: bool = False
-    default_value: Optional[Any] = None
+    default_value: Any | None = None
 
     def __str__(self) -> str:
         opt = "?" if self.optional else ""
@@ -116,11 +142,12 @@ class TypeParameter:
 @dataclass
 class FunctionSignature:
     """Complete function signature with parameters and return type."""
+
     name: str
-    parameters: List[TypeParameter]
+    parameters: list[TypeParameter]
     return_type: Type
-    type_parameters: List[TypeVariable] = field(default_factory=list)
-    throws: List[Type] = field(default_factory=list)
+    type_parameters: list[TypeVariable] = field(default_factory=list)
+    throws: list[Type] = field(default_factory=list)
     is_async: bool = False
     is_generator: bool = False
 
@@ -161,12 +188,13 @@ class TypeContext:
     This represents the typing context at a particular point in the code,
     including all accessible symbols and their types.
     """
-    variables: Dict[str, Type] = field(default_factory=dict)
-    functions: Dict[str, FunctionSignature] = field(default_factory=dict)
-    classes: Dict[str, 'ClassType'] = field(default_factory=dict)
-    interfaces: Dict[str, 'InterfaceType'] = field(default_factory=dict)
-    type_aliases: Dict[str, Type] = field(default_factory=dict)
-    imports: Dict[str, str] = field(default_factory=dict)
+
+    variables: dict[str, Type] = field(default_factory=dict)
+    functions: dict[str, FunctionSignature] = field(default_factory=dict)
+    classes: dict[str, ClassType] = field(default_factory=dict)
+    interfaces: dict[str, InterfaceType] = field(default_factory=dict)
+    type_aliases: dict[str, Type] = field(default_factory=dict)
+    imports: dict[str, str] = field(default_factory=dict)
 
     # Language-specific context
     language: str = "typescript"
@@ -198,7 +226,7 @@ class TypeContext:
         result.imports.update(other.imports)
         return result
 
-    def lookup(self, name: str) -> Optional[Type]:
+    def lookup(self, name: str) -> Type | None:
         """Look up a symbol's type in the context."""
         if name in self.variables:
             return self.variables[name]
@@ -216,12 +244,13 @@ class TypeContext:
 @dataclass
 class ClassType:
     """Class/struct type representation."""
+
     name: str
-    properties: Dict[str, Type]
-    methods: Dict[str, FunctionSignature]
-    extends: Optional[str] = None
-    implements: List[str] = field(default_factory=list)
-    type_parameters: List[TypeVariable] = field(default_factory=list)
+    properties: dict[str, Type]
+    methods: dict[str, FunctionSignature]
+    extends: str | None = None
+    implements: list[str] = field(default_factory=list)
+    type_parameters: list[TypeVariable] = field(default_factory=list)
     is_abstract: bool = False
 
     def to_type(self) -> Type:
@@ -235,11 +264,12 @@ class ClassType:
 @dataclass
 class InterfaceType:
     """Interface/trait type representation."""
+
     name: str
-    properties: Dict[str, Type]
-    methods: Dict[str, FunctionSignature]
-    extends: List[str] = field(default_factory=list)
-    type_parameters: List[TypeVariable] = field(default_factory=list)
+    properties: dict[str, Type]
+    methods: dict[str, FunctionSignature]
+    extends: list[str] = field(default_factory=list)
+    type_parameters: list[TypeVariable] = field(default_factory=list)
 
     def to_type(self) -> Type:
         """Convert to Type representation."""
@@ -259,6 +289,7 @@ class ConstraintLevel(Enum):
     - SEMANTIC: Satisfies behavioral specifications
     - CONTEXTUAL: Follows project-specific patterns
     """
+
     SYNTACTIC = 1
     TYPE = 2
     SEMANTIC = 3
@@ -273,16 +304,17 @@ class IndexedContext:
     Contains all extracted information from the codebase needed
     for constraint synthesis and code generation.
     """
-    files: List[Dict[str, str]]
-    symbols: List[Dict[str, Any]]
-    schemas: List[Dict[str, Any]]
-    style: Dict[str, Any]
-    tests: List[Dict[str, str]]
-    constraints_candidates: List[Dict[str, Any]]
+
+    files: list[dict[str, str]]
+    symbols: list[dict[str, Any]]
+    schemas: list[dict[str, Any]]
+    style: dict[str, Any]
+    tests: list[dict[str, str]]
+    constraints_candidates: list[dict[str, Any]]
 
     # Metadata
     language: str = "typescript"
-    project_path: Optional[str] = None
+    project_path: str | None = None
     indexed_at: datetime = field(default_factory=datetime.now)
 
     def to_summary(self) -> str:
@@ -305,7 +337,7 @@ class IndexedContext:
                 context.functions[symbol["name"]] = FunctionSignature(
                     name=symbol["name"],
                     parameters=[],
-                    return_type=Type(symbol.get("return_type", "any"))
+                    return_type=Type(symbol.get("return_type", "any")),
                 )
 
         return context
@@ -319,19 +351,20 @@ class Diagnostic:
     Used to capture errors, warnings, and suggestions from various
     validation stages.
     """
+
     severity: Literal["error", "warning", "info", "hint"]
     category: Literal["syntax", "type", "semantic", "style", "performance"]
     message: str
-    file: Optional[str] = None
-    line: Optional[int] = None
-    column: Optional[int] = None
-    end_line: Optional[int] = None
-    end_column: Optional[int] = None
-    code: Optional[str] = None  # Error code (e.g., "TS2322")
-    suggestion: Optional[str] = None
-    related: List['Diagnostic'] = field(default_factory=list)
+    file: str | None = None
+    line: int | None = None
+    column: int | None = None
+    end_line: int | None = None
+    end_column: int | None = None
+    code: str | None = None  # Error code (e.g., "TS2322")
+    suggestion: str | None = None
+    related: list[Diagnostic] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "severity": self.severity,
@@ -363,6 +396,7 @@ class GenerationResult:
     """
     Result from code generation including metadata and metrics.
     """
+
     code: str
     success: bool
     language: str
@@ -376,21 +410,21 @@ class GenerationResult:
     generation_time_ms: float
 
     # Constraint information
-    constraints_used: Optional['ConstraintSet'] = None
-    grammar_used: Optional[str] = None
-    schema_used: Optional[Dict[str, Any]] = None
+    constraints_used: ConstraintSet | None = None
+    grammar_used: str | None = None
+    schema_used: dict[str, Any] | None = None
 
     # Performance metrics
-    mask_computation_us: Optional[float] = None
-    type_search_ms: Optional[float] = None
+    mask_computation_us: float | None = None
+    type_search_ms: float | None = None
 
     # Provenance
-    prompt: Optional[str] = None
+    prompt: str | None = None
     temperature: float = 0.7
     max_tokens: int = 500
     attempts: int = 1
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "code": self.code,
@@ -413,38 +447,39 @@ class ValidationResult:
     """
     Result from code validation with diagnostics and suggestions.
     """
+
     passed: bool
-    diagnostics: List[Diagnostic] = field(default_factory=list)
+    diagnostics: list[Diagnostic] = field(default_factory=list)
 
     # Categorized results
-    syntax_errors: List[Diagnostic] = field(default_factory=list)
-    type_errors: List[Diagnostic] = field(default_factory=list)
-    semantic_errors: List[Diagnostic] = field(default_factory=list)
-    style_warnings: List[Diagnostic] = field(default_factory=list)
+    syntax_errors: list[Diagnostic] = field(default_factory=list)
+    type_errors: list[Diagnostic] = field(default_factory=list)
+    semantic_errors: list[Diagnostic] = field(default_factory=list)
+    style_warnings: list[Diagnostic] = field(default_factory=list)
 
     # Test results
     tests_run: int = 0
     tests_passed: int = 0
     tests_failed: int = 0
-    test_coverage: Optional[float] = None
+    test_coverage: float | None = None
 
     # Resource usage
     validation_time_ms: float = 0.0
-    memory_used_mb: Optional[float] = None
+    memory_used_mb: float | None = None
 
     # Suggestions for repair
-    suggestions: List[str] = field(default_factory=list)
+    suggestions: list[str] = field(default_factory=list)
 
-    def get_errors(self) -> List[Diagnostic]:
+    def get_errors(self) -> list[Diagnostic]:
         """Get all error-level diagnostics."""
         return [d for d in self.diagnostics if d.severity == "error"]
 
-    def get_warnings(self) -> List[Diagnostic]:
+    def get_warnings(self) -> list[Diagnostic]:
         """Get all warning-level diagnostics."""
         return [d for d in self.diagnostics if d.severity == "warning"]
 
     @classmethod
-    def combine(cls, results: List['ValidationResult']) -> 'ValidationResult':
+    def combine(cls, results: list[ValidationResult]) -> ValidationResult:
         """Combine multiple validation results."""
         combined = ValidationResult(passed=all(r.passed for r in results))
 
@@ -468,23 +503,24 @@ class GenerationProvenance:
     """
     Complete history of a generation attempt for debugging and learning.
     """
+
     id: str = field(default_factory=lambda: hashlib.sha256().hexdigest()[:8])
     timestamp: datetime = field(default_factory=datetime.now)
 
     # Input
     prompt: str = ""
-    specification: Optional['Specification'] = None
-    context: Optional[IndexedContext] = None
+    specification: Specification | None = None
+    context: IndexedContext | None = None
 
     # Process
-    constraints_synthesized: Optional['ConstraintSet'] = None
-    generation_attempts: List[GenerationResult] = field(default_factory=list)
-    validation_results: List[ValidationResult] = field(default_factory=list)
-    repair_attempts: List['RepairResult'] = field(default_factory=list)
+    constraints_synthesized: ConstraintSet | None = None
+    generation_attempts: list[GenerationResult] = field(default_factory=list)
+    validation_results: list[ValidationResult] = field(default_factory=list)
+    repair_attempts: list[RepairResult] = field(default_factory=list)
 
     # Output
-    final_code: Optional[str] = None
-    final_result: Optional[ValidationResult] = None
+    final_code: str | None = None
+    final_result: ValidationResult | None = None
 
     # Metrics
     total_time_ms: float = 0.0
@@ -501,7 +537,7 @@ class GenerationProvenance:
         """Add a validation result to the provenance."""
         self.validation_results.append(result)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "id": self.id,

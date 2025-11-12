@@ -3,27 +3,26 @@ Tests for project adaptation manager.
 """
 
 from pathlib import Path
-import tempfile
+
 import pytest
 
-from maze.learning.project_adaptation import (
-    ProjectAdaptationManager,
-    ProjectProfile,
-    ConventionSet,
-    AdaptationStats,
-)
-from maze.learning.pattern_mining import (
-    PatternMiningEngine,
-    PatternSet,
-    SyntacticPattern,
-    TypePattern,
-    SemanticPattern,
-)
 from maze.learning.constraint_learning import (
     ConstraintLearningSystem,
     Feedback,
     GenerationResult,
     ValidationResult,
+)
+from maze.learning.pattern_mining import (
+    PatternMiningEngine,
+    PatternSet,
+    SemanticPattern,
+    SyntacticPattern,
+)
+from maze.learning.project_adaptation import (
+    AdaptationStats,
+    ConventionSet,
+    ProjectAdaptationManager,
+    ProjectProfile,
 )
 
 
@@ -44,9 +43,7 @@ class TestProjectAdaptationManager:
     def manager(self, pattern_miner, learner):
         """Create project adaptation manager."""
         return ProjectAdaptationManager(
-            pattern_miner=pattern_miner,
-            learner=learner,
-            convergence_threshold=0.9
+            pattern_miner=pattern_miner, learner=learner, convergence_threshold=0.9
         )
 
     @pytest.fixture
@@ -56,22 +53,26 @@ class TestProjectAdaptationManager:
         project.mkdir()
 
         # Create some Python files
-        (project / "main.py").write_text("""
+        (project / "main.py").write_text(
+            """
 def process_data(input_data):
     return input_data * 2
 
 class DataProcessor:
     def transform(self, data):
         return data
-""")
+"""
+        )
 
-        (project / "utils.py").write_text("""
+        (project / "utils.py").write_text(
+            """
 def calculate_sum(a, b):
     return a + b
 
 def format_output(value):
     return str(value)
-""")
+"""
+        )
 
         return project
 
@@ -129,14 +130,18 @@ def format_output(value):
             language="python",
             syntactic=[
                 SyntacticPattern("function", "def foo(): ...", 1, ["def process_data(): pass"], {}),
-                SyntacticPattern("function", "def bar(): ...", 1, ["def calculate_sum(): pass"], {}),
-                SyntacticPattern("function", "def baz(): ...", 1, ["def format_output(): pass"], {}),
+                SyntacticPattern(
+                    "function", "def bar(): ...", 1, ["def calculate_sum(): pass"], {}
+                ),
+                SyntacticPattern(
+                    "function", "def baz(): ...", 1, ["def format_output(): pass"], {}
+                ),
             ],
             type_patterns=[],
             semantic=[],
             source=Path("."),
             extraction_time_ms=100.0,
-            total_patterns=3
+            total_patterns=3,
         )
 
         conventions = manager._extract_naming_conventions(patterns)
@@ -149,15 +154,21 @@ def format_output(value):
         patterns = PatternSet(
             language="typescript",
             syntactic=[
-                SyntacticPattern("function", "function foo() {}", 1, ["function processData() {}"], {}),
-                SyntacticPattern("function", "function bar() {}", 1, ["function calculateSum() {}"], {}),
-                SyntacticPattern("function", "function baz() {}", 1, ["function formatOutput() {}"], {}),
+                SyntacticPattern(
+                    "function", "function foo() {}", 1, ["function processData() {}"], {}
+                ),
+                SyntacticPattern(
+                    "function", "function bar() {}", 1, ["function calculateSum() {}"], {}
+                ),
+                SyntacticPattern(
+                    "function", "function baz() {}", 1, ["function formatOutput() {}"], {}
+                ),
             ],
             type_patterns=[],
             semantic=[],
             source=Path("."),
             extraction_time_ms=100.0,
-            total_patterns=3
+            total_patterns=3,
         )
 
         conventions = manager._extract_naming_conventions(patterns)
@@ -177,7 +188,7 @@ def format_output(value):
             semantic=[],
             source=Path("."),
             extraction_time_ms=100.0,
-            total_patterns=2
+            total_patterns=2,
         )
 
         conventions = manager._extract_naming_conventions(patterns)
@@ -254,7 +265,7 @@ def format_output(value):
             semantic=[],
             source=Path("/project/tests/test_file.py"),
             extraction_time_ms=100.0,
-            total_patterns=0
+            total_patterns=0,
         )
 
         structure = manager._extract_structure_patterns(patterns)
@@ -272,14 +283,14 @@ def format_output(value):
                     "def test_foo(): ...",
                     1,
                     ["def test_process_data(fixture):\n    assert True"],
-                    {}
+                    {},
                 ),
             ],
             type_patterns=[],
             semantic=[],
             source=Path("."),
             extraction_time_ms=100.0,
-            total_patterns=1
+            total_patterns=1,
         )
 
         testing = manager._extract_testing_patterns(patterns)
@@ -295,12 +306,16 @@ def format_output(value):
             syntactic=[],
             type_patterns=[],
             semantic=[
-                SemanticPattern("error_handling", "try-except", ["try:\n    op()\nexcept:\n    pass"], 3),
-                SemanticPattern("error_handling", "try-finally", ["try:\n    op()\nfinally:\n    cleanup()"], 2),
+                SemanticPattern(
+                    "error_handling", "try-except", ["try:\n    op()\nexcept:\n    pass"], 3
+                ),
+                SemanticPattern(
+                    "error_handling", "try-finally", ["try:\n    op()\nfinally:\n    cleanup()"], 2
+                ),
             ],
             source=Path("."),
             extraction_time_ms=100.0,
-            total_patterns=2
+            total_patterns=2,
         )
 
         error_patterns = manager._extract_error_handling_patterns(patterns)
@@ -315,18 +330,14 @@ def format_output(value):
             language="python",
             syntactic=[
                 SyntacticPattern(
-                    "function",
-                    "def foo(): ...",
-                    1,
-                    ["def process_data():\n    return 'data'"],
-                    {}
+                    "function", "def foo(): ...", 1, ["def process_data():\n    return 'data'"], {}
                 ),
             ],
             type_patterns=[],
             semantic=[],
             source=Path("."),
             extraction_time_ms=100.0,
-            total_patterns=1
+            total_patterns=1,
         )
 
         style = manager._extract_style_preferences(patterns)
@@ -349,12 +360,12 @@ def format_output(value):
                         "import requests\nrequests.post(url)",
                         "import requests\nrequests.put(url)",
                     ],
-                    3
+                    3,
                 ),
             ],
             source=Path("."),
             extraction_time_ms=100.0,
-            total_patterns=1
+            total_patterns=1,
         )
 
         apis = manager._extract_api_patterns(patterns)
@@ -382,7 +393,7 @@ def format_output(value):
             testing={"framework": "pytest"},
             error_handling=["try-except"],
             style={"indentation": "4_spaces"},
-            apis={"requests": ["example"]}
+            apis={"requests": ["example"]},
         )
 
         constraints = manager.create_adapted_constraints(conventions)
@@ -400,11 +411,13 @@ def format_output(value):
 
         feedback = Feedback(
             success=True,
-            generation_result=GenerationResult(code="def foo(): pass", language="python", generation_time_ms=50.0),
+            generation_result=GenerationResult(
+                code="def foo(): pass", language="python", generation_time_ms=50.0
+            ),
             validation_result=ValidationResult(success=True),
             repair_result=None,
             score=1.0,
-            feedback_type="positive"
+            feedback_type="positive",
         )
 
         initial_count = profile.generation_count
@@ -419,14 +432,15 @@ def format_output(value):
 
         feedback = Feedback(
             success=False,
-            generation_result=GenerationResult(code="def foo(", language="python", generation_time_ms=50.0),
+            generation_result=GenerationResult(
+                code="def foo(", language="python", generation_time_ms=50.0
+            ),
             validation_result=ValidationResult(
-                success=False,
-                diagnostics=[{"severity": "error", "message": "SyntaxError"}]
+                success=False, diagnostics=[{"severity": "error", "message": "SyntaxError"}]
             ),
             repair_result=None,
             score=-1.0,
-            feedback_type="negative"
+            feedback_type="negative",
         )
 
         manager.update_from_feedback("sample_project", feedback)
@@ -438,11 +452,13 @@ def format_output(value):
         """Test feedback update for unknown project."""
         feedback = Feedback(
             success=True,
-            generation_result=GenerationResult(code="def foo(): pass", language="python", generation_time_ms=50.0),
+            generation_result=GenerationResult(
+                code="def foo(): pass", language="python", generation_time_ms=50.0
+            ),
             validation_result=ValidationResult(success=True),
             repair_result=None,
             score=1.0,
-            feedback_type="positive"
+            feedback_type="positive",
         )
 
         # Should not raise error
@@ -477,7 +493,7 @@ def format_output(value):
             testing={"framework": "pytest"},
             error_handling=["try-except", "try-finally"],
             style={"indentation": "4_spaces"},
-            apis={"requests": ["example"]}
+            apis={"requests": ["example"]},
         )
 
         count = manager._count_conventions(conventions)
@@ -506,11 +522,13 @@ def format_output(value):
         # Simulate multiple successful generations
         feedback = Feedback(
             success=True,
-            generation_result=GenerationResult(code="def foo(): pass", language="python", generation_time_ms=50.0),
+            generation_result=GenerationResult(
+                code="def foo(): pass", language="python", generation_time_ms=50.0
+            ),
             validation_result=ValidationResult(success=True),
             repair_result=None,
             score=1.0,
-            feedback_type="positive"
+            feedback_type="positive",
         )
 
         for _ in range(10):
@@ -569,6 +587,7 @@ def format_output(value):
     def test_performance_initialize_project(self, manager, sample_project):
         """Test that project initialization meets performance target."""
         import time
+
         start = time.time()
         manager.initialize_project(sample_project, language="python")
         elapsed = time.time() - start

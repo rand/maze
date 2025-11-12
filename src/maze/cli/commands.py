@@ -4,7 +4,6 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Optional
 
 from maze.cli.base import Command
 from maze.config import Config
@@ -22,9 +21,7 @@ class InitCommand(Command):
             choices=["typescript", "python", "rust", "go", "zig"],
             help="Project language (default: typescript)",
         )
-        parser.add_argument(
-            "--name", "-n", help="Project name (default: directory name)"
-        )
+        parser.add_argument("--name", "-n", help="Project name (default: directory name)")
 
     def execute(self, args: argparse.Namespace) -> int:
         """Initialize project."""
@@ -96,7 +93,7 @@ class ConfigCommand(Command):
         print(json.dumps(config_dict, indent=2))
         return 0
 
-    def _get_config(self, key: Optional[str]) -> int:
+    def _get_config(self, key: str | None) -> int:
         """Get configuration value."""
         if key is None:
             return self._list_config()
@@ -159,9 +156,7 @@ class IndexCommand(Command):
 
     def setup_parser(self, parser: argparse.ArgumentParser) -> None:
         """Setup index command arguments."""
-        parser.add_argument(
-            "path", nargs="?", type=Path, default=Path.cwd(), help="Path to index"
-        )
+        parser.add_argument("path", nargs="?", type=Path, default=Path.cwd(), help="Path to index")
         parser.add_argument(
             "--output", "-o", type=Path, help="Output file for index results (JSON)"
         )
@@ -194,8 +189,7 @@ class IndexCommand(Command):
                     "files": result.files_processed,
                     "symbols": [s.to_dict() for s in result.symbols],
                     "tests": [
-                        {"name": t.name, "kind": t.kind, "file": t.file_path}
-                        for t in result.tests
+                        {"name": t.name, "kind": t.kind, "file": t.file_path} for t in result.tests
                     ],
                     "duration_ms": result.duration_ms,
                 }
@@ -215,12 +209,8 @@ class GenerateCommand(Command):
     def setup_parser(self, parser: argparse.ArgumentParser) -> None:
         """Setup generate command arguments."""
         parser.add_argument("prompt", help="Generation prompt")
-        parser.add_argument(
-            "--language", "-l", help="Target language (default: from config)"
-        )
-        parser.add_argument(
-            "--provider", "-p", help="LLM provider (default: from config)"
-        )
+        parser.add_argument("--language", "-l", help="Target language (default: from config)")
+        parser.add_argument("--provider", "-p", help="LLM provider (default: from config)")
         parser.add_argument("--output", "-o", type=Path, help="Output file")
         parser.add_argument(
             "--constraints",
@@ -258,7 +248,7 @@ class GenerateCommand(Command):
 
                 return 0
             else:
-                print(f"\n✗ Generation failed", file=sys.stderr)
+                print("\n✗ Generation failed", file=sys.stderr)
                 for error in result.errors:
                     print(f"  - {error}", file=sys.stderr)
                 return 1
@@ -274,15 +264,9 @@ class ValidateCommand(Command):
     def setup_parser(self, parser: argparse.ArgumentParser) -> None:
         """Setup validate command arguments."""
         parser.add_argument("file", type=Path, help="File to validate")
-        parser.add_argument(
-            "--run-tests", action="store_true", help="Run tests"
-        )
-        parser.add_argument(
-            "--type-check", action="store_true", help="Run type checking"
-        )
-        parser.add_argument(
-            "--fix", action="store_true", help="Attempt to fix errors"
-        )
+        parser.add_argument("--run-tests", action="store_true", help="Run tests")
+        parser.add_argument("--type-check", action="store_true", help="Run type checking")
+        parser.add_argument("--fix", action="store_true", help="Attempt to fix errors")
 
     def execute(self, args: argparse.Namespace) -> int:
         """Execute validate command."""
@@ -312,9 +296,7 @@ class ValidateCommand(Command):
 
                 if args.fix:
                     print("\nAttempting to fix...")
-                    repair_result = pipeline.repair(
-                        code, result.diagnostics, "fix errors", None
-                    )
+                    repair_result = pipeline.repair(code, result.diagnostics, "fix errors", None)
                     if repair_result.success:
                         args.file.write_text(repair_result.repaired_code)
                         print(f"✓ Fixed and saved to {args.file}")
@@ -338,12 +320,8 @@ class StatsCommand(Command):
         parser.add_argument(
             "--show-performance", action="store_true", help="Show performance metrics"
         )
-        parser.add_argument(
-            "--show-cache", action="store_true", help="Show cache statistics"
-        )
-        parser.add_argument(
-            "--show-patterns", action="store_true", help="Show learned patterns"
-        )
+        parser.add_argument("--show-cache", action="store_true", help="Show cache statistics")
+        parser.add_argument("--show-patterns", action="store_true", help="Show learned patterns")
 
     def execute(self, args: argparse.Namespace) -> int:
         """Execute stats command."""
@@ -393,22 +371,22 @@ class DebugCommand(Command):
         print("Maze Debug Information")
         print("=" * 60)
 
-        print(f"\nConfig:")
+        print("\nConfig:")
         print(f"  Project: {self.config.project.name}")
         print(f"  Language: {self.config.project.language}")
         print(f"  Provider: {self.config.generation.provider}")
 
-        print(f"\nPaths:")
+        print("\nPaths:")
         print(f"  Project: {self.config.project.path}")
         print(f"  Cache: {self.config.indexer.cache_path}")
 
         if args.verbose:
-            print(f"\nFull Configuration:")
+            print("\nFull Configuration:")
             config_dict = self.config.to_dict()
             print(json.dumps(config_dict, indent=2))
 
         if args.profile:
-            print(f"\nProfiling: Enabled")
+            print("\nProfiling: Enabled")
             self.config.performance.enable_profiling = True
 
         return 0

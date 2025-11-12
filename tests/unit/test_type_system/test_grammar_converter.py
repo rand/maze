@@ -2,12 +2,11 @@
 Tests for type-to-grammar converter.
 """
 
-import pytest
+from maze.core.types import ClassType, Type, TypeContext
 from maze.type_system.grammar_converter import (
     TypeToGrammarConverter,
     create_grammar_for_type,
 )
-from maze.core.types import Type, TypeContext, ClassType, FunctionSignature, TypeParameter
 
 
 class TestTypeToGrammarConverter:
@@ -54,11 +53,7 @@ class TestTypeToGrammarConverter:
         """Test converting simple object type to grammar."""
         converter = TypeToGrammarConverter()
 
-        person = ClassType(
-            name="Person",
-            properties={"name": Type("string")},
-            methods={}
-        )
+        person = ClassType(name="Person", properties={"name": Type("string")}, methods={})
 
         context = TypeContext(classes={"Person": person})
 
@@ -72,12 +67,7 @@ class TestTypeToGrammarConverter:
         converter = TypeToGrammarConverter()
 
         person = ClassType(
-            name="Person",
-            properties={
-                "name": Type("string"),
-                "age": Type("number")
-            },
-            methods={}
+            name="Person", properties={"name": Type("string"), "age": Type("number")}, methods={}
         )
 
         context = TypeContext(classes={"Person": person})
@@ -228,11 +218,7 @@ class TestTypeToGrammarConverter:
 
     def test_create_grammar_with_custom_context(self):
         """Test creating grammar with custom context."""
-        person = ClassType(
-            name="Person",
-            properties={"name": Type("string")},
-            methods={}
-        )
+        person = ClassType(name="Person", properties={"name": Type("string")}, methods={})
 
         context = TypeContext(classes={"Person": person})
 
@@ -259,11 +245,7 @@ class TestComplexTypes:
         """Test converting Array<Person> to grammar."""
         converter = TypeToGrammarConverter()
 
-        person = ClassType(
-            name="Person",
-            properties={"name": Type("string")},
-            methods={}
-        )
+        person = ClassType(name="Person", properties={"name": Type("string")}, methods={})
 
         context = TypeContext(classes={"Person": person})
 
@@ -278,9 +260,7 @@ class TestComplexTypes:
         converter = TypeToGrammarConverter()
 
         company = ClassType(
-            name="Company",
-            properties={"employees": Type("Array", (Type("string"),))},
-            methods={}
+            name="Company", properties={"employees": Type("Array", (Type("string"),))}, methods={}
         )
 
         context = TypeContext(classes={"Company": company})
@@ -294,10 +274,7 @@ class TestComplexTypes:
         converter = TypeToGrammarConverter()
         context = TypeContext()
 
-        union = Type("union", (
-            Type("Array", (Type("string"),)),
-            Type("Array", (Type("number"),))
-        ))
+        union = Type("union", (Type("Array", (Type("string"),)), Type("Array", (Type("number"),))))
 
         grammar = converter.convert(union, context)
 

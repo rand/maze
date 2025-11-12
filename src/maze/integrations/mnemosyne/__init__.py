@@ -8,17 +8,18 @@ Falls back to local cache when mnemosyne unavailable.
 import json
 import subprocess
 import time
-from dataclasses import dataclass, field, asdict
-from pathlib import Path
-from typing import Optional, Any
+from dataclasses import asdict, dataclass, field
 from functools import lru_cache
+from pathlib import Path
+from typing import Any, Optional
 
-from maze.learning.pattern_mining import SyntacticPattern, TypePattern, SemanticPattern
+from maze.learning.pattern_mining import SemanticPattern, SyntacticPattern, TypePattern
 
 
 @dataclass
 class StoredPattern:
     """Pattern stored in mnemosyne memory."""
+
     pattern_id: str
     pattern_type: str  # "syntactic", "type", "semantic"
     pattern_data: dict[str, Any]
@@ -34,6 +35,7 @@ class StoredPattern:
 @dataclass
 class ScoredPattern:
     """Pattern with relevance score."""
+
     pattern: StoredPattern
     score: float
     reasoning: str = ""
@@ -42,17 +44,19 @@ class ScoredPattern:
 @dataclass
 class GenerationContext:
     """Context for code generation."""
+
     language: str
     task_description: str
-    existing_code: Optional[str] = None
-    type_context: Optional[dict] = None
-    file_path: Optional[str] = None
+    existing_code: str | None = None
+    type_context: dict | None = None
+    file_path: str | None = None
     project_patterns: list[str] = field(default_factory=list)
 
 
 @dataclass
 class LearningTask:
     """Task for orchestrated learning."""
+
     task_type: str  # "pattern_discovery", "constraint_refinement", "adaptation"
     context: GenerationContext
     existing_patterns: list[StoredPattern] = field(default_factory=list)
@@ -62,6 +66,7 @@ class LearningTask:
 @dataclass
 class OrchestrationResult:
     """Result from orchestrated learning."""
+
     task: LearningTask
     new_patterns: list[StoredPattern]
     refined_constraints: dict[str, Any]
@@ -72,6 +77,7 @@ class OrchestrationResult:
 @dataclass
 class EvolutionStats:
     """Statistics from memory evolution."""
+
     consolidated_patterns: int
     decayed_patterns: int
     archived_patterns: int
@@ -93,7 +99,7 @@ class MnemosyneIntegration:
         self,
         enable_orchestration: bool = True,
         cache_size: int = 1000,
-        local_cache_path: Optional[Path] = None
+        local_cache_path: Path | None = None,
     ):
         """
         Initialize mnemosyne integration.
@@ -137,10 +143,7 @@ class MnemosyneIntegration:
         """Check if mnemosyne CLI is available."""
         try:
             result = subprocess.run(
-                ["mnemosyne", "--version"],
-                capture_output=True,
-                text=True,
-                timeout=2
+                ["mnemosyne", "--version"], capture_output=True, text=True, timeout=2
             )
             return result.returncode == 0
         except (subprocess.TimeoutExpired, FileNotFoundError):
@@ -152,27 +155,26 @@ class MnemosyneIntegration:
             return
 
         try:
-            with open(self.local_cache_path, 'r') as f:
+            with open(self.local_cache_path) as f:
                 for line in f:
                     if line.strip():
                         data = json.loads(line)
                         pattern = StoredPattern(**data)
                         self.pattern_cache[pattern.pattern_id] = pattern
-        except (json.JSONDecodeError, OSError) as e:
+        except (json.JSONDecodeError, OSError):
             # Corrupted cache - start fresh
             self.pattern_cache = {}
 
     def _save_to_local_cache(self, pattern: StoredPattern) -> None:
         """Append pattern to local cache file."""
         try:
-            with open(self.local_cache_path, 'a') as f:
-                f.write(json.dumps(asdict(pattern)) + '\n')
+            with open(self.local_cache_path, "a") as f:
+                f.write(json.dumps(asdict(pattern)) + "\n")
         except OSError:
             pass  # Fail silently for cache writes
 
     def _pattern_to_dict(
-        self,
-        pattern: SyntacticPattern | TypePattern | SemanticPattern
+        self, pattern: SyntacticPattern | TypePattern | SemanticPattern
     ) -> dict[str, Any]:
         """Convert pattern to dictionary for storage."""
         if isinstance(pattern, SyntacticPattern):
@@ -208,7 +210,7 @@ class MnemosyneIntegration:
         pattern: SyntacticPattern | TypePattern | SemanticPattern,
         namespace: str,
         importance: int,
-        tags: Optional[list[str]] = None
+        tags: list[str] | None = None,
     ) -> None:
         """
         Store pattern in mnemosyne memory.
@@ -232,6 +234,7 @@ class MnemosyneIntegration:
 
         # Generate pattern ID
         import hashlib
+
         pattern_str = json.dumps(pattern_data, sort_keys=True)
         pattern_id = f"pat-{hashlib.md5(pattern_str.encode()).hexdigest()[:8]}"
 
@@ -258,11 +261,16 @@ class MnemosyneIntegration:
             try:
                 subprocess.run(
                     [
-                        "mnemosyne", "remember",
-                        "-c", content,
-                        "-n", namespace,
-                        "-i", str(importance),
-                        "-t", tags_str,
+                        "mnemosyne",
+                        "remember",
+                        "-c",
+                        content,
+                        "-n",
+                        namespace,
+                        "-i",
+                        str(importance),
+                        "-t",
+                        tags_str,
                     ],
                     capture_output=True,
                     text=True,
@@ -289,7 +297,7 @@ class MnemosyneIntegration:
             pass
 
     @lru_cache(maxsize=1000)
-    def _cached_recall(self, query: str, namespace: Optional[str], limit: int) -> str:
+    def _cached_recall(self, query: str, namespace: str | None, limit: int) -> str:
         """Cached mnemosyne recall for performance."""
         try:
             cmd = ["mnemosyne", "recall", "-q", query, "-l", str(limit), "-f", "json"]
@@ -309,10 +317,7 @@ class MnemosyneIntegration:
             return "[]"
 
     def recall_patterns(
-        self,
-        context: GenerationContext,
-        namespace: Optional[str] = None,
-        limit: int = 10
+        self, context: GenerationContext, namespace: str | None = None, limit: int = 10
     ) -> list[ScoredPattern]:
         """
         Recall relevant patterns from memory.
@@ -364,11 +369,13 @@ class MnemosyneIntegration:
             score += pattern.importance * 0.3
 
             if score > 0:
-                scored_patterns.append(ScoredPattern(
-                    pattern=pattern,
-                    score=score,
-                    reasoning=f"language:{context.language}, success_rate:{pattern.success_count}/{pattern.recall_count}"
-                ))
+                scored_patterns.append(
+                    ScoredPattern(
+                        pattern=pattern,
+                        score=score,
+                        reasoning=f"language:{context.language}, success_rate:{pattern.success_count}/{pattern.recall_count}",
+                    )
+                )
 
         # Supplement with mnemosyne if not enough results and mnemosyne available
         if not self.use_local_cache and len(scored_patterns) < limit:
@@ -407,11 +414,13 @@ class MnemosyneIntegration:
 
                     score = mem.get("relevance", 0.5) * 10
 
-                    scored_patterns.append(ScoredPattern(
-                        pattern=stored_pattern,
-                        score=score,
-                        reasoning=f"mnemosyne_relevance:{score:.2f}"
-                    ))
+                    scored_patterns.append(
+                        ScoredPattern(
+                            pattern=stored_pattern,
+                            score=score,
+                            reasoning=f"mnemosyne_relevance:{score:.2f}",
+                        )
+                    )
 
             except (json.JSONDecodeError, KeyError):
                 pass  # Failed to supplement with mnemosyne
@@ -436,11 +445,7 @@ class MnemosyneIntegration:
 
         return result
 
-    def update_pattern_score(
-        self,
-        pattern_id: str,
-        success: bool
-    ) -> None:
+    def update_pattern_score(self, pattern_id: str, success: bool) -> None:
         """
         Update pattern score based on usage outcome.
 
@@ -538,10 +543,7 @@ class MnemosyneIntegration:
             execution_time_ms=elapsed_ms,
         )
 
-    def orchestrate_learning(
-        self,
-        task: LearningTask
-    ) -> OrchestrationResult:
+    def orchestrate_learning(self, task: LearningTask) -> OrchestrationResult:
         """
         Orchestrate multi-agent learning workflow.
 
@@ -567,11 +569,13 @@ class MnemosyneIntegration:
 
         # TODO: Implement full orchestration with mnemosyne agents
         # For now, return minimal result
-        agent_trace.append({
-            "agent": "orchestrator",
-            "action": "task_received",
-            "task_type": task.task_type,
-        })
+        agent_trace.append(
+            {
+                "agent": "orchestrator",
+                "action": "task_received",
+                "task_type": task.task_type,
+            }
+        )
 
         elapsed_ms = (time.time() - start_time) * 1000
 

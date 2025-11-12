@@ -2,15 +2,15 @@
 Tests for hybrid constraint weighting.
 """
 
+
 import pytest
-import math
 
 from maze.learning.hybrid_weighting import (
-    HybridConstraintWeighter,
-    WeightedConstraintSet,
-    TokenWeights,
     ConstraintSet,
     GenerationState,
+    HybridConstraintWeighter,
+    TokenWeights,
+    WeightedConstraintSet,
 )
 
 
@@ -77,9 +77,7 @@ class TestHybridConstraintWeighter:
     def test_compute_token_weights_uniform(self, weighter, generation_state):
         """Test computing uniform token weights."""
         weighted = WeightedConstraintSet(
-            hard_constraints=ConstraintSet([]),
-            soft_constraints={},
-            temperature=1.0
+            hard_constraints=ConstraintSet([]), soft_constraints={}, temperature=1.0
         )
 
         weights = weighter.compute_token_weights(weighted, generation_state)
@@ -96,7 +94,7 @@ class TestHybridConstraintWeighter:
         weights = TokenWeights(
             token_ids=[0, 1, 2, 3],
             weights=[0.4, 0.3, 0.2, 0.1],
-            hard_masked=[False, False, False, False]
+            hard_masked=[False, False, False, False],
         )
 
         scaled = weighter.apply_temperature(weights, temperature=0.0)
@@ -111,7 +109,7 @@ class TestHybridConstraintWeighter:
         weights = TokenWeights(
             token_ids=[0, 1, 2, 3],
             weights=original_weights.copy(),
-            hard_masked=[False, False, False, False]
+            hard_masked=[False, False, False, False],
         )
 
         scaled = weighter.apply_temperature(weights, temperature=1.0)
@@ -128,7 +126,7 @@ class TestHybridConstraintWeighter:
         weights = TokenWeights(
             token_ids=[0, 1, 2, 3],
             weights=[0.8, 0.1, 0.05, 0.05],
-            hard_masked=[False, False, False, False]
+            hard_masked=[False, False, False, False],
         )
 
         scaled = weighter.apply_temperature(weights, temperature=2.0)
@@ -142,7 +140,7 @@ class TestHybridConstraintWeighter:
         weights = TokenWeights(
             token_ids=[0, 1, 2, 3],
             weights=[0.4, 0.3, 0.2, 0.1],
-            hard_masked=[False, True, False, True]
+            hard_masked=[False, True, False, True],
         )
 
         scaled = weighter.apply_temperature(weights, temperature=0.5)
@@ -215,9 +213,7 @@ class TestHybridConstraintWeighter:
     def test_get_effective_weight(self, weighter):
         """Test getting effective weight for token."""
         weights = TokenWeights(
-            token_ids=[0, 1, 2],
-            weights=[0.5, 0.3, 0.2],
-            hard_masked=[False, False, False]
+            token_ids=[0, 1, 2], weights=[0.5, 0.3, 0.2], hard_masked=[False, False, False]
         )
 
         assert weighter.get_effective_weight(0, weights) == 0.5
@@ -227,9 +223,7 @@ class TestHybridConstraintWeighter:
     def test_get_effective_weight_out_of_bounds(self, weighter):
         """Test effective weight for out-of-bounds token."""
         weights = TokenWeights(
-            token_ids=[0, 1, 2],
-            weights=[0.5, 0.3, 0.2],
-            hard_masked=[False, False, False]
+            token_ids=[0, 1, 2], weights=[0.5, 0.3, 0.2], hard_masked=[False, False, False]
         )
 
         assert weighter.get_effective_weight(-1, weights) == 0.0
@@ -238,14 +232,10 @@ class TestHybridConstraintWeighter:
     def test_merge_token_weights_equal(self, weighter):
         """Test merging weights with equal mixing."""
         weights1 = TokenWeights(
-            token_ids=[0, 1, 2],
-            weights=[0.6, 0.3, 0.1],
-            hard_masked=[False, False, False]
+            token_ids=[0, 1, 2], weights=[0.6, 0.3, 0.1], hard_masked=[False, False, False]
         )
         weights2 = TokenWeights(
-            token_ids=[0, 1, 2],
-            weights=[0.2, 0.5, 0.3],
-            hard_masked=[False, False, False]
+            token_ids=[0, 1, 2], weights=[0.2, 0.5, 0.3], hard_masked=[False, False, False]
         )
 
         merged = weighter.merge_token_weights(weights1, weights2, alpha=0.5)
@@ -258,14 +248,10 @@ class TestHybridConstraintWeighter:
     def test_merge_token_weights_alpha_zero(self, weighter):
         """Test merging weights with alpha=0 (all weights2)."""
         weights1 = TokenWeights(
-            token_ids=[0, 1, 2],
-            weights=[0.6, 0.3, 0.1],
-            hard_masked=[False, False, False]
+            token_ids=[0, 1, 2], weights=[0.6, 0.3, 0.1], hard_masked=[False, False, False]
         )
         weights2 = TokenWeights(
-            token_ids=[0, 1, 2],
-            weights=[0.2, 0.5, 0.3],
-            hard_masked=[False, False, False]
+            token_ids=[0, 1, 2], weights=[0.2, 0.5, 0.3], hard_masked=[False, False, False]
         )
 
         merged = weighter.merge_token_weights(weights1, weights2, alpha=0.0)
@@ -277,14 +263,10 @@ class TestHybridConstraintWeighter:
     def test_merge_token_weights_alpha_one(self, weighter):
         """Test merging weights with alpha=1 (all weights1)."""
         weights1 = TokenWeights(
-            token_ids=[0, 1, 2],
-            weights=[0.6, 0.3, 0.1],
-            hard_masked=[False, False, False]
+            token_ids=[0, 1, 2], weights=[0.6, 0.3, 0.1], hard_masked=[False, False, False]
         )
         weights2 = TokenWeights(
-            token_ids=[0, 1, 2],
-            weights=[0.2, 0.5, 0.3],
-            hard_masked=[False, False, False]
+            token_ids=[0, 1, 2], weights=[0.2, 0.5, 0.3], hard_masked=[False, False, False]
         )
 
         merged = weighter.merge_token_weights(weights1, weights2, alpha=1.0)
@@ -296,14 +278,10 @@ class TestHybridConstraintWeighter:
     def test_merge_token_weights_preserves_masks(self, weighter):
         """Test that merging preserves hard masks."""
         weights1 = TokenWeights(
-            token_ids=[0, 1, 2],
-            weights=[0.6, 0.3, 0.1],
-            hard_masked=[False, True, False]
+            token_ids=[0, 1, 2], weights=[0.6, 0.3, 0.1], hard_masked=[False, True, False]
         )
         weights2 = TokenWeights(
-            token_ids=[0, 1, 2],
-            weights=[0.2, 0.5, 0.3],
-            hard_masked=[False, False, True]
+            token_ids=[0, 1, 2], weights=[0.2, 0.5, 0.3], hard_masked=[False, False, True]
         )
 
         merged = weighter.merge_token_weights(weights1, weights2, alpha=0.5)
@@ -314,9 +292,7 @@ class TestHybridConstraintWeighter:
     def test_compute_token_weights_normalization(self, weighter, generation_state):
         """Test that computed weights are normalized."""
         weighted = WeightedConstraintSet(
-            hard_constraints=ConstraintSet([]),
-            soft_constraints={},
-            temperature=1.0
+            hard_constraints=ConstraintSet([]), soft_constraints={}, temperature=1.0
         )
 
         weights = weighter.compute_token_weights(weighted, generation_state)
@@ -328,9 +304,7 @@ class TestHybridConstraintWeighter:
     def test_temperature_effects_on_distribution(self, weighter):
         """Test temperature effects on distribution shape."""
         weights = TokenWeights(
-            token_ids=[0, 1, 2, 3, 4],
-            weights=[0.5, 0.2, 0.15, 0.1, 0.05],
-            hard_masked=[False] * 5
+            token_ids=[0, 1, 2, 3, 4], weights=[0.5, 0.2, 0.15, 0.1, 0.05], hard_masked=[False] * 5
         )
 
         # Low temperature should sharpen
@@ -340,28 +314,33 @@ class TestHybridConstraintWeighter:
         high_temp = weighter.apply_temperature(weights, temperature=2.0)
 
         # Low temp should have higher max/min ratio
-        low_ratio = low_temp.weights[0] / low_temp.weights[-1] if low_temp.weights[-1] > 0 else float('inf')
-        high_ratio = high_temp.weights[0] / high_temp.weights[-1] if high_temp.weights[-1] > 0 else float('inf')
+        low_ratio = (
+            low_temp.weights[0] / low_temp.weights[-1] if low_temp.weights[-1] > 0 else float("inf")
+        )
+        high_ratio = (
+            high_temp.weights[0] / high_temp.weights[-1]
+            if high_temp.weights[-1] > 0
+            else float("inf")
+        )
 
         assert low_ratio > high_ratio
 
     def test_soft_constraint_extraction(self, weighter):
         """Test extracting soft constraint weights."""
+
         class MockConstraint:
             def __init__(self, weight):
                 self.weight = weight
 
-        soft = ConstraintSet(constraints=[
-            MockConstraint(0.8),
-            MockConstraint(0.5),
-            MockConstraint(0.3),
-        ])
-
-        weighted = weighter.combine_constraints(
-            ConstraintSet([]),
-            soft,
-            temperature=0.5
+        soft = ConstraintSet(
+            constraints=[
+                MockConstraint(0.8),
+                MockConstraint(0.5),
+                MockConstraint(0.3),
+            ]
         )
+
+        weighted = weighter.combine_constraints(ConstraintSet([]), soft, temperature=0.5)
 
         assert len(weighted.soft_constraints) == 3
 
@@ -369,9 +348,7 @@ class TestHybridConstraintWeighter:
         """Test handling empty vocabulary."""
         state = GenerationState(vocabulary=[])
         weighted = WeightedConstraintSet(
-            hard_constraints=ConstraintSet([]),
-            soft_constraints={},
-            temperature=1.0
+            hard_constraints=ConstraintSet([]), soft_constraints={}, temperature=1.0
         )
 
         weights = weighter.compute_token_weights(weighted, state)
@@ -383,9 +360,7 @@ class TestHybridConstraintWeighter:
         """Test with single token vocabulary."""
         state = GenerationState(vocabulary=["token"])
         weighted = WeightedConstraintSet(
-            hard_constraints=ConstraintSet([]),
-            soft_constraints={},
-            temperature=1.0
+            hard_constraints=ConstraintSet([]), soft_constraints={}, temperature=1.0
         )
 
         weights = weighter.compute_token_weights(weighted, state)
@@ -396,9 +371,7 @@ class TestHybridConstraintWeighter:
     def test_all_tokens_masked(self, weighter):
         """Test behavior when all tokens are masked."""
         weights = TokenWeights(
-            token_ids=[0, 1, 2],
-            weights=[0.0, 0.0, 0.0],
-            hard_masked=[True, True, True]
+            token_ids=[0, 1, 2], weights=[0.0, 0.0, 0.0], hard_masked=[True, True, True]
         )
 
         scaled = weighter.apply_temperature(weights, temperature=0.5)

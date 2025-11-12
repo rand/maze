@@ -5,12 +5,11 @@ Tests multi-level validation orchestration, early exit, parallel execution,
 and comprehensive diagnostics collection.
 """
 
-import pytest
 from maze.validation.pipeline import (
-    ValidationPipeline,
-    ValidationContext,
-    TypeContext,
     LintRules,
+    TypeContext,
+    ValidationContext,
+    ValidationPipeline,
 )
 
 
@@ -276,9 +275,7 @@ def multiply(a: int, b: int) -> int:
     return a * b
 """
 
-        context = ValidationContext(
-            tests="def test(): pass", lint_rules=LintRules.default()
-        )
+        context = ValidationContext(tests="def test(): pass", lint_rules=LintRules.default())
 
         result = pipeline.validate(code, "python", context)
 
@@ -517,9 +514,7 @@ class TestEdgeCases:
         """Test validation with invalid stage name."""
         pipeline = ValidationPipeline()
 
-        result = pipeline.validate(
-            "def foo(): pass", "python", stages=["invalid_stage"]
-        )
+        result = pipeline.validate("def foo(): pass", "python", stages=["invalid_stage"])
 
         # Invalid stage should be ignored
         assert result.validation_time_ms >= 0

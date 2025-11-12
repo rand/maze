@@ -7,12 +7,11 @@ supporting templates, composition, and JSON Schema embedding.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set
-from pathlib import Path
-import re
 import json
 import logging
+import re
+from dataclasses import dataclass, field
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +27,7 @@ class GrammarTemplate:
 
     name: str
     grammar: str
-    variables: Set[str] = field(default_factory=set)
+    variables: set[str] = field(default_factory=set)
     language: str = "generic"
     description: str = ""
 
@@ -36,7 +35,7 @@ class GrammarTemplate:
         """Extract variables from grammar template."""
         if not self.variables:
             # Find all {{variable}} patterns
-            self.variables = set(re.findall(r'\{\{(\w+)\}\}', self.grammar))
+            self.variables = set(re.findall(r"\{\{(\w+)\}\}", self.grammar))
 
     def render(self, **kwargs) -> str:
         """
@@ -81,11 +80,11 @@ class GrammarBuilder:
             language: Target language for grammar
         """
         self.language = language
-        self.templates: Dict[str, GrammarTemplate] = {}
-        self.rules: List[str] = []
-        self.terminals: List[str] = []
-        self.directives: List[str] = []
-        self.imports: List[str] = []
+        self.templates: dict[str, GrammarTemplate] = {}
+        self.rules: list[str] = []
+        self.terminals: list[str] = []
+        self.directives: list[str] = []
+        self.imports: list[str] = []
 
     def add_template(self, template: GrammarTemplate) -> GrammarBuilder:
         """
@@ -98,7 +97,9 @@ class GrammarBuilder:
             Self for chaining
         """
         self.templates[template.name] = template
-        logger.debug(f"Registered template '{template.name}' with {len(template.variables)} variables")
+        logger.debug(
+            f"Registered template '{template.name}' with {len(template.variables)} variables"
+        )
         return self
 
     def load_template(self, name: str, **kwargs) -> GrammarBuilder:
@@ -126,7 +127,9 @@ class GrammarBuilder:
 
         return self
 
-    def add_rule(self, name: str, production: str, priority: Optional[str] = None) -> GrammarBuilder:
+    def add_rule(
+        self, name: str, production: str, priority: str | None = None
+    ) -> GrammarBuilder:
         """
         Add a grammar rule.
 
@@ -164,7 +167,9 @@ class GrammarBuilder:
 
         return self
 
-    def add_json_schema(self, schema: Dict[str, Any], rule_name: str = "json_value") -> GrammarBuilder:
+    def add_json_schema(
+        self, schema: dict[str, Any], rule_name: str = "json_value"
+    ) -> GrammarBuilder:
         """
         Embed JSON Schema using %json directive.
 
@@ -176,7 +181,7 @@ class GrammarBuilder:
             Self for chaining
         """
         # Format schema as compact JSON
-        schema_json = json.dumps(schema, separators=(',', ':'))
+        schema_json = json.dumps(schema, separators=(",", ":"))
 
         # Add rule with %json directive
         json_rule = f"{rule_name}: %json {schema_json}"
@@ -208,7 +213,7 @@ class GrammarBuilder:
         Returns:
             Self for chaining
         """
-        return self.add_directive('%ignore /\\s+/')
+        return self.add_directive("%ignore /\\s+/")
 
     def _parse_and_add(self, grammar: str) -> None:
         """
@@ -217,22 +222,22 @@ class GrammarBuilder:
         Args:
             grammar: Grammar string to parse
         """
-        lines = grammar.strip().split('\n')
+        lines = grammar.strip().split("\n")
 
         for line in lines:
             line = line.strip()
-            if not line or line.startswith('//') or line.startswith('#'):
+            if not line or line.startswith("//") or line.startswith("#"):
                 continue
 
             # Directives
-            if line.startswith('%'):
+            if line.startswith("%"):
                 if line not in self.directives:
                     self.directives.append(line)
 
             # Terminals (uppercase name)
-            elif ':' in line:
-                parts = line.split(':', 1)
-                name = parts[0].strip().lstrip('?!')
+            elif ":" in line:
+                parts = line.split(":", 1)
+                name = parts[0].strip().lstrip("?!")
 
                 if name and name[0].isupper():
                     if line not in self.terminals:
@@ -253,25 +258,25 @@ class GrammarBuilder:
         # Add imports
         if self.imports:
             parts.extend(self.imports)
-            parts.append('')
+            parts.append("")
 
         # Add rules
         if self.rules:
             parts.extend(self.rules)
-            parts.append('')
+            parts.append("")
 
         # Add terminals
         if self.terminals:
             parts.extend(self.terminals)
-            parts.append('')
+            parts.append("")
 
         # Add directives
         if self.directives:
             parts.extend(self.directives)
 
-        return '\n'.join(parts).strip()
+        return "\n".join(parts).strip()
 
-    def validate(self) -> tuple[bool, Optional[str]]:
+    def validate(self) -> tuple[bool, str | None]:
         """
         Validate grammar structure.
 
@@ -280,7 +285,7 @@ class GrammarBuilder:
         """
         # Check for start rule
         has_start = any(
-            line.strip().startswith('?start:') or line.strip().startswith('start:')
+            line.strip().startswith("?start:") or line.strip().startswith("start:")
             for line in self.rules
         )
 
@@ -289,7 +294,7 @@ class GrammarBuilder:
 
         # Check for basic syntax
         for rule in self.rules:
-            if ':' not in rule:
+            if ":" not in rule:
                 return False, f"Invalid rule syntax: {rule}"
 
         return True, None
@@ -308,7 +313,7 @@ class GrammarBuilder:
         return self
 
 
-def create_json_schema_grammar(schema: Dict[str, Any], start_rule: str = "start") -> str:
+def create_json_schema_grammar(schema: dict[str, Any], start_rule: str = "start") -> str:
     """
     Create a complete grammar from a JSON Schema.
 
@@ -346,8 +351,8 @@ def merge_grammars(*grammars: str) -> str:
 
 
 __all__ = [
-    'GrammarBuilder',
-    'GrammarTemplate',
-    'create_json_schema_grammar',
-    'merge_grammars',
+    "GrammarBuilder",
+    "GrammarTemplate",
+    "create_json_schema_grammar",
+    "merge_grammars",
 ]
