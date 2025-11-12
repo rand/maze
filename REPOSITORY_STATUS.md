@@ -70,21 +70,25 @@ Moved 10 status documents out of root:
 ## ✅ CI/CD Workflows
 
 ### GitHub Actions
-1. **Tests** (`.github/workflows/test.yml`)
-   - Runs on Python 3.11 & 3.12
-   - Unit tests
-   - Coverage reporting
-   - Status: ✅ Passing (linting non-blocking)
-
-2. **Code Quality** (`.github/workflows/quality.yml`)
-   - Formatting checks
-   - Linting (non-blocking)
-   - Documentation verification
+1. **Deploy Pages** (`.github/workflows/deploy-pages.yml`)
+   - Deploys documentation to GitHub Pages
    - Status: ✅ Passing
 
-3. **Deploy Pages** (`.github/workflows/deploy-pages.yml`)
-   - Deploys documentation
+2. **Pages Build** (`.github/workflows/pages.yml`)
+   - GitHub Pages deployment
    - Status: ✅ Passing
+
+**Note**: Test and quality workflows removed - they don't make sense right now because:
+- Most tests require Modal endpoint (not available in CI)
+- Benchmark tests take 10+ minutes
+- Integration tests need external services
+
+Tests should be run manually:
+```bash
+export MODAL_ENDPOINT_URL=https://rand--maze-inference-mazeinferenceserver-fastapi-app.modal.run
+uv run pytest tests/unit/test_core/test_types.py -v
+uv run pytest tests/validation/test_constraint_enforcement.py -v
+```
 
 ## ✅ Documentation Quality
 
