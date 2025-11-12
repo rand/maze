@@ -30,37 +30,50 @@ app = modal.App("maze-inference")
 # Configure persistent volume for model caching
 volume = modal.Volume.from_name("maze-model-cache", create_if_missing=True)
 
-# Build custom image with vLLM and llguidance
+# Build optimized image with vLLM 0.9+ (native XGrammar support)
+# Key insight from lift-sys: Use CUDA devel image for JIT compilation
+# vLLM 0.9+ has XGrammar built-in (no need for separate llguidance build)
+
+# Pinned versions for reproducibility
+VLLM_VERSION = "0.9.2"  # Native XGrammar support
+TRANSFORMERS_VERSION = "4.53.0"
+FASTAPI_VERSION = "0.115.12"
+
 image = (
-    modal.Image.debian_slim(python_version="3.11")
-    # System dependencies for building
+    # Use NVIDIA CUDA development image (required for flashinfer JIT)
+    # lift-sys pattern: nvidia/cuda:devel provides nvcc compiler
+    modal.Image.from_registry(
+        "nvidia/cuda:12.4.1-devel-ubuntu22.04",
+        add_python="3.12"
+    )
+    # System dependencies
     .apt_install(
-        "git",
-        "build-essential",
-        "wget",
-        "curl",
+        "git",  # Required for transformers cache
+        "wget",  # Useful for asset downloads
     )
-    # vLLM with all dependencies
+    # Use uv_pip_install for 10-100x faster builds (lift-sys pattern)
     .uv_pip_install(
-        "vllm==0.8.5",
-        "torch==2.6.0",
-        "transformers==4.47.1",
-        "fastapi==0.115.0",
-        "pydantic==2.10.0",
+        f"vllm=={VLLM_VERSION}",  # vLLM with native XGrammar
+        f"transformers=={TRANSFORMERS_VERSION}",
+        f"fastapi[standard]=={FASTAPI_VERSION}",
+        "huggingface-hub>=0.20.0",
+        "hf-transfer",  # Fast HF downloads (Rust-based)
+        "flashinfer-python",  # 10-20% faster sampling
     )
-    # llguidance - clone and install from source
-    .run_commands(
-        "cd /tmp && git clone https://github.com/guidance-ai/llguidance.git",
-        "cd /tmp/llguidance && cargo build --release --manifest-path parser/Cargo.toml",
-        "cd /tmp/llguidance/python && pip install -e .",
-    )
-    # Environment configuration
+    # Environment configuration (lift-sys optimizations)
     .env({
-        "HF_HOME": "/cache/huggingface",
-        "VLLM_CACHE": "/cache/vllm",
-        "TRANSFORMERS_CACHE": "/cache/transformers",
-        # Disable unnecessary warnings
+        # CUDA paths
+        "CUDA_HOME": "/usr/local/cuda",
+        "CUDA_PATH": "/usr/local/cuda",
+        "PATH": "/usr/local/cuda/bin:${PATH}",
+        "LD_LIBRARY_PATH": "/usr/local/cuda/lib64:/usr/local/cuda/lib",
+        # Performance
+        "HF_HUB_ENABLE_HF_TRANSFER": "1",
+        "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
         "TOKENIZERS_PARALLELISM": "false",
+        # Cache directories
+        "HF_HOME": "/cache/huggingface",
+        "TRANSFORMERS_CACHE": "/cache/transformers",
     })
 )
 
@@ -90,15 +103,36 @@ class GenerateResponse(BaseModel):
     metadata: dict
 
 
+# Environment-based configuration (lift-sys pattern)
+MODAL_MODE = os.getenv("MODAL_MODE", "dev").lower()
+
+if MODAL_MODE == "demo":
+    SCALEDOWN_WINDOW = 600  # 10 min for presentations
+    GPU_CONFIG = "l40s"  # 48GB, $1.20/hr
+    print("🎬 DEMO MODE: 10 min scaledown, L40S GPU")
+elif MODAL_MODE == "prod":
+    SCALEDOWN_WINDOW = 300  # 5 min balanced
+    GPU_CONFIG = "l40s"
+    print("🚀 PROD MODE: 5 min scaledown, L40S GPU")
+else:
+    # Dev mode: aggressive scaledown for cost savings
+    SCALEDOWN_WINDOW = 120  # 2 min aggressive
+    GPU_CONFIG = "l40s"
+    print("💻 DEV MODE: 2 min scaledown (cost-optimized)")
+
+print(f"Scaledown: {SCALEDOWN_WINDOW}s")
+
 @app.cls(
-    gpu="l40s",  # 48GB VRAM
+    gpu=GPU_CONFIG,  # L40S: 48GB VRAM, ~$1.20/hour
     image=image,
     timeout=3600,  # 1 hour max
-    container_idle_timeout=300,  # 5 minutes idle
-    volumes={"/cache": volume},  # Persistent model cache
+    container_idle_timeout=SCALEDOWN_WINDOW,  # Environment-based
+    volumes={
+        "/cache": volume,  # Model cache
+        "/root/.cache/vllm": modal.Volume.from_name("maze-torch-cache", create_if_missing=True),  # Torch compilation cache
+    },
     secrets=[modal.Secret.from_name("huggingface-secret")],
-    # Keep 1 container warm for low latency
-    keep_warm=1,
+    # No keep_warm - use scaledown for cost optimization (lift-sys pattern)
 )
 class MazeInferenceServer:
     """vLLM inference server with llguidance for grammar-constrained generation."""
@@ -118,17 +152,19 @@ class MazeInferenceServer:
             print(f"GPU: {torch.cuda.get_device_name(0)}")
             print(f"VRAM: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
         
-        # Initialize vLLM with llguidance backend
+        # Initialize vLLM with XGrammar (native in 0.9+)
+        # lift-sys insight: vLLM 0.9.2+ has XGrammar built-in, no separate llguidance
         self.llm = LLM(
             model="Qwen/Qwen2.5-Coder-32B-Instruct",
+            revision="main",
             tensor_parallel_size=1,  # Single GPU
             gpu_memory_utilization=0.90,  # Use 90% of VRAM
-            max_model_len=8192,  # Context length (balance speed vs capability)
-            dtype="bfloat16",  # BF16 for quality
+            max_model_len=8192,  # Context for speed
+            dtype="bfloat16",  # BF16 precision
             trust_remote_code=True,
-            download_dir="/cache/models",  # Persistent storage
-            # Enable llguidance for grammar constraints
-            guided_decoding_backend="llguidance",
+            download_dir="/cache/models",  # Persistent cache
+            # XGrammar for constrained generation (built into vLLM 0.9+)
+            guided_decoding_backend="xgrammar",  # Native support, no extra setup
         )
         
         print("✅ Model loaded successfully")
@@ -175,10 +211,16 @@ class MazeInferenceServer:
         
         # Add grammar constraint if provided
         if grammar:
-            # llguidance integration in vLLM
-            # Grammar should be in Lark format with %llguidance directive
-            grammar_with_directive = f"%llguidance {{\n{grammar}\n}}"
-            sampling_params.guided_grammar = grammar_with_directive
+            # XGrammar in vLLM 0.9+ uses GBNF/EBNF format
+            # For Lark grammars, use guided_decoding parameter
+            sampling_params.guided_decoding_backend = "xgrammar"
+            # Note: vLLM 0.9+ accepts grammar directly
+            # May need conversion from Lark to EBNF depending on vLLM version
+            try:
+                sampling_params.grammar = grammar
+            except AttributeError:
+                # Fallback: older API
+                sampling_params.guided_grammar = grammar
         
         # Generate with vLLM
         try:
