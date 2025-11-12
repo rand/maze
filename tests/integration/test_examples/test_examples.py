@@ -7,12 +7,15 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 EXAMPLES_DIR = Path(__file__).parent.parent.parent.parent / "examples"
 
 
 class TestBasicExamples:
     """Tests for basic TypeScript examples."""
 
+    @pytest.mark.skip(reason="Requires Modal endpoint - run manually")
     def test_01_function_generation(self):
         """Test function generation example runs."""
         example = EXAMPLES_DIR / "typescript" / "01-function-generation.py"
@@ -21,7 +24,7 @@ class TestBasicExamples:
         result = subprocess.run(
             [sys.executable, str(example)],
             capture_output=True,
-            timeout=30,
+            timeout=180,
         )
 
         assert result.returncode == 0
@@ -55,6 +58,7 @@ class TestBasicExamples:
 
         assert result.returncode == 0
 
+    @pytest.mark.skip(reason="Requires Modal endpoint - run manually")
     def test_04_api_endpoint(self):
         """Test API endpoint example runs."""
         example = EXAMPLES_DIR / "typescript" / "04-api-endpoint.py"
@@ -63,11 +67,12 @@ class TestBasicExamples:
         result = subprocess.run(
             [sys.executable, str(example)],
             capture_output=True,
-            timeout=30,
+            timeout=180,
         )
 
         assert result.returncode == 0
 
+    @pytest.mark.skip(reason="Requires Modal endpoint - run manually")
     def test_05_type_safe_refactor(self):
         """Test type-safe refactoring example runs."""
         example = EXAMPLES_DIR / "typescript" / "05-type-safe-refactor.py"
@@ -76,7 +81,7 @@ class TestBasicExamples:
         result = subprocess.run(
             [sys.executable, str(example)],
             capture_output=True,
-            timeout=30,
+            timeout=180,
         )
 
         assert result.returncode == 0

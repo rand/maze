@@ -42,7 +42,7 @@ jobs:
         continue-on-error: true
 
       - name: Run unit tests
-        run: uv run pytest tests/unit/ -v --tb=short --maxfail=5
+        run: uv run pytest tests/unit/ -v --tb=short --maxfail=10 -m "not slow" --ignore=tests/unit/test_core/test_pipeline.py --ignore=tests/unit/test_core/test_provider_integration.py
 
       - name: Generate coverage report
         run: uv run pytest tests/unit/ --cov=maze --cov-report=xml --cov-report=term
