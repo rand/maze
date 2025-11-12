@@ -1,0 +1,60 @@
+[project]
+name = "maze-project"
+path = "/Users/rand/src/maze"
+language = "typescript"
+source_paths = [
+    "src",
+]
+test_patterns = [
+    "**/*test.ts",
+    "**/*.test.ts",
+]
+
+[indexer]
+enabled = true
+cache_enabled = true
+cache_path = ".maze/cache"
+incremental = true
+max_file_size_kb = 1024
+excluded_dirs = [
+    "node_modules",
+    ".git",
+    "dist",
+    "build",
+]
+
+[generation]
+provider = "openai"
+model = "qwen2.5-coder-32b"
+temperature = 0.7
+max_tokens = 2048
+timeout_seconds = 30
+retry_attempts = 3
+
+[constraints]
+syntactic_enabled = true
+type_enabled = true
+semantic_enabled = false
+contextual_enabled = true
+type_search_depth = 5
+adaptive_weighting = true
+
+[validation]
+syntax_check = true
+type_check = true
+run_tests = false
+lint = true
+timeout_seconds = 60
+
+[performance]
+cache_size = 100000
+parallel_indexing = true
+max_workers = 10
+enable_profiling = false
+memory_limit_mb = 2048
+
+[logging]
+level = "INFO"
+format = "json"
+output = "stdout"
+metrics_enabled = true

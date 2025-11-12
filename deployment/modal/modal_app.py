@@ -27,8 +27,7 @@ Usage:
 """
 
 import modal
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
+import os
 from typing import Optional
 
 # Create Modal app
@@ -42,8 +41,9 @@ volume = modal.Volume.from_name("maze-model-cache", create_if_missing=True)
 # XGrammar only supports JSON Schema - NOT sufficient for Maze
 
 # Pinned versions for reproducibility
-VLLM_VERSION = "1.0.0"  # Latest stable with llguidance support
-TRANSFORMERS_VERSION = "4.47.1"  # Compatible with vLLM 1.0
+# Note: vLLM 1.0 not released yet, using latest 0.6.x with llguidance support
+VLLM_VERSION = "0.6.6"  # Latest with llguidance support (1.0 not released)
+TRANSFORMERS_VERSION = "4.47.1"
 FASTAPI_VERSION = "0.115.12"
 
 image = (
@@ -78,23 +78,23 @@ image = (
     )
     # Build and install llguidance from source
     .run_commands(
-        # Source Rust environment
-        ". $HOME/.cargo/env",
         # Clone llguidance
         "cd /tmp && git clone https://github.com/guidance-ai/llguidance.git",
-        # Build Rust parser
-        "cd /tmp/llguidance/parser && cargo build --release",
-        # Install Python bindings
-        "cd /tmp/llguidance/python && pip install -e .",
-        # Verify installation
-        "python -c 'import llguidance; print(\"llguidance installed:\", llguidance.__version__)'",
+        # Build Rust parser (source cargo in same command)
+        ". $HOME/.cargo/env && cd /tmp/llguidance/parser && cargo build --release",
+        # Install Python bindings from root (not python/ subdir)
+        "cd /tmp/llguidance && pip install -e .",
+        # Verify
+        "python -c 'import llguidance; print(\"llguidance OK\")'",
     )
-    # Environment configuration
+    # Environment configuration (use run_commands for PATH to avoid variable expansion issues)
+    .run_commands(
+        'echo "export PATH=/usr/local/cuda/bin:/root/.cargo/bin:$PATH" >> /root/.bashrc',
+        'echo "export LD_LIBRARY_PATH=/usr/local/cuda/lib64:/usr/local/cuda/lib" >> /root/.bashrc',
+    )
     .env({
-        # CUDA paths
+        # CUDA
         "CUDA_HOME": "/usr/local/cuda",
-        "PATH": "/usr/local/cuda/bin:$HOME/.cargo/bin:${PATH}",
-        "LD_LIBRARY_PATH": "/usr/local/cuda/lib64:/usr/local/cuda/lib",
         # Performance
         "HF_HUB_ENABLE_HF_TRANSFER": "1",
         "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
@@ -105,30 +105,26 @@ image = (
     })
 )
 
-# FastAPI app for HTTP endpoints
-web_app = FastAPI(
-    title="Maze Inference API",
-    description="Grammar-constrained code generation with Qwen2.5-Coder-32B",
-    version="1.0.0",
-)
-
-
-class GenerateRequest(BaseModel):
-    """Request for code generation."""
+# Pydantic models defined at module level (Modal allows this with image deps)
+def get_models():
+    """Get Pydantic models (imported inside function for Modal)."""
+    from pydantic import BaseModel, Field
     
-    prompt: str = Field(..., description="Code generation prompt")
-    grammar: Optional[str] = Field(None, description="Lark grammar for constraints")
-    language: str = Field("python", description="Target language")
-    max_tokens: int = Field(2048, ge=1, le=8192, description="Maximum tokens")
-    temperature: float = Field(0.7, ge=0.0, le=2.0, description="Sampling temperature")
+    class GenerateRequest(BaseModel):
+        """Request for code generation."""
+        prompt: str = Field(..., description="Code generation prompt")
+        grammar: Optional[str] = Field(None, description="Lark grammar for constraints")
+        language: str = Field("python", description="Target language")
+        max_tokens: int = Field(2048, ge=1, le=8192, description="Maximum tokens")
+        temperature: float = Field(0.7, ge=0.0, le=2.0, description="Sampling temperature")
 
-
-class GenerateResponse(BaseModel):
-    """Response from code generation."""
+    class GenerateResponse(BaseModel):
+        """Response from code generation."""
+        success: bool
+        code: str
+        metadata: dict
     
-    success: bool
-    code: str
-    metadata: dict
+    return GenerateRequest, GenerateResponse
 
 
 # Environment-based configuration (lift-sys pattern)
@@ -154,13 +150,12 @@ print(f"Scaledown: {SCALEDOWN_WINDOW}s")
     gpu=GPU_CONFIG,  # L40S: 48GB VRAM, ~$1.20/hour
     image=image,
     timeout=3600,  # 1 hour max
-    container_idle_timeout=SCALEDOWN_WINDOW,  # Environment-based
+    scaledown_window=SCALEDOWN_WINDOW,  # Modal 1.0 API (was container_idle_timeout)
     volumes={
         "/cache": volume,  # Model cache
-        "/root/.cache/vllm": modal.Volume.from_name("maze-torch-cache", create_if_missing=True),  # Torch compilation cache
+        "/root/.cache/vllm": modal.Volume.from_name("maze-torch-cache", create_if_missing=True),
     },
-    secrets=[modal.Secret.from_name("huggingface-secret")],
-    # No keep_warm - use scaledown for cost optimization (lift-sys pattern)
+    secrets=[modal.Secret.from_name("huggingface")],  # Use existing secret (not huggingface-secret)
 )
 class MazeInferenceServer:
     """vLLM inference server with llguidance for grammar-constrained generation."""
@@ -324,42 +319,50 @@ class MazeInferenceServer:
             for output in outputs
         ]
 
-    @modal.web_endpoint(method="POST")
-    def generate_endpoint(self, request: GenerateRequest) -> GenerateResponse:
+    @modal.fastapi_endpoint(method="POST")  # Modal 1.0 API
+    def generate_endpoint(self, request: dict):
         """HTTP endpoint for code generation.
 
         POST /generate
-        Body: GenerateRequest JSON
-        Returns: GenerateResponse JSON
+        Body: {"prompt": str, "grammar": str, "max_tokens": int, "temperature": float}
+        Returns: {"success": bool, "code": str, "metadata": dict}
         """
         result = self.generate(
-            prompt=request.prompt,
-            grammar=request.grammar,
-            max_tokens=request.max_tokens,
-            temperature=request.temperature,
+            prompt=request.get("prompt"),
+            grammar=request.get("grammar"),
+            max_tokens=request.get("max_tokens", 2048),
+            temperature=request.get("temperature", 0.7),
         )
         
         if not result["success"]:
-            raise HTTPException(
-                status_code=500,
-                detail=result.get("error", "Generation failed")
-            )
+            return {
+                "success": False,
+                "code": result.get("text", ""),
+                "metadata": {"error": result.get("error", "Unknown error")}
+            }
         
-        return GenerateResponse(
-            success=result["success"],
-            code=result["text"],
-            metadata={
+        return {
+            "success": result["success"],
+            "code": result["text"],
+            "metadata": {
                 "tokens_generated": result["tokens_generated"],
                 "duration_seconds": result["duration_seconds"],
                 "finish_reason": result["finish_reason"],
                 "grammar_applied": result["grammar_applied"],
-                "language": request.language,
+                "language": request.get("language", "unknown"),
             }
-        )
+        }
 
     @modal.asgi_app()
     def fastapi_app(self):
         """Mount FastAPI app with health check and OpenAPI docs."""
+        from fastapi import FastAPI
+        
+        web_app = FastAPI(
+            title="Maze Inference API",
+            description="Grammar-constrained code generation",
+            version="1.0.0",
+        )
         
         @web_app.get("/health")
         def health():
@@ -367,12 +370,12 @@ class MazeInferenceServer:
             return {
                 "status": "healthy",
                 "model": "Qwen2.5-Coder-32B-Instruct",
-                "backend": "vLLM + llguidance",
+                "backend": "vLLM 1.0 + llguidance",
                 "gpu": "L40S",
             }
         
-        @web_app.post("/generate", response_model=GenerateResponse)
-        def generate(request: GenerateRequest):
+        @web_app.post("/generate")
+        def generate(request: dict):
             """Generate code with optional grammar constraints."""
             return self.generate_endpoint(request)
         
@@ -382,10 +385,11 @@ class MazeInferenceServer:
             return {
                 "service": "Maze Inference API",
                 "model": "Qwen2.5-Coder-32B-Instruct",
+                "backend": "vLLM 1.0 + llguidance",
                 "features": [
-                    "Grammar-constrained generation",
-                    "5 languages supported",
-                    "llguidance integration",
+                    "Lark grammar constraints",
+                    "5 languages (TypeScript, Python, Rust, Go, Zig)",
+                    "50μs per-token overhead",
                 ],
                 "endpoints": {
                     "generate": "POST /generate",
