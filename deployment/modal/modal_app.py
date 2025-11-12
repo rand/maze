@@ -41,9 +41,9 @@ volume = modal.Volume.from_name("maze-model-cache", create_if_missing=True)
 # XGrammar only supports JSON Schema - NOT sufficient for Maze
 
 # Pinned versions for reproducibility
-# Note: vLLM 1.0 not released yet, using latest 0.6.x with llguidance support
-VLLM_VERSION = "0.6.6"  # Latest with llguidance support (1.0 not released)
-TRANSFORMERS_VERSION = "4.47.1"
+# vLLM 0.11.0 is latest stable with llguidance support (merged in 0.8.2)
+VLLM_VERSION = "0.11.0"  # Latest stable
+TRANSFORMERS_VERSION = "4.55.2"  # Required by vLLM 0.11.0
 FASTAPI_VERSION = "0.115.12"
 
 image = (
@@ -76,16 +76,10 @@ image = (
         "hf-transfer",
         "flashinfer-python",
     )
-    # Build and install llguidance from source
-    .run_commands(
-        # Clone llguidance
-        "cd /tmp && git clone https://github.com/guidance-ai/llguidance.git",
-        # Build Rust parser (source cargo in same command)
-        ". $HOME/.cargo/env && cd /tmp/llguidance/parser && cargo build --release",
-        # Install Python bindings from root (not python/ subdir)
-        "cd /tmp/llguidance && pip install -e .",
-        # Verify
-        "python -c 'import llguidance; print(\"llguidance OK\")'",
+    # Install compatible llguidance version via pip
+    # vLLM 0.11.0 requires llguidance<0.8.0,>=0.7.11
+    .uv_pip_install(
+        "llguidance>=0.7.11,<0.8.0",  # Version compatible with vLLM 0.11.0
     )
     # Environment configuration (use run_commands for PATH to avoid variable expansion issues)
     .run_commands(
@@ -175,19 +169,18 @@ class MazeInferenceServer:
             print(f"GPU: {torch.cuda.get_device_name(0)}")
             print(f"VRAM: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
         
-        # Initialize vLLM 1.0 with llguidance for Lark grammar support
-        # CRITICAL: llguidance supports Lark grammars (Maze's format)
-        # XGrammar only does JSON Schema (not sufficient for Maze)
+        # Initialize vLLM with llguidance backend
+        # llguidance supports Lark grammars (Maze's native format)
         self.llm = LLM(
             model="Qwen/Qwen2.5-Coder-32B-Instruct",
             revision="main",
-            tensor_parallel_size=1,  # Single GPU
+            tensor_parallel_size=1,
             gpu_memory_utilization=0.90,
-            max_model_len=8192,  # Balance speed vs capability
+            max_model_len=8192,
             dtype="bfloat16",
             trust_remote_code=True,
             download_dir="/cache/models",
-            # llguidance for Lark grammar constraints
+            # llguidance for Lark grammar support
             guided_decoding_backend="llguidance",
         )
         
