@@ -1,19 +1,26 @@
-"""Modal deployment for Maze with vLLM + llguidance + Qwen2.5-Coder-32B.
+"""Modal deployment for Maze with vLLM 1.0 + llguidance + Qwen2.5-Coder-32B.
 
 This deploys a production-ready inference server with:
 - Qwen2.5-Coder-32B-Instruct for code generation
-- vLLM for fast inference
-- llguidance for grammar-constrained generation
+- vLLM 1.0 for fast inference
+- llguidance for Lark grammar-constrained generation (NOT XGrammar)
 - FastAPI for HTTP endpoints
 
+CRITICAL: llguidance is required for Lark grammars (Maze's native format).
+XGrammar only supports JSON Schema and is NOT sufficient for Maze's use case.
+
 Deployment:
+    ./deployment/modal/scripts/deploy.sh
+    
+    Or manually:
     modal deploy deployment/modal/modal_app.py
 
 Usage:
-    POST https://<user>--maze-inference-generate.modal.run
+    POST https://<user>--maze-inference-fastapi-app.modal.run/generate
     {
         "prompt": "def add(a: int, b: int) -> int:",
-        "grammar": "?start: function_def...",
+        "grammar": "?start: function_def\nfunction_def: ...",
+        "language": "python",
         "max_tokens": 512,
         "temperature": 0.7
     }
@@ -30,48 +37,69 @@ app = modal.App("maze-inference")
 # Configure persistent volume for model caching
 volume = modal.Volume.from_name("maze-model-cache", create_if_missing=True)
 
-# Build optimized image with vLLM 0.9+ (native XGrammar support)
-# Key insight from lift-sys: Use CUDA devel image for JIT compilation
-# vLLM 0.9+ has XGrammar built-in (no need for separate llguidance build)
+# Build optimized image with vLLM 1.0 + llguidance for Lark grammar support
+# Key: llguidance supports Lark grammars (Maze's native format)
+# XGrammar only supports JSON Schema - NOT sufficient for Maze
 
 # Pinned versions for reproducibility
-VLLM_VERSION = "0.9.2"  # Native XGrammar support
-TRANSFORMERS_VERSION = "4.53.0"
+VLLM_VERSION = "1.0.0"  # Latest stable with llguidance support
+TRANSFORMERS_VERSION = "4.47.1"  # Compatible with vLLM 1.0
 FASTAPI_VERSION = "0.115.12"
 
 image = (
-    # Use NVIDIA CUDA development image (required for flashinfer JIT)
-    # lift-sys pattern: nvidia/cuda:devel provides nvcc compiler
+    # Use NVIDIA CUDA development image (required for llguidance + flashinfer JIT)
+    # Includes Rust compiler needed for llguidance build
     modal.Image.from_registry(
         "nvidia/cuda:12.4.1-devel-ubuntu22.04",
         add_python="3.12"
     )
-    # System dependencies
+    # System dependencies including Rust for llguidance
     .apt_install(
-        "git",  # Required for transformers cache
-        "wget",  # Useful for asset downloads
+        "git",
+        "wget",
+        "curl",
+        "build-essential",  # C/C++ compilers
+        "pkg-config",
+        "libssl-dev",  # For Rust builds
     )
-    # Use uv_pip_install for 10-100x faster builds (lift-sys pattern)
+    # Install Rust (required for llguidance)
+    .run_commands(
+        "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y",
+        "echo 'source $HOME/.cargo/env' >> $HOME/.bashrc",
+    )
+    # Core ML dependencies
     .uv_pip_install(
-        f"vllm=={VLLM_VERSION}",  # vLLM with native XGrammar
+        f"vllm=={VLLM_VERSION}",
         f"transformers=={TRANSFORMERS_VERSION}",
         f"fastapi[standard]=={FASTAPI_VERSION}",
         "huggingface-hub>=0.20.0",
-        "hf-transfer",  # Fast HF downloads (Rust-based)
-        "flashinfer-python",  # 10-20% faster sampling
+        "hf-transfer",
+        "flashinfer-python",
     )
-    # Environment configuration (lift-sys optimizations)
+    # Build and install llguidance from source
+    .run_commands(
+        # Source Rust environment
+        ". $HOME/.cargo/env",
+        # Clone llguidance
+        "cd /tmp && git clone https://github.com/guidance-ai/llguidance.git",
+        # Build Rust parser
+        "cd /tmp/llguidance/parser && cargo build --release",
+        # Install Python bindings
+        "cd /tmp/llguidance/python && pip install -e .",
+        # Verify installation
+        "python -c 'import llguidance; print(\"llguidance installed:\", llguidance.__version__)'",
+    )
+    # Environment configuration
     .env({
         # CUDA paths
         "CUDA_HOME": "/usr/local/cuda",
-        "CUDA_PATH": "/usr/local/cuda",
-        "PATH": "/usr/local/cuda/bin:${PATH}",
+        "PATH": "/usr/local/cuda/bin:$HOME/.cargo/bin:${PATH}",
         "LD_LIBRARY_PATH": "/usr/local/cuda/lib64:/usr/local/cuda/lib",
         # Performance
         "HF_HUB_ENABLE_HF_TRANSFER": "1",
         "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
         "TOKENIZERS_PARALLELISM": "false",
-        # Cache directories
+        # Cache
         "HF_HOME": "/cache/huggingface",
         "TRANSFORMERS_CACHE": "/cache/transformers",
     })
@@ -152,19 +180,20 @@ class MazeInferenceServer:
             print(f"GPU: {torch.cuda.get_device_name(0)}")
             print(f"VRAM: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
         
-        # Initialize vLLM with XGrammar (native in 0.9+)
-        # lift-sys insight: vLLM 0.9.2+ has XGrammar built-in, no separate llguidance
+        # Initialize vLLM 1.0 with llguidance for Lark grammar support
+        # CRITICAL: llguidance supports Lark grammars (Maze's format)
+        # XGrammar only does JSON Schema (not sufficient for Maze)
         self.llm = LLM(
             model="Qwen/Qwen2.5-Coder-32B-Instruct",
             revision="main",
             tensor_parallel_size=1,  # Single GPU
-            gpu_memory_utilization=0.90,  # Use 90% of VRAM
-            max_model_len=8192,  # Context for speed
-            dtype="bfloat16",  # BF16 precision
+            gpu_memory_utilization=0.90,
+            max_model_len=8192,  # Balance speed vs capability
+            dtype="bfloat16",
             trust_remote_code=True,
-            download_dir="/cache/models",  # Persistent cache
-            # XGrammar for constrained generation (built into vLLM 0.9+)
-            guided_decoding_backend="xgrammar",  # Native support, no extra setup
+            download_dir="/cache/models",
+            # llguidance for Lark grammar constraints
+            guided_decoding_backend="llguidance",
         )
         
         print("✅ Model loaded successfully")
@@ -211,16 +240,10 @@ class MazeInferenceServer:
         
         # Add grammar constraint if provided
         if grammar:
-            # XGrammar in vLLM 0.9+ uses GBNF/EBNF format
-            # For Lark grammars, use guided_decoding parameter
-            sampling_params.guided_decoding_backend = "xgrammar"
-            # Note: vLLM 0.9+ accepts grammar directly
-            # May need conversion from Lark to EBNF depending on vLLM version
-            try:
-                sampling_params.grammar = grammar
-            except AttributeError:
-                # Fallback: older API
-                sampling_params.guided_grammar = grammar
+            # llguidance supports Lark grammars directly
+            # This is what Maze uses natively (TypeScript, Python, Rust grammars)
+            sampling_params.guided_decoding_backend = "llguidance"
+            sampling_params.guided_grammar = grammar
         
         # Generate with vLLM
         try:
