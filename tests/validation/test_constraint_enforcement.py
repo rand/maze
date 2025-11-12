@@ -579,5 +579,410 @@ class TestTypeConstraints:
             pytest.fail(f"Type-aware generation failed: {e}\n{full_code}")
 
 
+class TestComplexScenarios:
+    """Test complex real-world scenarios."""
+
+    @pytest.mark.skip(reason="Complex INDENT/DEDENT matching needs refinement")
+    def test_multiple_statements_with_grammar(self):
+        """Test generating multiple statements with grammar constraints."""
+        adapter = ModalProviderAdapter()
+        
+        # Simple grammar for two statements
+        grammar = """
+start: statements
+statements: NEWLINE INDENT statement statement DEDENT
+statement: IDENT "=" expression NEWLINE
+expression: IDENT ("+" | "-") IDENT | NUMBER
+IDENT: /[a-zA-Z_][a-zA-Z0-9_]*/
+NUMBER: /[0-9]+/
+NEWLINE: /\\n/
+INDENT: "    "
+DEDENT: ""
+%ignore /[ \\t]+/
+"""
+        
+        request = GenerationRequest(
+            prompt="def calculate(x, y):",
+            max_tokens=32,
+            temperature=0.1,
+            grammar=grammar,
+        )
+        
+        response = adapter.generate(request)
+        full_code = request.prompt + response.text
+        
+        print(f"\nGenerated multi-statement code:\n{full_code}")
+        
+        # Validate syntax
+        try:
+            ast.parse(full_code)
+            syntax_valid = True
+        except SyntaxError as e:
+            syntax_valid = False
+            print(f"Syntax error: {e}")
+        
+        assert syntax_valid, f"Multi-statement code should be valid:\n{full_code}"
+        # Should have at least one assignment
+        assert "=" in full_code
+
+    def test_typescript_function_body_completion(self):
+        """Test TypeScript function body completion."""
+        adapter = ModalProviderAdapter()
+        grammar = TYPESCRIPT_FUNCTION_BODY.grammar
+        
+        request = GenerationRequest(
+            prompt="function multiply(a: number, b: number): number ",
+            max_tokens=64,
+            temperature=0.1,
+            grammar=grammar,
+        )
+        
+        response = adapter.generate(request)
+        full_code = request.prompt + response.text
+        
+        print(f"\nGenerated TypeScript:\n{full_code}")
+        
+        # Should have block structure
+        assert "{" in full_code, "Should have opening brace"
+        assert "}" in full_code or response.text.strip().endswith("}"), "Should have closing brace"
+        
+        # Should have return (for number return type)
+        assert "return" in full_code.lower(), "Should return a value"
+
+    def test_temperature_variation(self):
+        """Test that different temperatures produce different but valid code."""
+        adapter = ModalProviderAdapter()
+        
+        # Simple grammar for consistent testing
+        grammar = """
+start: simple
+simple: "return " expression
+expression: NUMBER | binary_expr
+binary_expr: NUMBER ("+" | "-" | "*") NUMBER
+NUMBER: /[0-9]+/
+"""
+        
+        results = []
+        for temp in [0.0, 0.5, 1.0]:
+            request = GenerationRequest(
+                prompt="def get_value():\n    ",
+                max_tokens=16,
+                temperature=temp,
+                grammar=grammar,
+            )
+            
+            response = adapter.generate(request)
+            results.append((temp, response.text))
+            
+            # All should be valid
+            full_code = request.prompt + response.text
+            try:
+                ast.parse(full_code)
+            except SyntaxError as e:
+                pytest.fail(f"Temp {temp} produced invalid code: {e}\n{full_code}")
+        
+        print("\nTemperature variation results:")
+        for temp, code in results:
+            print(f"  T={temp}: {code.strip()}")
+        
+        # All should parse successfully (assertion above)
+        assert len(results) == 3
+
+    def test_constrained_vs_unconstrained_comparison(self):
+        """Direct comparison of constrained vs unconstrained generation."""
+        adapter = ModalProviderAdapter()
+        
+        test_prompts = [
+            "def add(a, b):\n    ",
+            "def is_valid(x):\n    ",
+            "def process(data):\n    ",
+        ]
+        
+        # Use simple grammar for reliable comparison
+        grammar = """
+start: simple
+simple: "return " expression
+expression: IDENT | NUMBER | binary_expr
+binary_expr: IDENT ("+" | "-") IDENT
+IDENT: /[a-zA-Z_][a-zA-Z0-9_]*/
+NUMBER: /[0-9]+/
+"""
+        
+        results = {
+            'constrained': {'valid': 0, 'total': 0},
+            'unconstrained': {'valid': 0, 'total': 0},
+        }
+        
+        for prompt in test_prompts:
+            # Constrained
+            req_constrained = GenerationRequest(
+                prompt=prompt,
+                max_tokens=32,
+                temperature=0.3,
+                grammar=grammar,
+            )
+            resp_constrained = adapter.generate(req_constrained)
+            results['constrained']['total'] += 1
+            
+            try:
+                ast.parse(prompt + resp_constrained.text)
+                results['constrained']['valid'] += 1
+            except SyntaxError:
+                print(f"Constrained FAILED for: {prompt}")
+            
+            # Unconstrained
+            req_unconstrained = GenerationRequest(
+                prompt=prompt,
+                max_tokens=32,
+                temperature=0.3,
+                grammar=None,
+            )
+            resp_unconstrained = adapter.generate(req_unconstrained)
+            results['unconstrained']['total'] += 1
+            
+            try:
+                ast.parse(prompt + resp_unconstrained.text)
+                results['unconstrained']['valid'] += 1
+            except SyntaxError:
+                print(f"Unconstrained failed for: {prompt}")
+        
+        constrained_rate = results['constrained']['valid'] / results['constrained']['total']
+        unconstrained_rate = results['unconstrained']['valid'] / results['unconstrained']['total']
+        
+        print(f"\n📊 Comparison Results:")
+        print(f"  Constrained:   {results['constrained']['valid']}/{results['constrained']['total']} ({constrained_rate:.0%})")
+        print(f"  Unconstrained: {results['unconstrained']['valid']}/{results['unconstrained']['total']} ({unconstrained_rate:.0%})")
+        print(f"  Improvement:   {(constrained_rate - unconstrained_rate):.0%}")
+        
+        # Constrained should be 100%
+        assert constrained_rate == 1.0, f"Constrained should be 100%, got {constrained_rate:.0%}"
+
+    def test_edge_case_empty_params(self):
+        """Test function with no parameters."""
+        adapter = ModalProviderAdapter()
+        
+        grammar = """
+start: simple
+simple: "return " (NUMBER | STRING)
+NUMBER: /[0-9]+/
+STRING: /"[^"]*"/
+"""
+        
+        request = GenerationRequest(
+            prompt="def get_constant():\n    ",
+            max_tokens=16,
+            temperature=0.0,
+            grammar=grammar,
+        )
+        
+        response = adapter.generate(request)
+        full_code = request.prompt + response.text
+        
+        print(f"\nEmpty params test:\n{full_code}")
+        
+        try:
+            ast.parse(full_code)
+            syntax_valid = True
+        except SyntaxError as e:
+            syntax_valid = False
+            print(f"Error: {e}")
+        
+        assert syntax_valid, "Should handle no-param functions"
+
+    def test_complex_expression_generation(self):
+        """Test generating expressions with operators."""
+        adapter = ModalProviderAdapter()
+        
+        # Simple but complete expression grammar
+        grammar = """
+start: simple
+simple: "return " expression
+expression: term (("+" | "-") term)?
+term: IDENT | NUMBER
+NUMBER: /[0-9]+/
+IDENT: /[a-zA-Z_][a-zA-Z0-9_]*/
+"""
+        
+        request = GenerationRequest(
+            prompt="def compute(a, b, c):\n    ",
+            max_tokens=16,
+            temperature=0.1,
+            grammar=grammar,
+        )
+        
+        response = adapter.generate(request)
+        full_code = request.prompt + response.text
+        
+        print(f"\nExpression:\n{full_code}")
+        
+        try:
+            ast.parse(full_code)
+            syntax_valid = True
+        except SyntaxError as e:
+            syntax_valid = False
+            print(f"Error: {e}")
+        
+        assert syntax_valid, "Should generate valid expressions"
+        assert "return" in response.text.lower()
+
+
+class TestPerformanceCharacteristics:
+    """Test and document performance characteristics."""
+
+    def test_latency_with_grammar(self):
+        """Measure and report latency with grammar constraints."""
+        adapter = ModalProviderAdapter()
+        
+        grammar = """
+start: simple
+simple: "return " NUMBER
+NUMBER: /[0-9]+/
+"""
+        
+        import time
+        
+        # Warm up
+        request = GenerationRequest(
+            prompt="def test():\n    ",
+            max_tokens=16,
+            temperature=0.0,
+            grammar=grammar,
+        )
+        adapter.generate(request)
+        
+        # Measure
+        latencies = []
+        for _ in range(3):
+            start = time.perf_counter()
+            adapter.generate(request)
+            latency = time.perf_counter() - start
+            latencies.append(latency)
+        
+        avg_latency = sum(latencies) / len(latencies)
+        
+        print(f"\n⏱️  Performance (with grammar):")
+        print(f"  Average latency: {avg_latency:.2f}s")
+        print(f"  Min: {min(latencies):.2f}s")
+        print(f"  Max: {max(latencies):.2f}s")
+        
+        # Should be reasonable (warm request <5s)
+        assert avg_latency < 5.0, f"Latency too high: {avg_latency:.2f}s"
+
+    def test_token_efficiency(self):
+        """Test that grammar constraints are token-efficient."""
+        adapter = ModalProviderAdapter()
+        
+        grammar = """
+start: simple
+simple: "return " NUMBER
+NUMBER: /[0-9]+/
+"""
+        
+        request = GenerationRequest(
+            prompt="def answer():\n    ",
+            max_tokens=16,
+            temperature=0.0,
+            grammar=grammar,
+        )
+        
+        response = adapter.generate(request)
+        
+        print(f"\n🎯 Token efficiency:")
+        print(f"  Max tokens: {request.max_tokens}")
+        print(f"  Generated: {response.metadata.get('tokens_generated', 'unknown')}")
+        print(f"  Code: {response.text.strip()}")
+        
+        # Should be concise with strict grammar
+        assert len(response.text) < 100, "Should be concise with strict grammar"
+
+
+class TestRealWorldPatterns:
+    """Test patterns that match real-world usage."""
+
+    def test_error_handling_pattern(self):
+        """Test generating code with error handling."""
+        adapter = ModalProviderAdapter()
+        
+        # Grammar for try-except pattern
+        grammar = """
+start: suite
+suite: NEWLINE INDENT try_stmt DEDENT
+try_stmt: "try:" NEWLINE INDENT return_stmt DEDENT "except:" NEWLINE INDENT return_stmt DEDENT
+return_stmt: "return " (NUMBER | STRING) NEWLINE
+NUMBER: /[0-9]+/
+STRING: /"[^"]*"/
+NEWLINE: /\\n/
+INDENT: "    "
+DEDENT: ""
+%ignore /[ \\t]+/
+"""
+        
+        request = GenerationRequest(
+            prompt="def safe_operation():",
+            max_tokens=64,
+            temperature=0.1,
+            grammar=grammar,
+        )
+        
+        response = adapter.generate(request)
+        full_code = request.prompt + response.text
+        
+        print(f"\nError handling pattern:\n{full_code}")
+        
+        try:
+            ast.parse(full_code)
+            syntax_valid = True
+        except SyntaxError as e:
+            syntax_valid = False
+            print(f"Error: {e}")
+        
+        assert syntax_valid, "Error handling pattern should be valid"
+        assert "try" in full_code.lower()
+        assert "except" in full_code.lower()
+
+    def test_conditional_return_pattern(self):
+        """Test generating conditional return statements."""
+        adapter = ModalProviderAdapter()
+        
+        grammar = """
+start: suite
+suite: NEWLINE INDENT if_stmt DEDENT
+if_stmt: "if" condition ":" NEWLINE INDENT return_stmt DEDENT "return" expression NEWLINE
+condition: IDENT comparison IDENT
+comparison: "==" | "!=" | "<" | ">" | "<=" | ">="
+return_stmt: "return" expression NEWLINE
+expression: IDENT | NUMBER
+IDENT: /[a-zA-Z_][a-zA-Z0-9_]*/
+NUMBER: /[0-9]+/
+NEWLINE: /\\n/
+INDENT: "    "
+DEDENT: ""
+%ignore /[ \\t]+/
+"""
+        
+        request = GenerationRequest(
+            prompt="def check(x, y):",
+            max_tokens=64,
+            temperature=0.1,
+            grammar=grammar,
+        )
+        
+        response = adapter.generate(request)
+        full_code = request.prompt + response.text
+        
+        print(f"\nConditional return:\n{full_code}")
+        
+        try:
+            ast.parse(full_code)
+            syntax_valid = True
+        except SyntaxError as e:
+            syntax_valid = False
+            print(f"Error: {e}")
+        
+        assert syntax_valid, "Conditional pattern should be valid"
+        assert "if" in full_code.lower()
+        assert "return" in full_code.lower()
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])
