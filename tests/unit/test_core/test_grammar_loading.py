@@ -3,7 +3,6 @@
 Test coverage target: 90%
 """
 
-
 from maze.config import Config
 from maze.core.pipeline import Pipeline
 

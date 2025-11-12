@@ -2,7 +2,6 @@
 Tests for hybrid constraint weighting.
 """
 
-
 import pytest
 
 from maze.learning.hybrid_weighting import (

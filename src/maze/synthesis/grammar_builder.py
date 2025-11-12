@@ -127,9 +127,7 @@ class GrammarBuilder:
 
         return self
 
-    def add_rule(
-        self, name: str, production: str, priority: str | None = None
-    ) -> GrammarBuilder:
+    def add_rule(self, name: str, production: str, priority: str | None = None) -> GrammarBuilder:
         """
         Add a grammar rule.
 

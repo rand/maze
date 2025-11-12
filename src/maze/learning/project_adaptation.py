@@ -87,9 +87,7 @@ class ProjectAdaptationManager:
         self.convergence_threshold = convergence_threshold
         self.profiles: dict[str, ProjectProfile] = {}
 
-    def initialize_project(
-        self, project_path: Path, language: str | None = None
-    ) -> ProjectProfile:
+    def initialize_project(self, project_path: Path, language: str | None = None) -> ProjectProfile:
         """
         Initialize project profile.
 

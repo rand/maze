@@ -170,9 +170,7 @@ class RuneExecutor:
         except (FileNotFoundError, subprocess.TimeoutExpired):
             return False
 
-    def execute(
-        self, code: str, language: str, tests: list[str] | None = None
-    ) -> ExecutionResult:
+    def execute(self, code: str, language: str, tests: list[str] | None = None) -> ExecutionResult:
         """Execute code in sandbox.
 
         Args:

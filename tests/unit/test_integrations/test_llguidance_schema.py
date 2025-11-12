@@ -3,7 +3,6 @@
 Test coverage target: 85%
 """
 
-
 from maze.integrations.llguidance.adapter import LLGuidanceAdapter
 
 

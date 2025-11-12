@@ -450,9 +450,7 @@ class LlamaCppProviderAdapter(ProviderAdapter):
         return "root ::= json_value"
 
 
-def create_provider_adapter(
-    provider: str, model: str | None = None, **kwargs
-) -> ProviderAdapter:
+def create_provider_adapter(provider: str, model: str | None = None, **kwargs) -> ProviderAdapter:
     """
     Create a provider adapter.
 

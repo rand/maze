@@ -2,7 +2,6 @@
 Pytest configuration and fixtures for Maze test suite.
 """
 
-
 # Add src directory to path for imports
 import sys
 from pathlib import Path

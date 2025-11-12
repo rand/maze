@@ -206,9 +206,7 @@ class FeedbackLoopOrchestrator:
 
         return max(-2.0, min(2.0, score))
 
-    def _classify_feedback(
-        self, validation: ValidationResult, repair: RepairResult | None
-    ) -> str:
+    def _classify_feedback(self, validation: ValidationResult, repair: RepairResult | None) -> str:
         """
         Classify feedback type.
 

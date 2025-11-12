@@ -110,9 +110,7 @@ class IndexingResult:
     duration_ms: float
     timestamp: datetime = field(default_factory=datetime.now)
 
-    def to_indexed_context(
-        self, language: str, project_path: str | None = None
-    ) -> IndexedContext:
+    def to_indexed_context(self, language: str, project_path: str | None = None) -> IndexedContext:
         """Convert to IndexedContext for use in constraint synthesis."""
         return IndexedContext(
             files=[{"path": f, "lang": language} for f in self.files_processed],
