@@ -22,12 +22,12 @@ PYTHON_FUNCTION = GrammarTemplate(
     grammar="""
 start: function_def
 
-function_def: decorators? async_modifier? "def" IDENT "(" parameters? ")" return_annotation? ":" suite
+function_def: decorators? async_modifier? "def " IDENT "(" parameters? ")" return_annotation? ":" suite
 
 decorators: ("@" dotted_name "(" args? ")" NEWLINE)+
 dotted_name: IDENT ("." IDENT)*
 
-async_modifier: "async"
+async_modifier: "async "
 
 parameters: param ("," param)* ("," "/")?  ("," "*" param)? ("," "**" param)?
           | "*" param ("," param)* ("," "**" param)?
